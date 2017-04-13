@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Blog Ritchie Vink</title>
+    <link>ritchievink.com/</link>
+    <description>Recent content on Blog Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2017 Ritchie Vink.</copyright>
+    <lastBuildDate>Sun, 12 Mar 2017 21:35:33 +0200</lastBuildDate>
+    <atom:link href="ritchievink.com/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Python 1D FEM Example 3</title>
+      <link>/ritchievink.com/2017/03/12/python-1d-fem-example-3/</link>
+      <pubDate>Sun, 12 Mar 2017 21:35:33 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>/ritchievink.com/2017/03/12/python-1d-fem-example-3/</guid>
+      <description>
+
+&lt;h1 id=&#34;python-1d-fem-example-3&#34;&gt;Python 1D FEM Example 3.&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/example.png&#34; alt=&#34;view&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# if using ipython notebook
+%matplotlib inline
+
+import StructuralEngineering.FEM.system as se
+
+# Create a new system object.
+system = se.SystemElements()
+
+# Add beams to the system. Positive z-axis is down, positive x-axis is the right.
+system.add_element(location_list=[[0, 0], [0, -5]], EA=15000, EI=5000)
+system.add_element(location_list=[[0, -5], [5, -5]], EA=15000, EI=5000)
+system.add_element(location_list=[[5, -5], [5, 0]], EA=15000, EI=5000)
+
+# Add supports.
+system.add_support_fixed(nodeID=1)
+# Add a rotational spring at node 4.
+system.add_support_spring(nodeID=4, translation=3, K=4000)
+
+# Add loads.
+system.point_load(Fx=30, nodeID=2)
+system.q_load(q=10, elementID=2)
+
+system.show_structure()
+system.solve()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/structure_1.png&#34; alt=&#34;structure&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_reaction_force()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/reaction_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_normal_force()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/normal_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_shear_force()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/shear_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_bending_moment()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/moment_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_displacement()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/displacement_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Python 1D FEM Example 2</title>
+      <link>/ritchievink.com/2017/02/12/python-1d-fem-example-2/</link>
+      <pubDate>Sun, 12 Feb 2017 21:35:33 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>/ritchievink.com/2017/02/12/python-1d-fem-example-2/</guid>
+      <description>
+
+&lt;h1 id=&#34;example-2-truss-framework&#34;&gt;Example 2: Truss framework&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/example_2.png&#34; alt=&#34;view&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# if using ipython notebook
+%matplotlib inline
+
+import StructuralEngineering.FEM.system as se
+
+# Create a new system object.
+system = se.SystemElements()
+
+# Add beams to the system. Positive z-axis is down, positive x-axis is the right.
+system.add_truss_element(location_list=[[0, 0], [0, -5]], EA=5000)
+system.add_truss_element(location_list=[[0, -5], [5, -5]], EA=5000)
+system.add_truss_element(location_list=[[5, -5], [5, 0]], EA=5000)
+system.add_truss_element(location_list=[[0, 0], [5, -5]], EA=5000 * math.sqrt(2))
+
+# get a visual of the element ID&#39;s and the node ID&#39;s
+system.show_structure()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/structure_2.png&#34; alt=&#34;structure_2&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# add hinged supports at node ID 1 and node ID 2
+system.add_support_hinged(nodeID=1)
+system.add_support_hinged(nodeID=4)
+
+# add point load at node ID 2
+system.point_load(Fx=10, nodeID=2)
+
+# show the structure
+system.show_structure()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/structure_wi_supp_2.png&#34; alt=&#34;structure_2&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# solve
+system.solve()
+# show the reaction forces
+system.show_reaction_force()
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/reaction_2.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the normal force
+system.show_normal_force()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/normal2.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_displacement()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/displacement_2.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Python 1D FEM Example 1</title>
+      <link>/ritchievink.com/2017/01/12/python-1d-fem-example-1/</link>
+      <pubDate>Thu, 12 Jan 2017 21:35:33 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>/ritchievink.com/2017/01/12/python-1d-fem-example-1/</guid>
+      <description>
+
+&lt;h1 id=&#34;example-1-framework:9d893190c3665aa5fa136e74a9494510&#34;&gt;Example 1: Framework&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/example_1.png&#34; alt=&#34;view&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# if using ipython notebook
+%matplotlib inline
+
+import StructuralEngineering.FEM.system as se
+
+# Create a new system object.
+system = se.SystemElements()
+
+# Add beams to the system. Positive z-axis is down, positive x-axis is the right.
+system.add_element(location_list=[[0, 0], [3, -4]], EA=5e9, EI=8000)
+system.add_element(location_list=[[3, -4], [8, -4]], EA=5e9, EI=4000)
+
+# get a visual of the element ID&#39;s and the node ID&#39;s
+system.show_structure()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/wosupports_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# add loads to the element ID 2
+system.q_load(elementID=2, q=10, direction=1)
+
+# add hinged support to node ID 1
+system.add_support_hinged(nodeID=1)
+
+# add fixed support to node ID 2
+system.add_support_fixed(nodeID=3)
+
+# solve
+system.solve()
+
+# show the structure
+system.show_structure()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/supports_1_.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the reaction forces
+system.show_reaction_force()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/reaction_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the normal force
+system.show_normal_force()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/normal_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the shear force
+system.show_shear_force()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/shear_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the bending moment
+system.show_bending_moment()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/moment_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the displacements
+system.show_displacement()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/displacement_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
