@@ -3,10 +3,17 @@
 date = "2017-01-12T21:35:33+02:00"
 draft = false
 title = "Python 1D FEM Example 1"
+description = "Example code for 1D FEM in Python."
 
 +++
 
 # Example 1: Framework
+
+A while ago I wrote a FEM package for basic frames and trusses in Python.
+
+This is a basic example that shows how to use it.
+
+You can download it on [github](https://github.com/ritchie46/structural_engineering)
 
 ![view](/img/fem/example_1/example_1.png)
 
@@ -80,3 +87,5 @@ system.show_bending_moment()
 system.show_displacement()
 ``` 
 ![](/img/fem/example_1/displacement_1.png)
+
+

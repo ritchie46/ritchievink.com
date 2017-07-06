@@ -2,27 +2,1585 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on Blog Ritchie Vink</title>
-    <link>ritchievink.com/post/</link>
+    <link>https://ritchievink.com/blog/post/</link>
     <description>Recent content in Posts on Blog Ritchie Vink</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-EN</language>
     <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
     <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
     <copyright>(c) 2017 Ritchie Vink.</copyright>
-    <lastBuildDate>Sun, 12 Mar 2017 21:35:33 +0200</lastBuildDate>
-    <atom:link href="ritchievink.com/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 04 Jun 2017 14:08:34 +0200</lastBuildDate>
+    <atom:link href="https://ritchievink.com/blog/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Deep learning music classifier part 2. Computer says no!</title>
+      <link>https://ritchievink.com/blog/2017/06/04/deep-learning-music-classifier-part-2.-computer-says-no/</link>
+      <pubDate>Sun, 04 Jun 2017 14:08:34 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://ritchievink.com/blog/2017/06/04/deep-learning-music-classifier-part-2.-computer-says-no/</guid>
+      <description>
+
+&lt;h2 id=&#34;recap:aa484d3d1409cd9f4bec39fdc6755448&#34;&gt;Recap&lt;/h2&gt;
+
+&lt;p&gt;Last post I described what my motivations were to start building a music classifier, or at least attempt to build one. The post also described how I collected a dataset, extracted important features and clustered the data based on their variance. &lt;a href=&#34;https://ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/&#34;&gt;You can read the previous post here.&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;This post describes how I got my feet wet with classifying music. Spotify kind of sorted the data I&amp;rsquo;ve downloaded by genre. However when I started looking at the data, I found that a lot of songs were interchangeable between the genres. If I am to use data that do not belong solely to one class but should be labeled as both soul and blues music, how can a neural network learn to distinguish between them?&lt;/p&gt;
+
+&lt;p&gt;Take the genres blues and rock as an example. In the data set both genres contained the song &lt;em&gt;Ironic&lt;/em&gt; made by &lt;em&gt;Alanis Morissette&lt;/em&gt;. In my opinion this songs doesn&amp;rsquo;t belong to any of these genres. To address this problem I chose to train the models on the more distinguishable genres, namely:&lt;/p&gt;
+
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Genre&lt;/th&gt;
+&lt;th&gt;No. of songs&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Hiphop&lt;/td&gt;
+&lt;td&gt;1212&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;EDM&lt;/td&gt;
+&lt;td&gt;2496&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;Classical music&lt;/td&gt;
+&lt;td&gt;2678&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;Metal&lt;/td&gt;
+&lt;td&gt;1551&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;Jazz&lt;/td&gt;
+&lt;td&gt;417&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;I believe that these genres don&amp;rsquo;t overlap too much. For instance a metal song can have multiple labels, but I am pretty sure classical and jazz won&amp;rsquo;t be one.&lt;/p&gt;
+
+&lt;p&gt;Now the genres are chosen, the data set is still far from perfect. As you can see in the table above the data is not evenly distributed. So I expect that the trained models will find it harder to generalise for music that is less represented in the data. Jazz music for instance will be harder to train than classical music as the latter is is abundant in the data set.&lt;/p&gt;
+
+&lt;p&gt;Another example of the flaws in the data set is that there are songs that aren&amp;rsquo;t even songs at all! During training I realised that the data set contained songs that were labeled as metal. When actually listening to the audio they seemed to be just recordings of interviews with the band members of Metallica. I really didn&amp;rsquo;t feel like manually checking every song for the correct label, thus I&amp;rsquo;ve accepted that the models will learn some flawed data. This luckely gives me an excuse when some predictions are really off :).&lt;/p&gt;
+
+&lt;p&gt;&lt;/br&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;multilayer-perceptron:aa484d3d1409cd9f4bec39fdc6755448&#34;&gt;Multilayer perceptron&lt;/h2&gt;
+
+&lt;p&gt;The first models I trained were multilayer perceptrons also called feed forward neural networks. These nets consist of an input layer, one or multiple hidden layers and an output layer. The output layer should have as many nodes as classes you want to predict. In our case this would be five nodes. The figure below shows an example of a multilayer perceptron.&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-8-dl-music/mlp.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Multilayer perceptron&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;&lt;/br&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;data-augmentation:aa484d3d1409cd9f4bec39fdc6755448&#34;&gt;data augmentation&lt;/h3&gt;
+
+&lt;p&gt;In the last post I described that the feature extraction has converted the raw audio data into images. Every pixel of these images is an input to the neural network. As we can see in the figure above. Every input is connected to all the nodes of the next layer. Lets compute the number of parameters this would take for a neural net with one hidden layer for one song&amp;rsquo;s image.&lt;/p&gt;
+
+&lt;p&gt;As a rule of thumb we can choose the number of hidden nodes somewhere between the input nodes and the output nodes.&lt;/p&gt;
+
+&lt;p&gt;The input image has a size of &lt;span&gt;\(10 x 2548 = 25,480 \)&lt;/span&gt; pixels. The number of output nodes is equal to the number of classes = 5 nodes. If we interpolate the amount of hidden layer connections:&lt;/p&gt;
+
+&lt;div&gt;$$hidden \ nodes = \frac{25480 + 5}{2}= 12743$$&lt;/div&gt; 
+
+&lt;p&gt;The total connections of the neural net would become:&lt;/p&gt;
+
+&lt;div&gt;$$connections = 25480 \cdot 12743 + 12743 \cdot 5 = 3.24 \cdot 10^8$$&lt;/div&gt; 
+
+&lt;p&gt;This sheer number of connections for a simple neural net with one hidden layer was way too much for my humble laptop to deal with. Therefore I started to reduce the amount of input data.&lt;/p&gt;
+
+&lt;p&gt;Computers see images as 2D arrays of numbers. Below is an example shown of a random grayscale image of 9x6 pixels. The pictures I used to classify information contain MFCC spectra. Every column of these images is a discrete time step t&lt;sub&gt;i&lt;/sub&gt; and contains time information. The rows contain frequency coefficient information.&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-8-dl-music/img_grayscale.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Grayscale picture (as a computer sees it)&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;&lt;/br&gt;&lt;/p&gt;
+
+&lt;p&gt;I reduced the amount of information by only feeding every 20th column of the image. This way the frequency information of a timestep t&lt;sub&gt;i&lt;/sub&gt; remains intact however the amount of time steps is divided by 20. This is of course a huge loss of information, but the upside of this rough downsampling was that I could expand my data set with 20 times the amount of data. As I could just change the offset of counting every 20th column. The amount of input nodes reduced to &lt;span&gt;\(\frac{25480}{20} = 1274 \)&lt;/span&gt; nodes. Which is a number of input nodes my laptop can handle and gives me the possibility expand the network deeper.&lt;/p&gt;
+
+&lt;h3 id=&#34;model-results:aa484d3d1409cd9f4bec39fdc6755448&#34;&gt;model results&lt;/h3&gt;
+
+&lt;p&gt;The best results were yielded from a model with one hidden layer and a model with three hidden layers. The amount of hidden nodes were divided as following:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Model 1; hidden layer 1; 600 nodes&lt;/li&gt;
+&lt;li&gt;Model 2; hidden layer 1; 600 nodes&lt;/li&gt;
+&lt;li&gt;Model 2; hidden layer 2; 400 nodes&lt;/li&gt;
+&lt;li&gt;Model 2; hidden layer 1; 100 nodes&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;To prevent the models from overfitting I used both l2 regularisation and dropout. 20% of the total data set was set aside as validation data.&lt;/p&gt;
+
+&lt;p&gt;Below are the results plotted. The dashed lines show the result the accuracy of the models on the training data. The solid lines are the validation data results. This is an indication of how accurate the models are on real world data. As in music they haven&amp;rsquo;t heard before, or in this case music they haven&amp;rsquo;t &lt;strong&gt;seen&lt;/strong&gt; before.&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-8-dl-music/mlp-results.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Accuracy of the feed forward models&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;The maximum accuracy on the validation set was &lt;strong&gt;82%&lt;/strong&gt;. I am quite pleased with this result as I threw away a lot of information with the rigorous dropping of the columns. In a next model I wanted to be able to feed all the information stored in a song&amp;rsquo;s image to the model. Furthermore it would also be nice if the model could learn something about the order of frequencies. In other words that the model learns something about time information, maybe we can even call it rhythm.&lt;/p&gt;
+
+&lt;p&gt;I don&amp;rsquo;t believe a feed forward neural net does this. For a feed forward network I need the rescale the 2D image matrix into a 1D vector which probably is also some (spatial) information loss.&lt;/p&gt;
+
+&lt;p&gt;&lt;/br&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;convolutional:aa484d3d1409cd9f4bec39fdc6755448&#34;&gt;Convolutional&lt;/h2&gt;
+
+&lt;p&gt;I believe the solution to some of the wishes I named in the last section are convolutional neural networks (CNN). &lt;/br&gt;
+Convolutional neural networks work great with images as they can deal with spatial information. An image contains 2D information. The input nodes of a CNN are not fully connected to every layer so the model can deal with large input data without blowing up the amount of nodes required in the model. Images can have a high number of megapixels, thus a lot of data. I think these properties of CNN are also convenient for our problem of classifying music images.&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-8-dl-music/cnn.jpg&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Convolutional neural network in action&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;&lt;/br&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;shared-nodes:aa484d3d1409cd9f4bec39fdc6755448&#34;&gt;shared nodes&lt;/h3&gt;
+
+&lt;p&gt;In a convolutional neural net the weights and biases are shared instead of fully connected to the layers. For an image this means that a cat in the left corner of an image leads to the same output as the same cat in the right corner of an image. For a song this may be that a certain rythm at the beginning of song will fire the same neurons as that particular rhythm at the end of the song.&lt;/p&gt;
+
+&lt;h3 id=&#34;spatial-information:aa484d3d1409cd9f4bec39fdc6755448&#34;&gt;spatial information&lt;/h3&gt;
+
+&lt;p&gt;The images I have created in previous post contain spatial information. As said before the x direction shows time information, the y directions shows frequency coefficients. With CNN&amp;rsquo;s I don&amp;rsquo;t have to reshape the image matrix in a 1D vector. The spatial information stays preserved.&lt;/p&gt;
+
+&lt;h3 id=&#34;data-set:aa484d3d1409cd9f4bec39fdc6755448&#34;&gt;data set&lt;/h3&gt;
+
+&lt;p&gt;Both the shared nodes and the spatial information preservation does intuitively seem to make sense. The only drawback compared to the previous model is the amount of data. By the drastic downsampling in columns I was able to created a twentyfold of the original number of songs. Now I was feeding the whole image to the model. So the amount of data remains equal to the amount of downloaded songs.&lt;/p&gt;
+
+&lt;p&gt;In image classification the data sets are often augmented by rotating and flipping the images horizontally. This augmentation seems reasonable as a rotated cat is still a cat. &lt;a href=&#34;https://www.youtube.com/watch?v=STY1Ut9JhtY&#34;&gt;The proof of this statement is provided!&lt;/a&gt; I am not certain this same logic is true for music. Doesn&amp;rsquo;t a rotated songs image hustle some time and frequency information? I am not sure about the previous statement, thus I chose to leave the songs images intact and work with the amount of songs I&amp;rsquo;ve got.&lt;/p&gt;
+
+&lt;h3 id=&#34;results:aa484d3d1409cd9f4bec39fdc6755448&#34;&gt;results&lt;/h3&gt;
+
+&lt;p&gt;The convolutional models yielded far better results than the feed forward neural nets. The best predicting model contained 3 convolutional layers with respectively 16, 32 and 32 filters. After the convolutional layers there was added a 50% dropout layer followed by a fully connected layer of 250 neurons. For who is interested in all the technicalities a graph of the model is &lt;a href=&#34;https://github.com/ritchie46/music-classification/blob/master/cnn_16_32_32_d0_0.5_250.png&#34;&gt;available here.&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;The accuracy gained during training of the two best predicting models are shown in the plot below.&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-8-dl-music/cnn-results.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Accuracy of the convolutional neural nets&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;&lt;/br&gt;&lt;/p&gt;
+
+&lt;p&gt;The nummerical results in terms of the prediction accuracy are shown in the table below. Note that the accuracy results was computed with all the data, training and validation data. On real world data the results would probably be a bit lower.&lt;/p&gt;
+
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;th&gt;precision&lt;/th&gt;
+&lt;th&gt;recall&lt;/th&gt;
+&lt;th&gt;n songs&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Hiphop&lt;/td&gt;
+&lt;td&gt;0.87&lt;/td&gt;
+&lt;td&gt;0.94&lt;/td&gt;
+&lt;td&gt;1208&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;EDM&lt;/td&gt;
+&lt;td&gt;0.95&lt;/td&gt;
+&lt;td&gt;0.91&lt;/td&gt;
+&lt;td&gt;2493&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;Classical&lt;/td&gt;
+&lt;td&gt;0.97&lt;/td&gt;
+&lt;td&gt;0.98&lt;/td&gt;
+&lt;td&gt;2678&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;Metal&lt;/td&gt;
+&lt;td&gt;0.96&lt;/td&gt;
+&lt;td&gt;0.97&lt;/td&gt;
+&lt;td&gt;1571&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;Jazz&lt;/td&gt;
+&lt;td&gt;0.86&lt;/td&gt;
+&lt;td&gt;0.78&lt;/td&gt;
+&lt;td&gt;416&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;The table shows the precision and the recall of the labels. The precision is the amount of good classifications divided by the total amount times that label was predicted. Recall is the amount of good classifications divided by the total occurrences of that specific label in a data set. So let&amp;rsquo;s say I&amp;rsquo;ve trained my model very badly and it only is able to predict jazz as a label. Such a hypothetical model would have 100% recall on the jazz label.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Total number of songs: 11,366&lt;/li&gt;
+&lt;li&gt;Total number of jazz songs: 416&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div&gt;$$recall = \frac{416}{416} \cdot 100= 100 \%$$&lt;/div&gt; 
+
+&lt;p&gt;The precision of the model would however be low as the model has classified all the songs as jazz.&lt;/p&gt;
+
+&lt;div&gt;$$precision = \frac{416}{11366} \cdot 100= 3.66 \%$$&lt;/div&gt; 
+
+&lt;p&gt;So back to the table we can see that EDM, metal and classical music score best on both precision and recall. Hiphop has a good recall score. It scores a bit lower on precision meaning that it mostly correct in labeling a hiphop song given that it is a hiphop song, but the model makes more mistakes by labeling a song as hiphop that should not be classified as such. &lt;/br&gt;
+Jazz scores worst. Which is as expected as the amount of jazz songs in the data set is substantially lower than the other labels.&lt;/p&gt;
+
+&lt;h2 id=&#34;tl-dr:aa484d3d1409cd9f4bec39fdc6755448&#34;&gt;tl;dr&lt;/h2&gt;
+
+&lt;p&gt;This post focusses on the classification of the songs. I&amp;rsquo;ve described the results I yielded with feed forward and convolutional neural networks that classified music based on MFCC images.&lt;/p&gt;
+
+&lt;p&gt;The convolutional model is used in the small widget below. You can try to search by an artist and a track name. If a match is found in the spotify library an mp3 is downloaded and converted to a MFCC image. When the model has finished &amp;lsquo;viewing&amp;rsquo; the song it will make his best prediction of the known labels.&lt;/p&gt;
+
+&lt;p&gt;Before a prediction can be made the mp3 needs to be downloaded, converted to a .wav audio file, converted to a MFFC image and finally fed to the model. I only have got a small web server, so please be patient. A prediction is coming your way. :)&lt;/p&gt;
+
+&lt;p&gt;Oh and remember&amp;hellip; it only knows:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Hiphop&lt;/li&gt;
+&lt;li&gt;EDM&lt;/li&gt;
+&lt;li&gt;Classical music&lt;/li&gt;
+&lt;li&gt;Metal&lt;/li&gt;
+&lt;li&gt;Jazz&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;It is of course also interesting to see how the model classifies genres it hasn&amp;rsquo;t learned. But I cannot promise you it would be a sane prediction though.&lt;/p&gt;
+
+&lt;div class=&#34;base-input&#34;&gt;
+&lt;label&gt;Artist:&lt;/label&gt; &lt;input type=&#34;text&#34; class=&#34;input-style-1&#34; value=&#34;coolio&#34; id=&#34;artist&#34;&gt;&lt;/input&gt; &lt;/br&gt;
+&lt;label&gt;Song:&lt;/label&gt; &lt;input type=&#34;text&#34; class=&#34;input-style-1&#34; value=&#34;gangsta&#39;s paradise&#34; id=&#34;track&#34;&gt;&lt;/input&gt; &lt;/br&gt;
+&lt;input type=&#34;submit&#34; value=&#34;Predict!&#34; id=&#34;predict&#34;&gt;
+&lt;input type=&#34;submit&#34; value=&#34;Pause song&#34; id=&#34;stop&#34;&gt;
+
+&lt;div id=&#34;result&#34;&gt;&lt;/div&gt;
+
+&lt;div id=&#34;mfcc-wrap&#34;&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;/br&gt;&lt;/p&gt;
+
+&lt;style&gt;
+label {
+    width: 30%;
+    display: inline-block;
+}
+
+input {
+    padding: 0.2em 0.2em 0.2em 0.2em;
+    box-sizing: border-box;
+    margin: 0.2em 0.2em 0.2em 0.2em;
+    width: 22rem;
+}
+
+.input-style-1 {
+    padding: 10px;
+    border: None;
+    border-bottom: solid 2px #c9c9c9;
+    transition: border 0.3s;
+}
+.input-style-1:focus,
+.input-style-1.focus {
+    border-bottom: solid 2px #969696;
+}
+
+.input-container {
+    margin: 1em 1em 1em 1em;
+    text-align: left;
+    display: block;
+}
+
+.base-input {
+    margin: 1em 1em 1em 1em;
+    padding: 1em 1em;
+    background: #efefef;
+    width: 45rem;
+    border: solid 2px #969696;
+
+}
+
+input[type=submit] {
+
+margin: 0.5em 0.5em 1em 1em;
+width: 15rem
+
+}
+&lt;/style&gt;
+
+&lt;script src=&#34;https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js&#34;&gt;&lt;/script&gt;
+&lt;script&gt;
+var audio = new Audio(&#39;&#39;)
+$(&#34;#predict&#34;).click(function(){
+$(&#34;#result&#34;).html(&#34;Searching for &lt;i&gt;&#34; + $(&#34;#artist&#34;).val() + &#34; - &#34; + $(&#34;#track&#34;).val() + &#34;&lt;/i&gt;...&lt;/br&gt;&#34;);
+      $.ajax({
+        url: &#34;/d/music-prediction&#34;,
+        data: {
+            &#39;artist&#39;: $(&#34;#artist&#34;).val(),
+            &#39;track&#39;: $(&#34;#track&#34;).val()
+        },
+        dataType: &#34;json&#34;,
+        success: function (data) {
+        if (data.response) {
+            $(&#34;#result&#34;).html(&#34;The best prediction of the model:&#34;+
+&#34; &lt;ol&gt;&#34;+
+&#34; &lt;li&gt;&#34; + data.first[0] + &#34;, certainty: &#34; + Math.round(data.first[1] * 100) + &#34;%&lt;/li&gt;&#34;+
+&#34; &lt;li&gt;&#34; + data.second[0] + &#34;, certainty: &#34; + Math.round(data.second[1] * 100) + &#34;%&lt;/li&gt;&#34; +
+&#34; &lt;/ol&gt;&#34;
+);
+
+
+            audio.pause();
+            var img = document.createElement(&#39;img&#39;);
+            img.src = &#39;data:image/jpeg;base64,&#39; + data.mfcc;
+            $(&#34;#mfcc-wrap&#34;).html(img);
+            audio = new Audio(data.mp3);
+            audio.play();
+    }
+    else {
+$(&#34;#result&#34;).html(&#34;The song you are searching could not be found or has no available preview.&#34;);
+}
+        }
+    });
+});
+
+document.getElementById(&#39;stop&#39;).onclick = function() {
+    audio.pause()
+};
+&lt;/script&gt;
+
+&lt;script type=&#34;text/javascript&#34; async
+  src=&#34;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML&#34;&gt;
+&lt;/script&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Deep learning music classifier part 1. 30 seconds disco!</title>
+      <link>https://ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/</link>
+      <pubDate>Fri, 12 May 2017 16:34:27 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/</guid>
+      <description>
+
+&lt;h2 id=&#34;introduction&#34;&gt;Introduction&lt;/h2&gt;
+
+&lt;p&gt;As a nerd I am fascinated by the deep learning hype. Out of interest I have been following some courses, reading blogs and watched youtube video&amp;rsquo;s about the topic. Before diving into the content, I really thought this was something solely for the great internet companies and that it was not a subject us mortals could understand.&lt;/p&gt;
+
+&lt;p&gt;While reading and learning more about it I&amp;rsquo;ve come to the insight that making use of deep learning techniques is not only something the internet giants and scientists can do. Thanks to the open source development of the machine learning community and technological advancement, open source deep learning libraries are now available for everybody with a reasonable computer to play and tinker with.&lt;/p&gt;
+
+&lt;p&gt;Just for fun and learning purposes, I am trying to make a music classifier with different deep learning algorithms. In multiple posts I will share my insights, choices, failures, results, and if I am really hyped maybe even my emotions. But the latter I won&amp;rsquo;t promise.&lt;/p&gt;
+
+&lt;p&gt;This first post focusses on the data retrieval and feature extraction. Before training any neural net on the data I will examine the data distribution.&lt;/p&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;data&#34;&gt;Data&lt;/h2&gt;
+
+&lt;p&gt;As learning is all about experience, we need to let a machine experience. This is done in the form of data. I want to make use of supervised learning techniques. That means the data also needs to be labeled. Labeled means that a jazz song is labeled as, well, a jazz song. I don&amp;rsquo;t feel like hitting the record button on my soundblaster stereo every time a jazz song may be played. Therefore I have used the Spotify web api. I found they have got playlistst that are (somewhat) ordered by genre.&lt;/p&gt;
+
+&lt;p&gt;Before you can use the Spotify web api, you need to create a developers account. After doing so they will provide you with a client id and a secret token. &lt;a href=&#34;https://developer.spotify.com/my-applications/#!/applications&#34;&gt;You can create an account here.&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;I&amp;rsquo;ve made a notebook that will download the music for you. Of course there are some legal limitations to downloading music, thereore you only get a preview of the song from Spotify. The preview songs have a duration of 30 seconds. Most of the time we can classify a song by genre in less than 5 seconds so the 30 seconds duration is probably long enough for a neural net to classify our songs.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/ritchie46/music-classification/blob/master/get_data.ipynb&#34;&gt;Run this notebook to start your 30 seconds disco!&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;images&#34;&gt;Images&lt;/h2&gt;
+
+&lt;p&gt;After some research I learned that most people who also played with music and neural nets did not feed raw audio into the networks. Most of the neural nets excel in recognizing images. To utilize this property I&amp;rsquo;ve used techniques in speech recognition and sound processing to downgrade the dimensionality and extract important features from the raw music data. The results are saved as images. In the text below I describe which features were extracted from the raw audio.&lt;/p&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;mel-spectogram&#34;&gt;Mel spectogram&lt;/h3&gt;
+
+&lt;p&gt;We can get frequency information of a song by taking the Fourier transform (FFT)  of the signal. &lt;a href=&#34;https://ritchievink.com/blog/2017/04/23/understanding-the-fourier-transform-by-example/&#34;&gt;Read more about Fourier in my earlier post.&lt;/a&gt; However by doing so we trade all time information into frequency information, which is a huge loss of information.&lt;/p&gt;
+
+&lt;p&gt;The solution to this problem is quite simple however. Instead of doing a FFT over the whole time signal, it is done in discrete time steps. At every time step dt you will get frequency information.&lt;/p&gt;
+
+&lt;p&gt;Normally when doing an FFT, the frequency is plotted on the x-axis. Now the frequencies will be plotted on the y-axis. The result is called a spectogram, which is time &lt;strong&gt;and&lt;/strong&gt; frequency information of an audio signal. The y-axis isn&amp;rsquo;t plotted in linear scale, but in Mel scale. A Mel scale is defined by the way we humans hear. Every increment on the Mel scale sounds equally apart to us humans. What we are actually doing is extracting features that are important to us humans. As we are also the species that define which music belongs to which genre. So I don&amp;rsquo;t know yet if this works, but this seems like a rational thing to do.&lt;/p&gt;
+
+&lt;p&gt;Below are some of the spectograms shown. The x-axis shows the duration of the song in seconds. The y-scale is the Mel scale and shows the frequencies as we hear them as humans. The color intensity shows the magnitude of the frequency. Where yellow/orange is intense and black is the absence of te frequency. I like these images as we could really tell something about the songs tunes. Furthermore you can notice that even in an image form EDM is way too intense.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/ritchie46/music-classification/blob/master/modify_data.ipynb&#34;&gt;The notebook used to convert the mp3 files to images can be found here&lt;/a&gt;&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-7-dl-music/ms_classical.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Mel spectogram classical music&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-7-dl-music/ms_edm.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Mel spectogram electronic dance&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-7-dl-music/ms_reggae.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Mel spectogram reggae&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-7-dl-music/ms_hiphop.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Mel spectogram hiphop&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;mfcc&#34;&gt;MFCC&lt;/h3&gt;
+
+&lt;p&gt;To further reduce dimensionality of the music, I have also made Mel frequency cepstral coefficients(MFCC) images from the data. It is a processing technique commonly used for algorithms used for speech recognition. Just like the Mel spectograms this is feature extraction. Oversimplifying an MFCC could be seen as a spectrum of volume coefficients inspired by the way we humans hear, such as in the case with the Mel spectogram. This &lt;a href=&#34;https://dsp.stackexchange.com/questions/6499/help-calculating-understanding-the-mfccs-mel-frequency-cepstrum-coefficients&#34;&gt;stackexchange answer&lt;/a&gt; gives a clear description of what MFCC&amp;rsquo;s are.&lt;/p&gt;
+
+&lt;p&gt;The image below shows an MFCC of a jazz song. It seems to me that this isn&amp;rsquo;t something that is meant to be readible by humans. To be sure that a machine is able to recognize something in this data I&amp;rsquo;ve done a principal component analysis on the MFCC images. This is described in the text below.&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-7-dl-music/mfcc_jazz.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;MFCC jazz&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;principal-components&#34;&gt;Principal components&lt;/h2&gt;
+
+&lt;p&gt;Before doing any machine learning with the data I want to know how these images would be clustered if we reduce the dimensions. For this purpose I utilize the Principal Component Analysis. PCA is a statiscal procedure that returns principal components of parameters with the highest variance. Think of a principal component as an axis vector on which you can project the data. The first principal component will follow the axis on which the data shows the highest variance. The second principal component is perpendical on that axis and shows the second highest variance.&lt;/p&gt;
+
+&lt;p&gt;If there are N dimensions in your data there are also N principal components. The last principal components show the least variance and are least significant. In other words they give you little information about how to classify the data.&lt;/p&gt;
+
+&lt;p&gt;The figure below shows the two pincipal components of a distribution.&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-7-dl-music/GaussianScatterPCA.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Two principal components of a distribution&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;clustering&#34;&gt;Clustering&lt;/h3&gt;
+
+&lt;p&gt;Note that I dropped some genres. After downloading I concluded that most of the genres data was really ambiguous. The rock dataset had a lot of numbers that could be regarded hiphop or soul and vice versa. Therefore I&amp;rsquo;ve chosen to continue with the genres that in my opinion were most distinctive or had the most data. The winning genres are:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;hiphop&lt;/li&gt;
+&lt;li&gt;EDM&lt;/li&gt;
+&lt;li&gt;classical&lt;/li&gt;
+&lt;li&gt;metal&lt;/li&gt;
+&lt;li&gt;jazz&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The winning genres were rewarded with a principal component analyis. Below is the result plot shown of the principal component analysis. The analysis is done on the MFCC images. The different genres are already somewhat clustered, even before applying any machine learning algorithm on the data. Metal and classical music seem to be pretty distinctive music. EDM seems to have some overlap with jazz and hiphop. Based on this plot I would say it would be hardest for the learning algorithm to distinguish between jazz, hiphop and EDM.&lt;/p&gt;
+
+&lt;p&gt;
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-7-dl-music/pca_mfcc.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Principal component plot Mel spectogram images&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+&lt;/p&gt;
+
+&lt;p&gt;I really think the image above is amazing. I could not believe that we get such a nice clustering in two dimensions from something so complicated and high dimensional as music. It is really interesting that it pretty much seems to coincide with my definition of the music genres.&lt;/p&gt;
+
+&lt;p&gt;This post described how I got the music data and how extracted important features (for us humans) from it. Next post I am going to feed this data to some different neural nets. Stay tuned.&lt;/p&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;tl-dr&#34;&gt;TL;DR&lt;/h2&gt;
+
+&lt;p&gt;I am trying to build a music classifier with deep learning models. I&amp;rsquo;ve downloaded some labeled music from spotify and converted it into images. I was really surprised by the way the data clustered afer doing a principal component analysis.&lt;/p&gt;
+
+&lt;p&gt;Next post I am going to try to predict some genres with different multi layer perceptron models.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>What should be explained in the Dutch SBR-B Guideline!</title>
+      <link>https://ritchievink.com/blog/2017/05/07/what-should-be-explained-in-the-dutch-sbr-b-guideline/</link>
+      <pubDate>Sun, 07 May 2017 20:27:28 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://ritchievink.com/blog/2017/05/07/what-should-be-explained-in-the-dutch-sbr-b-guideline/</guid>
+      <description>
+
+&lt;p&gt;The Dutch SBR guideline is intended to help you process vibration data and help you determine when a vibration signal can cause discomfort to persons. It seems to me however, that the SBR-B guideline does not have the intention to be understood. They seem to help you by making a super abstract of scientific papers and by giving you a few keywords so you can Google it yourself.&lt;/p&gt;
+
+&lt;p&gt;This post will elaborate on two formula&amp;rsquo;s given in the guideline. It took me a while to find out what they really ment. But thanks to some help from my colleague &lt;a href=&#34;https://www.linkedin.com/in/lex-van-der-meer-phd-0546906/&#34;&gt;Lex van der Meer&lt;/a&gt;, and some papers he found, I could make sense of it.&lt;/p&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;problem&#34;&gt;Problem&lt;/h2&gt;
+
+&lt;p&gt;The guideline gives two formula&amp;rsquo;s that should be used to turn your raw data from a vibrations measurement into design values for further processing.
+Roughly translated, in about the same amount of words, it says:&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;The vibration data needs to be weighed by:&lt;/em&gt;&lt;/p&gt;
+
+&lt;div&gt;\[|H_a(f)| = \frac{1}{v_0} \cdot \frac{1}{\sqrt{1 + (f_0/f)^2}}\]&lt;/div&gt;
+
+&lt;p&gt;&lt;em&gt;In which:&lt;/em&gt;&lt;/p&gt;
+
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;f&lt;/td&gt;
+&lt;td&gt;frequency in Hz&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;f&lt;sub&gt;0&lt;/sub&gt;&lt;/td&gt;
+&lt;td&gt;5.6 Hz&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;v&lt;sub&gt;0&lt;/sub&gt;&lt;/td&gt;
+&lt;td&gt;1 mm/s&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;From the result of the formula above the effective value is determined by:&lt;/em&gt;&lt;/p&gt;
+
+&lt;div&gt;\[v_{eff}(t) = \sqrt{ \frac{1}{\tau} \int_0^tg(\xi)v^2(t-\xi)d\xi}\]&lt;/div&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;In which:&lt;/em&gt;&lt;/p&gt;
+
+&lt;div&gt;\[\tau = 0.125 s\]&lt;/div&gt;
+&lt;div&gt;\[g(\xi) = e^{-\xi/\tau}\]&lt;/div&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;p&gt;In the first formula a frequeny in Hz is required. They do not specify which frequency. I thought my measured vibration signal had infinity frequencies, or at least more than one? In the second formule we integrate the output of the first formula over d&amp;xi;, again not specifying what &amp;xi; is. That&amp;rsquo;s about all the attention the guideline spents on it. Well good luck with that!&lt;/p&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;time-signal&#34;&gt;Time signal&lt;/h2&gt;
+
+&lt;p&gt;First we need some &amp;lsquo;measured&amp;rsquo; data. In the following code snippet some fake data is created by adding 5 sine waves. The sine waves&amp;rsquo; amplitudes and frequency are random.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(5)
+t = np.linspace(0, 2.5, 500)
+vibrations = np.zeros_like(t)
+
+for i in range(5):
+    vibrations += np.sin((10 * np.random.rand())**2 * 2 * np.pi *t) * 10 * np.random.rand()
+
+fig = plt.figure(figsize=(12, 6))
+plt.title(&amp;quot;Measured vibration&amp;quot;)
+plt.ylabel(&amp;quot;v [mm/s]&amp;quot;)
+plt.xlabel(&amp;quot;t [s]&amp;quot;)
+plt.plot(t, vibrations)
+plt.show()
+
+&lt;/code&gt;&lt;/pre&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-6-sbr/fig_1.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Vibration signal&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;Above is the fake vibration data we&amp;rsquo;ve just created shown. Now we have a vibrations signal we can take apart the two give formula&amp;rsquo;s and see what their use is.&lt;/p&gt;
+
+&lt;p&gt;&lt;/br&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;weighted-signal&#34;&gt;Weighted signal&lt;/h2&gt;
+
+&lt;p&gt;The first formula is used to weight the signal by the frequencies that are most likely to cause hindrance. This becomes more clear if we plot the function first. Let&amp;rsquo;s plot the result of the function in the frequency range 1 - 100 Hz. Note that 1 / v&lt;sub&gt;0&lt;/sub&gt; = 1, thus let&amp;rsquo;s ignore that.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;f = np.arange(0, 100)
+f0 = 5.6
+y = 1 / np.sqrt(1 + (f0/f)**2)
+
+plt.plot(f, y)
+plt.xlabel(&amp;quot;f [Hz]&amp;quot;)
+plt.show()
+&lt;/code&gt;&lt;/pre&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-6-sbr/fig_3.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Weight function&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;By plotting &lt;span&gt;\(\frac{1}{\sqrt{1 + (f/5.6)^2}}\)&lt;/span&gt; in the range 1-100 Hz we get the curve shown above. Apparently the lower frequencies will be weighted much more than the higher ones, as the the curve will tend to go to zero by increasing the frequency. This weighting is done by multiplying the original signal with this function.&lt;/p&gt;
+
+&lt;p&gt;What the guideline does not mention is that before you are able to do so, you must convert the signal from the time domain to the frequency domain. Well, this can be done by taking the Fast Fourier Transform! &lt;a href=&#34;https://ritchievink.com/blog/2017/04/23/understanding-the-fourier-transform-by-example/&#34;&gt;You can read more about this in the last post.&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;By taking the FFT we retrieve the frequency bins. Each bin can be multiplied with the weights function. Shown below is the frequency spectrum and the curve that will scale down this spectrum.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;vibrations_fft = np.fft.fft(vibrations)
+T = t[1] - t[0]
+N = t.size
+
+f = np.linspace(0, 1 / T, N)
+a = N // 2
+
+weight = 1 / np.sqrt(1 + (5.6/f)**2)
+vibrations_fft_w = weight * vibrations_fft
+
+fig = plt.figure(figsize=(14, 4))
+plt.subplot(121)
+plt.title(&amp;quot;Frequency spectrum&amp;quot;)
+plt.ylabel(&amp;quot;[-]&amp;quot;)
+plt.xlabel(&amp;quot;f [Hz]&amp;quot;)
+plt.bar(f[:a], np.abs(vibrations_fft[:a]) / np.max(vibrations_fft[:a]), width=0.3)
+plt.plot(f[:a], weight[:a], c=&amp;quot;r&amp;quot;)
+
+plt.subplot(122)
+plt.title(&amp;quot;Weighted frequency spectrum&amp;quot;)
+plt.ylabel(&amp;quot;[-]&amp;quot;)
+plt.xlabel(&amp;quot;f [Hz]&amp;quot;)
+plt.bar(f[:a], np.abs(vibrations_fft_w[:a]) / np.max(vibrations_fft[:a]), width=0.3)
+plt.ylim(0, 1)
+plt.show()
+&lt;/code&gt;&lt;/pre&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-6-sbr/fig_4.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Weighted frequency spectrum&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;The above figure shows that all frequencies are downscaled. However the lower frequencies are downscaled most. The higher frequencies are probably leading to the most hindrance. And very low frequencies will probably just rock you to sleep.&lt;/p&gt;
+
+&lt;p&gt;By transforming the signal back to the time spectrum we can see how the frequency scaling affected the signal.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;vibrations_w = np.fft.ifft(vibrations_fft_w).real
+
+plt.title(&amp;quot;Weighted vibration&amp;quot;)
+plt.ylabel(&amp;quot;v [mm/s]&amp;quot;)
+plt.xlabel(&amp;quot;t [s]&amp;quot;)
+plt.plot(t, vibrations_w)
+plt.show()
+&lt;/code&gt;&lt;/pre&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-6-sbr/fig_5.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Weighted time spectrum&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;By comparing the above figure with the original signal we can see it has changed a bit. By weakening the lower frequencies the signal has decreased in amplitude. The maximum amplitude has dropped from ~ 30 mm/s to ~ 25 mm/s.&lt;/p&gt;
+
+&lt;p&gt;&lt;/br&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;effective-value&#34;&gt;Effective value&lt;/h2&gt;
+
+&lt;p&gt;The second formula describes how you can compute the effective value of the vibration signal, or &amp;lsquo;voortschrijdende effectieve waarde&amp;rsquo; in Dutch. This formula looks a lot like the formula of the &lt;a href=&#34;https://en.wikipedia.org/wiki/Root_mean_square&#34;&gt;Root Mean Square&lt;/a&gt; (RMS) of a signal. The formula of the RMS given by:&lt;/p&gt;
+
+&lt;div&gt;\[RMS = \sqrt{\frac{1}{T}\int^T_0 v(t)^2dt}\]&lt;/div&gt;
+
+&lt;p&gt;It resembles the first formula. However for &lt;span&gt;\(v(t - \xi)\)&lt;/span&gt; the velocity signal is multiplied with &lt;span&gt;\(e^{-\xi/\tau}\)&lt;/span&gt;. Also the signal is not an integral with steps dt, but an integral with steps d&amp;xi;&lt;/p&gt;
+
+&lt;p&gt;The &amp;xi; is actually another parameter for the time t. Every increment in time dt a new integral is computed from t&lt;sub&gt;0&lt;/sub&gt; to t&lt;sub&gt;i&lt;/sub&gt; with steps d&amp;xi; (which are the same size as dt); The function &lt;span&gt;\(e^{-\xi/\tau}\)&lt;/span&gt; is another scaling function. The larger &amp;xi; becomes, the smaller the multiplication factor becomes.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;v_sqrd_w = vibrations_w**2
+a = 55
+c = [&amp;quot;#1f77b4&amp;quot; for i in range(a)]
+
+current = 51
+c[current] = &amp;quot;#d62728&amp;quot;
+
+xi = t[:current + 2]
+g = np.exp(-xi / 0.125)
+
+plt.subplot(211)
+plt.title(&amp;quot;Squared signal&amp;quot;)
+plt.plot(t[:current + 2], g[::-1][:a] * v_sqrd_w[current + 1], color=&amp;quot;r&amp;quot;)
+plt.bar(t[1:a], v_sqrd_w[1:a], width=0.002, color=c)
+plt.ylim(0, np.max(v_sqrd_w))
+
+for i in range(g.size):
+    v_sqrd_w[i] *= g[-i]
+
+plt.subplot(212)
+plt.title(&amp;quot;Weighted squared signal&amp;quot;)
+plt.xlabel(&amp;quot;t [s]&amp;quot;)
+plt.bar(t[1:a], v_sqrd_w[1:a], width=0.002, color=c)
+plt.ylim(0, np.max(vibrations_w**2))
+plt.show()
+&lt;/code&gt;&lt;/pre&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-6-sbr/fig_6.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Scaled down time signal per time step&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;In the code snippet above the signal is squared and plotted. The red bar in the plot is the current time inteval t&lt;sub&gt;i&lt;/sub&gt;. All the preceding values of, and including the value for v(t)&lt;sup&gt;2&lt;/sup&gt;, will be multiplied with the red function. This function ranges from 0 to 1. Values close to the current time interval t&lt;sub&gt;i&lt;/sub&gt; will keep their value. Values further away will be scaled down more. This multiplication is done for every time step t&lt;sub&gt;i&lt;/sub&gt;. The scaled down signal for the current time step is shown the in the second figure.&lt;/p&gt;
+
+&lt;p&gt;When the weighted value for every time step is determined the RMS can be computed for this weighted signal.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;Ts = 0.125
+v_eff = np.zeros(t.size)
+dt = t[1] - t[0]
+
+for i in range(t.size - 1):
+    g_xi = np.exp(-t[:i + 1][::-1] / Ts)
+    v_eff[i] = np.sqrt(1 / Ts * np.trapz(g_xi * v_sqrd_w[:i + 1], dx=dt))
+
+plt.plot(t, v_eff)
+plt.title(&amp;quot;Effective value&amp;quot;)
+plt.ylabel(&amp;quot;v [mm/s]&amp;quot;)
+plt.xlabel(&amp;quot;t [s]&amp;quot;)
+plt.show()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-6-sbr/fig_7.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Effective value time signal&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+&lt;/p&gt;
+
+&lt;p&gt;&lt;/br&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h2&gt;
+
+&lt;p&gt;We have computed the effective value (voortscrhijdende effectieve waarde) for a random time signal. It was quite a hassle for me to find out what should be done. The guideline does not mention that you need to switch between the frequency and the time spectrum two times. Also the interpretation of &amp;xi; in the second formula could really use a calculation example.&lt;/p&gt;
+
+&lt;p&gt;What you eventually can do with the computed effective value is something I will leave to the guideline. I hope this helps someone a few hours when dealing with the SBR!&lt;/p&gt;
+
+&lt;script type=&#34;text/javascript&#34;
+  src=&#34;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML&#34;&gt;
+&lt;/script&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Understanding the Fourier Transform by example</title>
+      <link>https://ritchievink.com/blog/2017/04/23/understanding-the-fourier-transform-by-example/</link>
+      <pubDate>Sun, 23 Apr 2017 13:07:00 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://ritchievink.com/blog/2017/04/23/understanding-the-fourier-transform-by-example/</guid>
+      <description>
+
+&lt;p&gt;In the last couple of weeks I have been playing with the results of the Fourier Transform and it has quite some interesting properties that initially were not clear to me. In this post I summarize the things I found interesting and the things I&amp;rsquo;ve learned about the Fourier Transform.&lt;/p&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;application:552f9eda3c4f26fda39ed09db5e2d717&#34;&gt;Application&lt;/h3&gt;
+
+&lt;p&gt;The Fourier Transformation is applied in engineering to determine the dominant frequencies in a vibration signal. When the dominant frequency of a signal corresponds with the natural frequency of a structure, the occurring vibrations can get amplified due to resonance. This can happen to such a degree that a structure may collapse.&lt;/p&gt;
+
+&lt;p&gt;Now say I have bought a new sound system and the natural frequency of the window in my living room is about 100 Hz. Let&amp;rsquo;s use the Fourier Transform and examine if it is safe to turn Kendrick Lamar&amp;rsquo;s song &amp;lsquo;Alright&amp;rsquo; on full volume.&lt;/p&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;time-signal:552f9eda3c4f26fda39ed09db5e2d717&#34;&gt;Time signal&lt;/h3&gt;
+
+&lt;p&gt;The Fourier transform is commonly used to convert a signal in the time spectrum to a frequency spectrum. Examples of time spectra are sound waves, electricity, mechanical vibrations etc. The figure below shows 0,25 seconds of Kendrick&amp;rsquo;s tune. As can clearly be seen it looks like a wave with different frequencies. Actually it looks like multiple waves.&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-5-fft/fig_1.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Time spectrum Kendrick Lamar - Alright.&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h1 id=&#34;fourier-transform:552f9eda3c4f26fda39ed09db5e2d717&#34;&gt;Fourier transform&lt;/h1&gt;
+
+&lt;p&gt;This is where the Fourier Transform comes in. This method makes use of te fact that every non-linear function can be represented as a sum of (infinite) sine waves. In the underlying figure this is illustrated, as a step function is simulated by a multitude of sine waves.&lt;/p&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-5-fft/fig_2.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Step function simulated with sine waves&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;p&gt;A Fourier Transform will break apart a time signal and will return information about the frequency of all sine waves needed to simulate that time signal. For sequences of evenly spaced values the Discrete Fourier Transform (DFT) is defined as:&lt;/p&gt;
+
+&lt;div&gt;\[ X_k = \sum_{n=0}^{N-1}x_n  e^{-2 \pi ikn/N}\] &lt;/div&gt;
+
+&lt;p&gt;Where:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;N = number of samples&lt;/li&gt;
+&lt;li&gt;n = current sample&lt;/li&gt;
+&lt;li&gt;x&lt;sub&gt;n&lt;/sub&gt; = value of the sinal at time n&lt;/li&gt;
+&lt;li&gt;k = current frequency (0 Hz to N-1 Hz)&lt;/li&gt;
+&lt;li&gt;X&lt;sub&gt;k&lt;/sub&gt; = Result of the DFT (amplitude and phase)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Note that a dot product is defined as:&lt;/p&gt;
+
+&lt;div&gt;\[ a \cdot b = \sum_{n=1}^{n}a_ib_i\] &lt;/div&gt;
+
+&lt;p&gt;A DFT algorithm can thus be as written as:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;import numpy as np
+
+def DFT(x):
+    &amp;quot;&amp;quot;&amp;quot;
+    Compute the discrete Fourier Transform of the 1D array x
+    :param x: (array)
+    &amp;quot;&amp;quot;&amp;quot;
+
+    N = x.size
+    n = np.arange(N)
+    k = n.reshape((N, 1))
+    e = np.exp(-2j * np.pi * k * n / N)
+    return np.dot(e, x)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;However if we run this code on our time signal, wich contains approximately 10,000 values, it takes over 10 seconds to compute! Whoah&amp;hellip; this is slow.&lt;/p&gt;
+
+&lt;p&gt;Luckily some clever guys &lt;a href=&#34;https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm&#34;&gt;(Cooley and Tukey)&lt;/a&gt; have come up with the Fast Fourier Transform (FFT) algorithm which recursively divides the DFT in smaller DFT&amp;rsquo;s bringing down the needed computation time drastically. A standard DFT scales O(N&lt;sup&gt;2&lt;/sup&gt;) while the FFT scales O(N log(N)).&lt;/p&gt;
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;h1 id=&#34;exploring-the-fft:552f9eda3c4f26fda39ed09db5e2d717&#34;&gt;Exploring the FFT&lt;/h1&gt;
+
+&lt;p&gt;Let&amp;rsquo;s write some code to find out what an FFT is actually doing.&lt;/p&gt;
+
+&lt;p&gt;First we define a simple signal containing an addition of two sine waves. One with a frequency of 40 Hz and one with a frequency of 90 Hz.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;t = np.linspace(0, 0.5, 500)
+s = np.sin(40 * 2 * np.pi * t) + 0.5 * np.sin(90 * 2 * np.pi * t)
+
+plt.ylabel(&amp;quot;Amplitude&amp;quot;)
+plt.xlabel(&amp;quot;Time [s]&amp;quot;)
+plt.plot(t, s)
+plt.show()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;../img/post-5-fft/fig_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;/br&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;complex:552f9eda3c4f26fda39ed09db5e2d717&#34;&gt;Complex&lt;/h3&gt;
+
+&lt;p&gt;In order to retrieve a spectrum of the frequency of the time signal mentioned above we must take a FFT on that sequence.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;fft = np.fft.fft(s)
+
+
+for i in range(2):
+    print(&amp;quot;Value at index {}:\t{}&amp;quot;.format(i, yf[i + 1]), &amp;quot;\nValue at index {}:\t{}&amp;quot;.format(yf.size -1 - i, yf[-1 - i]))
+
+&amp;gt;&amp;gt;&amp;gt;
+Value at index 0:	(0.0003804834928402556-0.060555031761900024j) 
+Value at index 499:	(0.0003804834928403944+0.060555031761903175j)
+Value at index 1:	(0.0015317714831371565-0.12188808528069561j) 
+Value at index 498:	(0.0015317714831373785+0.1218880852806919j)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In the above code snippet the FFT result of the two sine waves is determined. The first two and the last two values of the FFT sequency were printed to stdout. As we can see we get complex numbers as a result. If we compare the first value of the sequence (index 0) with the last value of the sequence (index 499) we can see that the real parts of both numbers are equal and that the value of the imaginary numbers are also equal in magnitude, only one is positive and the other is negative. The numbers are each others complex conjugate. This is true for all numbers in the sequence;&lt;/p&gt;
+
+&lt;p&gt;For real number inputs is &lt;strong&gt;n&lt;/strong&gt; the complex conjugate of &lt;strong&gt;N - n&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Because the second half of the sequence gives us no new information we can already conclude that the half of the FFT sequence is the output we need.&lt;/p&gt;
+
+&lt;p&gt;The complex output numbers of the FFT contains the following information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Amplitude&lt;/strong&gt; of a certain frequency sine wave (energy).&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Phase&lt;/strong&gt; offset of a certain frequency sine wave.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The amplitude is retrieved by taking the absolute value of the number and the phase offset is obtained by computing the angle of the number.&lt;/p&gt;
+
+&lt;h3 id=&#34;spectrum:552f9eda3c4f26fda39ed09db5e2d717&#34;&gt;Spectrum&lt;/h3&gt;
+
+&lt;p&gt;We are interested in the energy of each frequency, so we can determine the absolute value of the FFT&amp;rsquo;s output. To get a good insight in the spectrum the energy should be plotted against the frequency. Each discrete number output of the FFT corresponds to a certain frequency. The frequency resolution is determined by:&lt;/p&gt;
+
+&lt;div&gt;\[ \Delta f = \frac{f_s}{N}\] &lt;/div&gt;
+
+&lt;p&gt;Putting it all together we can plot the frequency spectrum for our simple sine wave function. We plot only half of the spectrum, because that is the only half giving us real information.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;fft = np.fft.fft(s)
+T = t[1] - t[0]  # sample rate
+N = s.size
+
+# 1/T = frequency
+f = np.linspace(0, 1 / T, N)
+
+plt.ylabel(&amp;quot;Amplitude&amp;quot;)
+plt.xlabel(&amp;quot;Frequency [Hz]&amp;quot;)
+plt.bar(f[:N // 2], np.abs(fft)[:N // 2] * 1 / N, width=1.5)  # 1 / N is a normalization factor
+plt.show()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;img src=&#34;../img/post-5-fft/fig_4.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;As we can see the FFT works! It has given us information about the frequencies of the waves in the time signal.&lt;/p&gt;
+
+&lt;p&gt;A FFT is a trade-off between time information and frequency information. By taking a FFT of a time signal, all time information is lost in return for frequency information. To keep information about time &lt;strong&gt;and&lt;/strong&gt; frequencies in one spectrum, we must make a &lt;a href=&#34;https://en.wikipedia.org/wiki/Spectrogram&#34;&gt;spectrogram&lt;/a&gt;. These are DFT&amp;rsquo;s taken on discrete time windows.&lt;/p&gt;
+
+&lt;h3 id=&#34;alright:552f9eda3c4f26fda39ed09db5e2d717&#34;&gt;Alright&lt;/h3&gt;
+
+&lt;p&gt;By taking a FFT result of the time signal of Kendrick Lamar&amp;rsquo;s song, we get the spectrum shown below. The frequency scale is plotted on log scale. As we assumed before the natural frequency of my windows are about 100 Hz. In the figure we can see that the most dominant frequencies occur between 10&lt;sup&gt;1.5&lt;/sup&gt;-10&lt;sup&gt;2.2&lt;/sup&gt; Hz (30-158 Hz). My windows natural frequency is right in the middle of the dominant frequencies of the song and thus may resonate due to the high volume.&lt;/p&gt;
+
+&lt;p&gt;Now it is too premature to say it wouldn&amp;rsquo;t be safe to listen to this song on full volume. However if I really want to be sure about my windows I maybe should examine the frequency of another song.&lt;/p&gt;
+
+&lt;p&gt;
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-5-fft/fig_5.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Frequencies in Kendrick Lamar&amp;#39;s Alright&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+&lt;/p&gt;
+
+&lt;script type=&#34;text/javascript&#34; async
+  src=&#34;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML&#34;&gt;
+&lt;/script&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 1)</title>
+      <link>https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-1/</link>
+      <pubDate>Thu, 13 Apr 2017 13:02:56 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-1/</guid>
+      <description>
+
+&lt;h2 id=&#34;problem&#34;&gt;Problem&lt;/h2&gt;
+
+&lt;p&gt;If you want to solve a vibrations problem with a force acting on the system you often need to find the solution in nummerical algorithms. Say you have got a single degree of freedom mass spring system as shown in the figure below.&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-4/mass_spring.PNG&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;SDOF damped mass spring system&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+
+&lt;p&gt;The differential equation of this system is:&lt;/p&gt;
+
+&lt;div&gt;\[ mu&#39;&#39; + cu&#39; + ku = F\] &lt;/div&gt;
+
+&lt;p&gt;When the force that acts on the system is a function, this problem can be solved with symbolical maths by solving the differential equation. However if raw measured vibration data is used the problem needs to be solved nummerically.&lt;/p&gt;
+
+&lt;h2 id=&#34;euler-method&#34;&gt;Euler method&lt;/h2&gt;
+
+&lt;p&gt;Before we can solve the problem mentioned above we are first going to take a look at nummerical methods for first first order ordinary differential equations (ode&amp;rsquo;s). These are differential equations in the form:&lt;/p&gt;
+
+&lt;div&gt;\[ y&#39; + y = 0\] &lt;/div&gt;
+
+&lt;p&gt;The Runga Kutta method is a nummerical method for solving first order ode&amp;rsquo;s.&lt;/p&gt;
+
+&lt;p&gt;This method determines the tangent line for the derivative of y (y&amp;rsquo;) for every small step in time dt.
+So it is possible to describe a yet unknown function by computing the derivative for each small step
+dt. For this to be possible the start conditions of the curve need to be known.
+The starting conditions and the derivatives function are the input for this method.&lt;/p&gt;
+
+&lt;p&gt;The simplest of the Runga Kutta methods is the &lt;a href=&#34;https://en.wikipedia.org/wiki/Euler_method&#34;&gt;Euler method&lt;/a&gt;. This method only determines the tangent for each step dt and increments with ti + dt and yt + dy. (dy is the tangent line of y multiplied with dt).&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-4/euler.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Visual example of the Euler method.&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;Written in math the Euler method is describes as:&lt;/p&gt;
+
+&lt;div&gt;\[ y_{n+1} = y_{n} + h \cdot y&#39;(t_{n})\] &lt;/div&gt;
+
+&lt;p&gt;Well I am definitly not a mathmetician, so I understand such methods often a lot better written in code.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;def euler(t, f, initial=(0, 0)):
+    &amp;quot;&amp;quot;&amp;quot;
+    Eulers nummerical method.
+
+    Computes dy and adds it to previous y-value.
+    :param t: (list/ array) Time values of function f.
+    :param f: (function) y&#39;.
+    :param initial:(tpl) Initial values.
+    :return: (list/ array) y values.
+    &amp;quot;&amp;quot;&amp;quot;
+    # step size
+    h = t[1] - t[0]
+    y = np.zeros((t.size, ))
+
+    t[0], y[0] = initial
+
+    for i in range(t.size - 1):
+        y[i + 1] = y[i] + h * f(t[i], y[i])
+
+    return y
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The first parameter is a numpy array of the time values t. The second parameter is a function that should return y&amp;rsquo;. In the case of:&lt;/p&gt;
+
+&lt;div&gt;\[ y&#39; + y = 0\] &lt;/div&gt;
+
+&lt;p&gt;the function should return&lt;/p&gt;
+
+&lt;div&gt;\[ y&#39;= y\] &lt;/div&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# Note that the t values is not needed for this problem.
+def func(t, y):
+    return y
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The third parameter tuple are the starting conditions (t0, y0).&lt;/p&gt;
+
+&lt;p&gt;If we compare the output of the Euler method wit the real solution y = exp(t) we see that this nummerical method deviates quite a lot.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;import numpy as np
+import matplotlib.pyplot as plt
+
+# initiate the time values.
+t = np.linspace(0, 4, 50)
+
+
+def solution(t):
+    return np.exp(t)
+
+
+plt.plot(t, euler(t, func, initial=(0, 1)), label=&amp;quot;euler&amp;quot;)
+plt.plot(t, solution(t), label=&amp;quot;solution&amp;quot;)
+plt.legend()
+plt.show()
+&lt;/code&gt;&lt;/pre&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-4/figure_1.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Euler method and solution.&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;This deviation from the real solution can be decreased by minimizing the step size, but overall this method should not be used for acquiring accuracy.
+To get more accuracy we are going to do the same in a &lt;a href=&#34;https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/&#34;&gt;4th order Runga Kutta method in the next post&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/&#34;&gt;READ HERE FOR THE NEXT PART!&lt;/a&gt;&lt;/p&gt;
+
+&lt;script type=&#34;text/javascript&#34;
+  src=&#34;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML&#34;&gt;
+&lt;/script&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 2)</title>
+      <link>https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/</link>
+      <pubDate>Thu, 13 Apr 2017 13:02:56 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/</guid>
+      <description>
+
+&lt;p&gt;This post continues where &lt;a href=&#34;https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-1/&#34;&gt;part 1&lt;/a&gt; ended. In order to increase the accuracy of our function solver we are going to use a 4th order Runga Kutta algorithm. The basics are the same as with the Euler method. However the dy part of the 4th order method is more accurately computed.&lt;/p&gt;
+
+&lt;h2 id=&#34;definition:5e143ca7cde27b10bcdb3e3ddfb3a14c&#34;&gt;Definition&lt;/h2&gt;
+
+&lt;p&gt;The incremental values of this method are defined as:&lt;/p&gt;
+
+&lt;div&gt;\[ y_{n+1} = y_{n} + \frac{h}{6}(k_{1} + 2k_{2} +2k_{3} + k_{4})\] &lt;/div&gt;
+&lt;div&gt;\[ t_{n+1} = t_{n} + h \] &lt;/div&gt;
+
+&lt;p&gt;With the factors k&lt;sub&gt;1&lt;/sub&gt; - k&lt;sub&gt;4&lt;/sub&gt; being:&lt;/p&gt;
+
+&lt;div&gt;\[k_{1} = f(t_{n}, y_{n}) \]&lt;/div&gt;
+&lt;div&gt;\[k_{2} = f(t_{n} + \frac{h}{2}, y_{n}) + \frac{h}{2}k_{1}) \]&lt;/div&gt;
+&lt;div&gt;\[k_{3} = f(t_{n} + \frac{h}{2}, y_{n}) + \frac{h}{2}k_{2}) \]&lt;/div&gt;
+&lt;div&gt;\[k_{4} = f(t_{n} + h, y_{n}) + hk_{3}) \]&lt;/div&gt;
+
+&lt;p&gt;The function f is again the derivative of y.&lt;/p&gt;
+
+&lt;div&gt;\[y&#39;= f(t, y)\]&lt;/div&gt;
+
+&lt;h2 id=&#34;code:5e143ca7cde27b10bcdb3e3ddfb3a14c&#34;&gt;Code&lt;/h2&gt;
+
+&lt;p&gt;Lets see how this looks in Python.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;def runga_kutta_4(t, f, initial=(0, 0)):
+    &amp;quot;&amp;quot;&amp;quot;
+    Runga Kutta nummerical method.
+
+    Computes dy and adds it to previous y-value.
+    :param t: (list/ array) Time values of function f.
+    :param f: (function)
+    :param initial:(tpl) Initial values
+    :return: (list/ array) y values.
+    &amp;quot;&amp;quot;&amp;quot;
+    # step size
+    h = t[1] - t[0]
+    y = np.zeros((t.size, ))
+
+    t[0], y[0] = initial
+
+    for i in range(t.size - 1):
+        k1 = h * f(t[i], y[i])
+        k2 = h * f(t[i] + h * 0.5, y[i] + 0.5 * k1)
+        k3 = h * f(t[i] + h * 0.5, y[i] + 0.5 * k2)
+        k4 = h * f(t[i + 1], y[i] + k3)
+        y[i + 1] = y[i] + (k1 + 2 * k2 + 2 * k3 + k4) / 6
+    return y
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As you can see above the input values are the same as with euler function. Again the starting point of the curve must be set by passing the initial values for t&lt;sub&gt;0&lt;/sub&gt; and y&lt;sub&gt;0&lt;/sub&gt;.&lt;/p&gt;
+
+&lt;p&gt;By plotting all 3 curves, the Euler method, the 4th order Runga Kutta method and the function y = e&lt;sup&gt;t&lt;/sup&gt; than we find that the curve of the Runga Kutta method is plotted above the curve of the solution and thus has far more acccuracy than the Euler method.&lt;/p&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-4/figure_2.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Euler method, Runga Kutta method and solution.&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;In the &lt;a href=&#34;https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/&#34;&gt;next post&lt;/a&gt; we are going to apply the Runga Kutta solution to the vibrations problem.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/&#34;&gt;READ HERE FOR THE NEXT PART!&lt;/a&gt;
+&lt;script type=&#34;text/javascript&#34;
+  src=&#34;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML&#34;&gt;
+&lt;/script&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 3)</title>
+      <link>https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/</link>
+      <pubDate>Thu, 13 Apr 2017 13:02:56 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/</guid>
+      <description>
+
+&lt;p&gt;This post continues where &lt;a href=&#34;https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/&#34;&gt;part 2&lt;/a&gt; ended. The Runga Kutta algorithm described in last post is only able to solve first order differential equations.&lt;/p&gt;
+
+&lt;p&gt;The differential equation (de) for a single mass spring vibrations problem is a second order de.&lt;/p&gt;
+
+&lt;div&gt;\[ mu&#39;&#39; + cu&#39; + ku = F\] &lt;/div&gt;
+
+&lt;p&gt;Note that in this equation:&lt;/p&gt;
+
+&lt;p&gt;u&amp;rdquo; = acceleration a&lt;/p&gt;
+
+&lt;p&gt;u&amp;rsquo; = velocity v&lt;/p&gt;
+
+&lt;p&gt;u = displacement&lt;/p&gt;
+
+&lt;p&gt;Before we can solve it with a Runga Kutta algorithm we must rewrite the base equation to a system of two first order ode&amp;rsquo;s.&lt;/p&gt;
+
+&lt;p&gt;Rewrite:&lt;/p&gt;
+
+&lt;div&gt;\[ u&#39; = v\] &lt;/div&gt;
+&lt;div&gt;\[ v&#39; = \frac{1}{m}(F - cv - ku) \] &lt;/div&gt;
+
+&lt;p&gt;Now there a set of coupled ode&amp;rsquo;s. Both need to be solved together. The solution of both ode&amp;rsquo;s is determined by:&lt;/p&gt;
+
+&lt;div&gt;\[ u_{i+1} = u_{i} + \frac{h}{6}(v_{1} + 2v_{2} + 2v_{3} + v_{4})\] &lt;/div&gt;
+&lt;div&gt;\[ v_{i+1} = v_{i} + \frac{h}{6}(a_{1} + 2a_{2} + 2a_{3} + a_{4})\] &lt;/div&gt;
+
+&lt;p&gt;Where v&lt;sub&gt;1&lt;/sub&gt; - v&lt;sub&gt;4&lt;/sub&gt; and a&lt;sub&gt;1&lt;/sub&gt; - a&lt;sub&gt;4&lt;/sub&gt; are determined as described in the table below. Note that:&lt;/p&gt;
+
+&lt;div&gt;\[ f(t, u, v) = v&#39; = \frac{1}{m}(F - cv - ku) \] &lt;/div&gt;
+
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th align=&#34;center&#34;&gt;&lt;strong&gt;Column values&lt;/strong&gt;&lt;/th&gt;
+&lt;th align=&#34;center&#34;&gt;&lt;strong&gt;t&lt;/strong&gt;&lt;/th&gt;
+&lt;th align=&#34;center&#34;&gt;&lt;strong&gt;u&lt;/strong&gt;&lt;/th&gt;
+&lt;th align=&#34;center&#34;&gt;&lt;strong&gt;v&lt;/strong&gt;&lt;/th&gt;
+&lt;th align=&#34;center&#34;&gt;&lt;strong&gt;a&lt;/strong&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;1&lt;/sub&gt;, u&lt;sub&gt;1&lt;/sub&gt;, v&lt;sub&gt;1&lt;/sub&gt;,  a&lt;sub&gt;1&lt;/sub&gt;&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;i&lt;/sub&gt;&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;i&lt;/sub&gt;&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;v&lt;sub&gt;i&lt;/sub&gt;&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;f(t&lt;sub&gt;1&lt;/sub&gt;, u&lt;sub&gt;1&lt;/sub&gt;, v&lt;sub&gt;1&lt;/sub&gt;)&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;2&lt;/sub&gt;, u&lt;sub&gt;2&lt;/sub&gt;, v&lt;sub&gt;2&lt;/sub&gt;,  a&lt;sub&gt;2&lt;/sub&gt;&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;i&lt;/sub&gt; + h/2&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;i&lt;/sub&gt;  + v&lt;sub&gt;1&lt;/sub&gt;h/2&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;v&lt;sub&gt;i&lt;/sub&gt; + a&lt;sub&gt;1&lt;/sub&gt;h/2&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;f(t&lt;sub&gt;2&lt;/sub&gt;, u&lt;sub&gt;2&lt;/sub&gt;, v&lt;sub&gt;2&lt;/sub&gt;)&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;3&lt;/sub&gt;, u&lt;sub&gt;3&lt;/sub&gt;, v&lt;sub&gt;3&lt;/sub&gt;,  a&lt;sub&gt;3&lt;/sub&gt;&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;i&lt;/sub&gt; + h/2&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;i&lt;/sub&gt;  + v&lt;sub&gt;2&lt;/sub&gt;h/2&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;v&lt;sub&gt;i&lt;/sub&gt; + a&lt;sub&gt;2&lt;/sub&gt;h/2&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;f(t&lt;sub&gt;3&lt;/sub&gt;, u&lt;sub&gt;3&lt;/sub&gt;, v&lt;sub&gt;3&lt;/sub&gt;)&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;4&lt;/sub&gt;, u&lt;sub&gt;4&lt;/sub&gt;, v&lt;sub&gt;4&lt;/sub&gt;,  a&lt;sub&gt;4&lt;/sub&gt;&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;i&lt;/sub&gt; + h&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;t&lt;sub&gt;i&lt;/sub&gt;  + v&lt;sub&gt;3&lt;/sub&gt;h&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;v&lt;sub&gt;i&lt;/sub&gt; + a&lt;sub&gt;3&lt;/sub&gt;h&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;f(t&lt;sub&gt;4&lt;/sub&gt;, u&lt;sub&gt;4&lt;/sub&gt;, v&lt;sub&gt;4&lt;/sub&gt;)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&#34;code&#34;&gt;Code&lt;/h2&gt;
+
+&lt;p&gt;If we make this in python we get the function below. The input is an array with time values; t.
+We set the displacement and velocity at the first value of the times array.
+Furthermore we pass the mass, the damping and the spring stiffness of the system.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;
+def runga_kutta_vibrations(t, u0, v0, m, c, k, force):
+    &amp;quot;&amp;quot;&amp;quot;
+    :param t: (list/ array)
+    :param u0: (flt)u at t[0]
+    :param v0: (flt) v at t[0].
+    :param m:(flt) Mass.
+    :param c: (flt) Damping.
+    :param k: (flt) Spring stiffness.
+    :param force: (list/ array) Force acting on the system.
+    :return: (tpl) (displacement u, velocity v)
+    &amp;quot;&amp;quot;&amp;quot;
+
+    u = np.zeros(t.shape)
+    v = np.zeros(t.shape)
+    u[0] = u0
+    v[0] = v0
+    dt = t[1] - t[0]
+    
+    # Returns the acceleration a
+    def func(u, V, force):
+        return (force - c * V - k * u) / m
+
+    for i in range(t.size - 1):
+        # F at time step t / 2
+        f_t_05 = (force[i + 1] - force[i]) / 2 + force[i]
+
+        u1 = u[i]
+        v1 = v[i]
+        a1 = func(u1, v1, force[i])
+        u2 = u[i] + v1 * dt / 2
+        v2 = v[i] + a1 * dt / 2
+        a2 = func(u2, v2, f_t_05)
+        u3 = u[i] + v2 * dt / 2
+        v3 = v[i] + a2 * dt / 2
+        a3 = func(u3, v3, f_t_05)
+        u4 = u[i] + v3 * dt
+        v4 = v[i] + a3 * dt
+        a4 = func(u4, v4, force[i + 1])
+        u[i + 1] = u[i] + dt / 6 * (v1 + 2 * v2 + 2 * v3 + v4)
+        v[i + 1] = v[i] + dt / 6 * (a1 + 2 * a2 + 2 * a3 + a4)
+
+    return u, v
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Lets say we have got a mass spring system with the following parameters:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Mass          m = 10 kg&lt;/li&gt;
+&lt;li&gt;Stiffness     k = 50 N/m&lt;/li&gt;
+&lt;li&gt;Viscous damping   c = 5 Ns/m&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;On this system we are going to apply a short pulse. The force on the system is described by the following array:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;
+n = 1000
+t = np.linspace(0, 10, n)
+force = np.zeros(n)
+
+for i in range(100, 150):
+    a = np.pi / 50 * (i - 100)
+    force[i] = np.sin(a)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;It is an array of zeros for most of the time values t. Only a small part off the array will be a peak.
+Now we are going to define the parameters of the system, call the runga_kutta_vibrations function and plot the result together with the force.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# Parameters of the mass spring system
+m = 10
+k = 50
+c = 5
+
+u, v = runga_kutta_vibrations(t, 0, 0, m, c, k, force)
+
+# Plot the result
+fig, ax1 = plt.subplots()
+l1 = ax1.plot(t, v, color=&#39;b&#39;, label=&amp;quot;displacement&amp;quot;)
+ax2 = ax1.twinx()
+l2 = ax2.plot(t, force, color=&#39;r&#39;, label=&amp;quot;force&amp;quot;)
+
+lines = l1 + l2
+plt.legend(lines, [l.get_label() for l in lines])
+plt.show()
+&lt;/code&gt;&lt;/pre&gt;
+
+
+&lt;figure &gt;
+    
+        &lt;img src=&#34;../img/post-4/figure_3.png&#34; /&gt;
+    
+    
+    &lt;figcaption&gt;
+        &lt;h4&gt;Vibration resulting from a pulse.&lt;/h4&gt;
+        
+    &lt;/figcaption&gt;
+    
+&lt;/figure&gt;
+
+
+&lt;p&gt;If we look at the plot figure. We can see that before the pulse is acting on the system the amplitude is zero. There is no force acting on the system and therefore there is no oscillation. At approximately 1 s, a short puls acts on the system and the system responds. The rest of the plot shows the system oscillating in its natural frequency.&lt;/p&gt;
+
+&lt;p&gt;As you can see, we now can describe a vibrations problem of a singe degree of freedom system nummerically. The Runga Kutta method can be used with predefined force functions as we did (We described the pulse with a sine function, but it can also be used with vibration data resulting from measurements.&lt;/p&gt;
+
+&lt;script type=&#34;text/javascript&#34;
+  src=&#34;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML&#34;&gt;
+&lt;/script&gt;
+</description>
+    </item>
     
     <item>
       <title>Python 1D FEM Example 3</title>
-      <link>/ritchievink.com/2017/03/12/python-1d-fem-example-3/</link>
+      <link>https://ritchievink.com/blog/2017/03/12/python-1d-fem-example-3/</link>
       <pubDate>Sun, 12 Mar 2017 21:35:33 +0200</pubDate>
       <author>ritchie46@gmail.com (Ritchie Vink)</author>
-      <guid>/ritchievink.com/2017/03/12/python-1d-fem-example-3/</guid>
+      <guid>https://ritchievink.com/blog/2017/03/12/python-1d-fem-example-3/</guid>
       <description>
 
-&lt;h1 id=&#34;python-1d-fem-example-3&#34;&gt;Python 1D FEM Example 3.&lt;/h1&gt;
+&lt;h1 id=&#34;python-1d-fem-example-3:6f8ef0c99f08d4c7d83cf7bf7f750f25&#34;&gt;Python 1D FEM Example 3.&lt;/h1&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/example.png&#34; alt=&#34;view&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;A while ago I wrote a FEM package for basic frames and trusses in Python.&lt;/p&gt;
+
+&lt;p&gt;This is a basic example that shows how to use it.&lt;/p&gt;
+
+&lt;p&gt;You can download it on &lt;a href=&#34;https://github.com/ritchie46/structural_engineering&#34;&gt;github&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_3/example.png&#34; alt=&#34;view&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# if using ipython notebook
 %matplotlib inline
@@ -50,46 +1608,52 @@ system.show_structure()
 system.solve()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/structure_1.png&#34; alt=&#34;structure&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_3/structure_1.png&#34; alt=&#34;structure&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_reaction_force()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/reaction_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_3/reaction_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_normal_force()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/normal_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_3/normal_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_shear_force()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/shear_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_3/shear_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_bending_moment()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/moment_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_3/moment_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_displacement()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_3/displacement_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_3/displacement_3.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 </description>
     </item>
     
     <item>
       <title>Python 1D FEM Example 2</title>
-      <link>/ritchievink.com/2017/02/12/python-1d-fem-example-2/</link>
+      <link>https://ritchievink.com/blog/2017/02/12/python-1d-fem-example-2/</link>
       <pubDate>Sun, 12 Feb 2017 21:35:33 +0200</pubDate>
       <author>ritchie46@gmail.com (Ritchie Vink)</author>
-      <guid>/ritchievink.com/2017/02/12/python-1d-fem-example-2/</guid>
+      <guid>https://ritchievink.com/blog/2017/02/12/python-1d-fem-example-2/</guid>
       <description>
 
 &lt;h1 id=&#34;example-2-truss-framework&#34;&gt;Example 2: Truss framework&lt;/h1&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/example_2.png&#34; alt=&#34;view&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;A while ago I wrote a FEM package for basic frames and trusses in Python.&lt;/p&gt;
+
+&lt;p&gt;This is a basic example that shows how to use it.&lt;/p&gt;
+
+&lt;p&gt;You can download it on &lt;a href=&#34;https://github.com/ritchie46/structural_engineering&#34;&gt;github&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_2/example_2.png&#34; alt=&#34;view&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# if using ipython notebook
 %matplotlib inline
@@ -109,7 +1673,7 @@ system.add_truss_element(location_list=[[0, 0], [5, -5]], EA=5000 * math.sqrt(2)
 system.show_structure()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/structure_2.png&#34; alt=&#34;structure_2&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_2/structure_2.png&#34; alt=&#34;structure_2&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# add hinged supports at node ID 1 and node ID 2
 system.add_support_hinged(nodeID=1)
@@ -122,7 +1686,7 @@ system.point_load(Fx=10, nodeID=2)
 system.show_structure()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/structure_wi_supp_2.png&#34; alt=&#34;structure_2&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_2/structure_wi_supp_2.png&#34; alt=&#34;structure_2&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# solve
 system.solve()
@@ -131,32 +1695,38 @@ system.show_reaction_force()
 
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/reaction_2.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_2/reaction_2.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the normal force
 system.show_normal_force()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/normal2.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_2/normal2.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;system.show_displacement()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_2/displacement_2.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_2/displacement_2.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 </description>
     </item>
     
     <item>
       <title>Python 1D FEM Example 1</title>
-      <link>/ritchievink.com/2017/01/12/python-1d-fem-example-1/</link>
+      <link>https://ritchievink.com/blog/2017/01/12/python-1d-fem-example-1/</link>
       <pubDate>Thu, 12 Jan 2017 21:35:33 +0200</pubDate>
       <author>ritchie46@gmail.com (Ritchie Vink)</author>
-      <guid>/ritchievink.com/2017/01/12/python-1d-fem-example-1/</guid>
+      <guid>https://ritchievink.com/blog/2017/01/12/python-1d-fem-example-1/</guid>
       <description>
 
-&lt;h1 id=&#34;example-1-framework:9d893190c3665aa5fa136e74a9494510&#34;&gt;Example 1: Framework&lt;/h1&gt;
+&lt;h1 id=&#34;example-1-framework&#34;&gt;Example 1: Framework&lt;/h1&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/example_1.png&#34; alt=&#34;view&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;A while ago I wrote a FEM package for basic frames and trusses in Python.&lt;/p&gt;
+
+&lt;p&gt;This is a basic example that shows how to use it.&lt;/p&gt;
+
+&lt;p&gt;You can download it on &lt;a href=&#34;https://github.com/ritchie46/structural_engineering&#34;&gt;github&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_1/example_1.png&#34; alt=&#34;view&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# if using ipython notebook
 %matplotlib inline
@@ -174,7 +1744,7 @@ system.add_element(location_list=[[3, -4], [8, -4]], EA=5e9, EI=4000)
 system.show_structure()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/wosupports_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_1/wosupports_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# add loads to the element ID 2
 system.q_load(elementID=2, q=10, direction=1)
@@ -192,37 +1762,37 @@ system.solve()
 system.show_structure()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/supports_1_.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_1/supports_1_.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the reaction forces
 system.show_reaction_force()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/reaction_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_1/reaction_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the normal force
 system.show_normal_force()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/normal_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_1/normal_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the shear force
 system.show_shear_force()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/shear_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_1/shear_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the bending moment
 system.show_bending_moment()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/moment_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_1/moment_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;# show the displacements
 system.show_displacement()
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;img src=&#34;ritchievink.com/img/fem/example_1/displacement_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;../img/fem/example_1/displacement_1.png&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 </description>
     </item>
     

@@ -3,10 +3,17 @@
 date = "2017-02-12T21:35:33+02:00"
 draft = false
 title = "Python 1D FEM Example 2"
+description = "Example code for 1D FEM in Python."
 
 +++
 
 # Example 2: Truss framework
+
+A while ago I wrote a FEM package for basic frames and trusses in Python.
+
+This is a basic example that shows how to use it.
+
+You can download it on [github](https://github.com/ritchie46/structural_engineering)
 
 ![view](/img/fem/example_2/example_2.png)
 

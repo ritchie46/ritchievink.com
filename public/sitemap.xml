@@ -2,23 +2,58 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>/ritchievink.com/</loc>
-    <lastmod>2017-03-12T21:35:33+02:00</lastmod>
+    <loc>https://ritchievink.com/blog/</loc>
+    <lastmod>2017-06-04T14:08:34+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>/ritchievink.com/2017/03/12/python-1d-fem-example-3/</loc>
+    <loc>https://ritchievink.com/blog/2017/06/04/deep-learning-music-classifier-part-2.-computer-says-no/</loc>
+    <lastmod>2017-06-04T14:08:34+02:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/</loc>
+    <lastmod>2017-05-12T16:34:27+02:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://ritchievink.com/blog/2017/05/07/what-should-be-explained-in-the-dutch-sbr-b-guideline/</loc>
+    <lastmod>2017-05-07T20:27:28+02:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://ritchievink.com/blog/2017/04/23/understanding-the-fourier-transform-by-example/</loc>
+    <lastmod>2017-04-23T13:07:00+02:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-1/</loc>
+    <lastmod>2017-04-13T13:02:56+02:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/</loc>
+    <lastmod>2017-04-13T13:02:56+02:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/</loc>
+    <lastmod>2017-04-13T13:02:56+02:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://ritchievink.com/blog/2017/03/12/python-1d-fem-example-3/</loc>
     <lastmod>2017-03-12T21:35:33+02:00</lastmod>
   </url>
   
   <url>
-    <loc>/ritchievink.com/2017/02/12/python-1d-fem-example-2/</loc>
+    <loc>https://ritchievink.com/blog/2017/02/12/python-1d-fem-example-2/</loc>
     <lastmod>2017-02-12T21:35:33+02:00</lastmod>
   </url>
   
   <url>
-    <loc>/ritchievink.com/2017/01/12/python-1d-fem-example-1/</loc>
+    <loc>https://ritchievink.com/blog/2017/01/12/python-1d-fem-example-1/</loc>
     <lastmod>2017-01-12T21:35:33+02:00</lastmod>
   </url>
   

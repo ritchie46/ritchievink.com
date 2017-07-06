@@ -1,5 +1,7 @@
 
-baseurl = "ritchievink.com"
+baseurl = "https://ritchievink.com/blog/"
+
+relativeURLs = true
 
 # Site title
 title = "Blog Ritchie Vink"
@@ -22,7 +24,7 @@ paginate = 10
 paginatePath = "page"
 
 # Enable Disqus integration
-disqusShortname = "your_disqus_shortname"
+disqusShortname = "www-ritchievink-com"
 
 [permalinks]
     post = "/:year/:month/:day/:slug/"
@@ -58,7 +60,7 @@ disqusShortname = "your_disqus_shortname"
     highlight = "xcode"
 
     # Google Analytics.
-    googleAnalytics = "Your Google Analytics tracking code"
+    googleAnalytics = "UA-83196691-2"
 
     # Sidebar social links.
     github = "ritchie46" # Your Github profile ID
@@ -75,6 +77,7 @@ disqusShortname = "your_disqus_shortname"
     # Sidebar RSS link: will only show up if there is a RSS feed
     # associated with the current page
     rss = false
+
 [blackfriday]
     angledQuotes = true
     fractions = false
@@ -83,5 +86,6 @@ disqusShortname = "your_disqus_shortname"
     plainIdAnchors = true
     extensions = []
     extensionmask = []
+
 
 
