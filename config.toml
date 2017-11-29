@@ -54,6 +54,10 @@ url = "/about/"
 tag = "about"
 
 [[params.static_pages]]
+url = "/anastruct/"
+tag = "anastruct"
+
+[[params.static_pages]]
 url = "/mnkappa/"
 tag = "m-n-kappa"
 
