@@ -322,3 +322,4 @@ Thumbs.db
 /__pycache__
 *.pyc
 /public/
+themes/

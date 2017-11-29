@@ -9,7 +9,6 @@ keywords:
 - Python
 - Vibrations
 tags:
-- Fourier Transform
 - Python
 - Vibrations
 title: Understanding the Fourier Transform by example

@@ -9,11 +9,7 @@ description = "Example code for 1D FEM in Python."
 
 # Example 1: Framework
 
-A while ago I wrote a FEM package for basic frames and trusses in Python.
-
-This is a basic example that shows how to use it.
-
-You can download it on [github](https://github.com/ritchie46/structural_engineering)
+Simple code example for [anaStruct](https://github.com/ritchie46/anaStruct).
 
 ![view](/img/fem/example_1/example_1.png)
 
@@ -21,70 +17,70 @@ You can download it on [github](https://github.com/ritchie46/structural_engineer
 # if using ipython notebook
 %matplotlib inline
 
-import StructuralEngineering.FEM.system as se
+from anastruct.fem.system import SystemElements
 
 # Create a new system object.
-system = se.SystemElements()
+ss = SystemElements()
 
-# Add beams to the system. Positive z-axis is down, positive x-axis is the right.
-system.add_element(location_list=[[0, 0], [3, -4]], EA=5e9, EI=8000)
-system.add_element(location_list=[[3, -4], [8, -4]], EA=5e9, EI=4000)
+# Add beams to the system.
+ss.add_element(location=[[0, 0], [3, 4]], EA=5e9, EI=8000)
+ss.add_element(location=[[3, 4], [8, 4]], EA=5e9, EI=4000)
 
-# get a visual of the element ID's and the node ID's
-system.show_structure()
+# get a visual of the element IDs and the node IDs
+ss.show_structure()
 ```
 
 ![](/img/fem/example_1/wosupports_1.png)
 
 ```python
 # add loads to the element ID 2
-system.q_load(elementID=2, q=10, direction=1)
+ss.q_load(element_id=2, q=-10)
 
 # add hinged support to node ID 1
-system.add_support_hinged(nodeID=1)
+ss.add_support_hinged(node_id=1)
 
 # add fixed support to node ID 2
-system.add_support_fixed(nodeID=3)
+ss.add_support_fixed(node_id=3)
 
 # solve
-system.solve()
+ss.solve()
 
 # show the structure
-system.show_structure()
+ss.show_structure()
 ```
 
 ![](/img/fem/example_1/supports_1_.png)
 
 ```python
 # show the reaction forces
-system.show_reaction_force()
+ss.show_reaction_force()
 ```
 
 ![](/img/fem/example_1/reaction_1.png)
 
 ```python
-# show the normal force
-system.show_normal_force()
+# show the axial forces
+ss.show_axial_force()
 ```
 
 ![](/img/fem/example_1/normal_1.png)
 
 ```python
 # show the shear force
-system.show_shear_force()
+ss.show_shear_force()
 ```
 
 ![](/img/fem/example_1/shear_1.png)
 
 ```python
 # show the bending moment
-system.show_bending_moment()
+ss.show_bending_moment()
 ``` 
 ![](/img/fem/example_1/moment_1.png)
 
 ```python
 # show the displacements
-system.show_displacement()
+ss.show_displacement()
 ``` 
 ![](/img/fem/example_1/displacement_1.png)
 

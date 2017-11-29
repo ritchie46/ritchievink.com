@@ -10,9 +10,7 @@ keywords:
 - classification
 tags:
 - machine learning
-- deep learning
 - music
-- classification
 title: Deep learning music classifier part 2. Computer says no!
 topics:
 - topic 1

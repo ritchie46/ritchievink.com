@@ -1,1 +1,1 @@
-rsync -r public/. server:/var/www/blog
+rsync -r public/. linode:/var/www/blog

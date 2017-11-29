@@ -1,33 +1,17 @@
-
-baseurl = "https://ritchievink.com/blog/"
-
+baseurl = "https://www.ritchievink.com/"
 relativeURLs = true
-
-# Site title
-title = "Blog Ritchie Vink"
-
-# Copyright
+title = "Ritchie Vink"
 copyright = "(c) 2017 Ritchie Vink."
-
-# Language
 languageCode = "en-EN"
-
-# Metadata format
-# "yaml", "toml", "json"
 metaDataFormat = "yaml"
-
-# Theme to use (located in /themes/THEMENAME/)
-theme = "hyde-y"
-
-# Pagination
+theme = "hucore"
 paginate = 10
 paginatePath = "page"
 
-# Enable Disqus integration
 disqusShortname = "www-ritchievink-com"
 
 [permalinks]
-    post = "/:year/:month/:day/:slug/"
+    post = "/blog/:year/:month/:day/:slug/"
     code = "/:slug/"
 
 [taxonomies]
@@ -38,54 +22,38 @@ disqusShortname = "www-ritchievink-com"
     name = "Ritchie Vink"
     email = "ritchie46@gmail.com"
 
-#
-# All parameters below here are optional and can be mixed and matched.
-#
 [params]
-    # You can use markdown here.
-    brand = "Ritchie Vink"
-    topline = "Structural Engineer / Programmer"
-    footline = ""
+author = "Ritchie Vink"
+sharingicons = true
+keywords = ["keyword 1", "keyword 2", "keyword 3"]
 
-    # Sidebar position
-    # false, true, "left", "right"
-    sidebar = "left"
-
-    # Text for the top menu link, which goes the root URL for the site.
-    # Default (if omitted) is "Home".
-    home = "Blog"
-
-    # Select a syntax highight.
-    # Check the static/css/highlight directory for options.
-    highlight = "xcode"
-
-    # Google Analytics.
-    googleAnalytics = "UA-83196691-2"
-
-    # Sidebar social links.
-    github = "ritchie46" # Your Github profile ID
-    bitbucket = "" # Your Bitbucket profile ID
-    linkedin = "ritchievink" # Your LinkedIn profile ID (from public URL)
-    googleplus = "" # Your Google+ profile ID
-    facebook = "" # Your Facebook profile ID
-    twitter = "" # Your Twitter profile ID
-    youtube = ""  # Your Youtube channel ID
-    flattr = ""  # populate with your flattr uid
-    flickr = "" # Your Flickr profile ID
-    vimeo = "" # Your Vimeo profile ID
-
-    # Sidebar RSS link: will only show up if there is a RSS feed
-    # associated with the current page
-    rss = false
-
-[blackfriday]
-    angledQuotes = true
-    fractions = false
-    hrefTargetBlank = false
-    latexDashes = true
-    plainIdAnchors = true
-    extensions = []
-    extensionmask = []
+[params.highlight]
+style = "github"
+languages = ["scala", "python"]
 
 
+[[params.social]]
+url = "https://github.com/ritchie46"
+fa_icon = "fa-github"
+
+
+[[params.social]]
+url = "https://linkedin.com/in/ritchievink/"
+fa_icon = "fa-linkedin-square"
+
+[[params.social]]
+url = "/index.xml"
+fa_icon = "fa-rss"
+
+[[params.socialshare]]
+url = "https://linkedin.com/in/mgjohansen"
+fa_icon = "fa-linkedin-square"
+
+[[params.static_pages]]
+url = "/about/"
+tag = "about"
+
+[[params.static_pages]]
+url = "/mnkappa/"
+tag = "m-n-kappa"
 

@@ -9,11 +9,7 @@ description = "Example code for 1D FEM in Python."
 
 # Python 1D FEM Example 3.
 
-A while ago I wrote a FEM package for basic frames and trusses in Python.
-
-This is a basic example that shows how to use it.
-
-You can download it on [github](https://github.com/ritchie46/structural_engineering)
+Simple code example for [anaStruct](https://github.com/ritchie46/anaStruct).
 
 ![view](/img/fem/example_3/example.png)
 
@@ -21,57 +17,58 @@ You can download it on [github](https://github.com/ritchie46/structural_engineer
 # if using ipython notebook
 %matplotlib inline
 
-import StructuralEngineering.FEM.system as se
+from anastruct.fem.system import SystemElements
 
 # Create a new system object.
-system = se.SystemElements()
+ss = SystemElements(EA=15000, EI=5000)
 
-# Add beams to the system. Positive z-axis is down, positive x-axis is the right.
-system.add_element(location_list=[[0, 0], [0, -5]], EA=15000, EI=5000)
-system.add_element(location_list=[[0, -5], [5, -5]], EA=15000, EI=5000)
-system.add_element(location_list=[[5, -5], [5, 0]], EA=15000, EI=5000)
+# Add beams to the system.
+ss.add_element(location=[[0, 0], [0, 5]])
+ss.add_element(location=[[0, 5], [5, 5]])
+ss.add_element(location=[[5, 5], [5, 0]])
 
-# Add supports.
-system.add_support_fixed(nodeID=1)
+# Add a fixed support at node 1.
+ss.add_support_fixed(node_id=1)
+
 # Add a rotational spring at node 4.
-system.add_support_spring(nodeID=4, translation=3, K=4000)
+ss.add_support_spring(node_id=4, translation=3, k=4000)
 
 # Add loads.
-system.point_load(Fx=30, nodeID=2)
-system.q_load(q=10, elementID=2)
+ss.point_load(Fx=30, node_id=2)
+ss.q_load(q=-10, element_id=2)
 
-system.show_structure()
-system.solve()
+ss.show_structure()
+ss.solve()
 ```
 
 ![structure](/img/fem/example_3/structure_1.png)
 
 ```python
-system.show_reaction_force()
+ss.show_reaction_force()
 ```
 
 ![](/img/fem/example_3/reaction_3.png)
 
 ```python
-system.show_normal_force()
+ss.show_axial_force()
 ```
 
 ![](/img/fem/example_3/normal_3.png)
 
 ```python
-system.show_shear_force()
+ss.show_shear_force()
 ```
 
 ![](/img/fem/example_3/shear_3.png)
 
 ```python
-system.show_bending_moment()
+ss.show_bending_moment()
 ```
 
 ![](/img/fem/example_3/moment_3.png)
 
 ```python
-system.show_displacement()
+ss.show_displacement()
 ```
 
 ![](/img/fem/example_3/displacement_3.png)

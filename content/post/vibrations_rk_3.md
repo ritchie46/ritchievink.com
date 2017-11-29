@@ -3,12 +3,10 @@ author: Ritchie Vink
 date: 2017-04-13T13:02:56+02:00
 description: Introduction to Runga Kutta.
 draft: false
-keywords:
-- key
-- words
 tags :
-- "Python"
-- "Vibrations"
+- Python
+- Vibrations
+- Engineering
 title: Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 3)
 topics:
 - topic 1

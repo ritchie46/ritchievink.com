@@ -10,9 +10,7 @@ keywords:
 - classification
 tags:
 - machine learning
-- deep learning
 - music
-- classification
 title: Deep learning music classifier part 1. 30 seconds disco!
 topics:
 - topic 1
@@ -111,7 +109,7 @@ The winning genres were rewarded with a principal component analyis. Below is th
 
 I really think the image above is amazing. I could not believe that we get such a nice clustering in two dimensions from something so complicated and high dimensional as music. It is really interesting that it pretty much seems to coincide with my definition of the music genres. 
 
-This post described how I got the music data and how extracted important features (for us humans) from it. Next post I am going to feed this data to some different neural nets. Stay tuned.
+This post described how I got the music data and how extracted important features (for us humans) from it. [Next post I am going to feed this data to some different neural nets. Stay tuned.]({{< ref "post/music-class-part-2.md" >}}) 
 
 
 <br/>

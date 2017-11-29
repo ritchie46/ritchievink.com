@@ -9,11 +9,7 @@ description = "Example code for 1D FEM in Python."
 
 # Example 2: Truss framework
 
-A while ago I wrote a FEM package for basic frames and trusses in Python.
-
-This is a basic example that shows how to use it.
-
-You can download it on [github](https://github.com/ritchie46/structural_engineering)
+Simple code example for [anaStruct](https://github.com/ritchie46/anaStruct).
 
 ![view](/img/fem/example_2/example_2.png)
 
@@ -21,33 +17,35 @@ You can download it on [github](https://github.com/ritchie46/structural_engineer
 # if using ipython notebook
 %matplotlib inline
 
-import StructuralEngineering.FEM.system as se
+import math
+from anastruct.fem.system import SystemElements
 
 # Create a new system object.
-system = se.SystemElements()
+ss = SystemElements(EA=5000)
 
-# Add beams to the system. Positive z-axis is down, positive x-axis is the right.
-system.add_truss_element(location_list=[[0, 0], [0, -5]], EA=5000)
-system.add_truss_element(location_list=[[0, -5], [5, -5]], EA=5000)
-system.add_truss_element(location_list=[[5, -5], [5, 0]], EA=5000)
-system.add_truss_element(location_list=[[0, 0], [5, -5]], EA=5000 * math.sqrt(2))
+# Add beams to the system.
+ss.add_truss_element(location=[[0, 0], [0, 5]])
+ss.add_truss_element(location=[[0, 5], [5, 5]])
+ss.add_truss_element(location=[[5, 5], [5, 0]])
+ss.add_truss_element(location=[[0, 0], [5, 5]], EA=5000 * math.sqrt(2))
 
 # get a visual of the element ID's and the node ID's
-system.show_structure()
+ss.show_structure()
 ```
 
 ![structure_2](/img/fem/example_2/structure_2.png)
 
 ```python
 # add hinged supports at node ID 1 and node ID 2
-system.add_support_hinged(nodeID=1)
-system.add_support_hinged(nodeID=4)
+ss.add_support_hinged(node_id=1)
+ss.add_support_hinged(node_id=4)
+
 
 # add point load at node ID 2
-system.point_load(Fx=10, nodeID=2)
+ss.point_load(Fx=10, node_id=2)
 
 # show the structure
-system.show_structure()
+ss.show_structure()
 ```
 
 ![structure_2](/img/fem/example_2/structure_wi_supp_2.png)
@@ -55,21 +53,21 @@ system.show_structure()
 
 ```python
 # solve
-system.solve()
+ss.solve()
 # show the reaction forces
-system.show_reaction_force()
+ss.show_reaction_force()
 
 ``` 
 ![](/img/fem/example_2/reaction_2.png)
 
 ```python
 # show the normal force
-system.show_normal_force()
+ss.show_axial_force()
 ``` 
 ![](/img/fem/example_2/normal2.png)
 
 ```python
-system.show_displacement()
+ss.show_displacement()
 ``` 
 
 ![](/img/fem/example_2/displacement_2.png)
