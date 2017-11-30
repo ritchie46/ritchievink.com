@@ -4,7 +4,7 @@ title = "Ritchie Vink"
 copyright = "(c) 2017 Ritchie Vink."
 languageCode = "en-EN"
 metaDataFormat = "yaml"
-theme = "hucore"
+theme = "humin"
 paginate = 10
 paginatePath = "page"
 
@@ -24,6 +24,7 @@ disqusShortname = "www-ritchievink-com"
 
 [params]
 author = "Ritchie Vink"
+googleAnalytics = "UA-83196691-2"
 sharingicons = true
 keywords = ["keyword 1", "keyword 2", "keyword 3"]
 
@@ -46,7 +47,7 @@ url = "/index.xml"
 fa_icon = "fa-rss"
 
 [[params.socialshare]]
-url = "https://linkedin.com/in/mgjohansen"
+url = "https://linkedin.com/in/ritchievink"
 fa_icon = "fa-linkedin-square"
 
 [[params.static_pages]]
