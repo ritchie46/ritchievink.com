@@ -3,7 +3,7 @@ title = "Computer build me a bridge"
 date = "2018-01-14"
 description = ""
 categories = ["category"]
-tags = ["tag1", "tag2"]
+tags = ["machine learning", "Engineering", "Python"]
 draft = true
 author = "Ritchie Vink"
 +++
@@ -35,9 +35,9 @@ And this guy would have a score of 1:
 {{< youtube id="_9umwdE8VoY?t=19s _" >}}
 
 <br>
-He does get a point, because he misses. 
+Because he misses his shot, he does get a point though.
 
-The fitness function can be anything though. It is a function that outputs positive numbers. The output of the function should be higher if the result is more optimal or closer to our desired behaviour. When you want to build a brigdge the fitness function could for instance relate to:
+The fitness function can be anything. It is a function that outputs positive numbers. The output of the function should be higher if the result is more optimal or closer to our desired behaviour. When you want to build a brigdge the fitness function could for instance relate to:
 
 * Is the structure in equillibrium (does it not collapse).
 * Amount of elements used (We probably don't want to spent high material costs).
