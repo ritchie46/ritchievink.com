@@ -1,7 +1,7 @@
 +++
 title = "Computer build me a bridge"
 date = "2018-01-14"
-description = ""
+description = "Building structures with genetic algorithms"
 categories = ["category"]
 tags = ["machine learning", "engineering", "python"]
 draft = false

@@ -2,15 +2,13 @@
 # <small> Ritchie Vink </small>
 
 
-<p>Hi, my name is Ritchie Vink. I am a nerd that can get really enthusiastic about abstract problems. This site
-is a clustering of things I found interesting or things I worked on.</p>
+<p>Hi, my name is Ritchie Vink. Welcome on my blog. Here I post some of the results of the projects that keep me busy, or just things I've learned or found interesting. </p>
 
-<p>This year I've switched jobs from being a Structural Engineer at <a href="www.abt.eu">ABT</a> to Data Scientist
-& Engineer at <a href="www.xomnia.com">Xomnia</a>. As a structural engineer my work was looking more and more
-as the job of a data scientist / developer. I focused mainly on utilizing computational power to do some really cool engineering stuff.
+<p>I've switched jobs from being a Structural Engineer to Data Scientist
+& Engineer. As a structural engineer my work was looking more and more
+as the job of a data scientist / developer. I focused mainly on utilizing computational power to do some really cool engineering stuff.</p>
 
-I made the switch because I really like the multidisciplinary skill set that is need for applying data science
-and managing big data. One major reason for my switch is that I want to keep learning new things. And with the traction that there is currently in artificial intelligence, data and computer science. I really think I can spend forever sucking it all up.
+<p>I like the traction the whole machine learning science has at the moment. This was one the reasons for me to switch jobs and focus more on developing myself in that industry. My interests go both ways though. I realy like to combine the machine learning problems with the domain knowledge I've got from the engineering industry. The posts on this site will probably oscillate somewhat between both worlds sometimes.
 </p>
 
 
