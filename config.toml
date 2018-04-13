@@ -1,7 +1,7 @@
 baseurl = "https://www.ritchievink.com/"
 relativeURLs = true
 title = "Ritchie Vink"
-copyright = "(c) 2017 Ritchie Vink."
+copyright = "(c) 2018 Ritchie Vink."
 languageCode = "en-EN"
 metaDataFormat = "yaml"
 theme = "humin"

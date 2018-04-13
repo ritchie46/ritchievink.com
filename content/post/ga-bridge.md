@@ -3,8 +3,8 @@ title = "Computer build me a bridge"
 date = "2018-01-14"
 description = ""
 categories = ["category"]
-tags = ["machine learning", "Engineering", "Python"]
-draft = true
+tags = ["machine learning", "engineering", "python"]
+draft = false
 author = "Ritchie Vink"
 +++
 
