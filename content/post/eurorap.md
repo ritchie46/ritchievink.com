@@ -4,7 +4,7 @@ date = "2018-04-12"
 description = ""
 categories = ["category"]
 tags = ["machine learning", "python"]
-draft = true
+draft = false
 author = "Ritchie Vink"
 +++
 
