@@ -31,16 +31,19 @@ class VGG(nn.Module):
 
 
 class VGGmod(nn.Module):
-    def __init__(self, model, h, do):
+    def __init__(self, h, dropout):
         super(VGGmod, self).__init__()
+        model = VGG()
+        model_pretrained.load_state_dict(
+            model_zoo.load_url(model_urls['https://download.pytorch.org/models/vgg11_bn-6002323d.pth']))
         self.features = model.features
         self.classifier = nn.Sequential(
             nn.Linear(25088, h),
             nn.ReLU(inplace=True),
-            nn.Dropout(do),
+            nn.Dropout(dropout),
             nn.Linear(h, h),
             nn.ReLU(inplace=True),
-            nn.Dropout(do),
+            nn.Dropout(dropout),
             nn.Linear(h, 28)
         )
 
@@ -69,9 +72,6 @@ class VGGmod(nn.Module):
         return torch.cat([a.unsqueeze(-1), b, c, d, e, f, g], dim=1)
 
 
-model_pretrained = VGG()
-model_pretrained.load_state_dict(model_zoo.load_url(model_urls['https://download.pytorch.org/models/vgg11_bn-6002323d.pth']))
-
-model = VGG11mod(model_pretrained, 300, 0.5)
+model = VGGmod(300, 0.5)
 
 
