@@ -4,9 +4,9 @@ date: 2017-04-13T13:02:56+02:00
 description: Introduction to Runga Kutta.
 draft: false
 tags :
-- Python
-- Vibrations
-- Engineering
+- python
+- vibrations
+- engineering
 title: Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 2)
 topics:
 - topic 1

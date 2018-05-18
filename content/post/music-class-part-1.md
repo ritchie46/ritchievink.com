@@ -11,6 +11,7 @@ keywords:
 tags:
 - machine learning
 - music
+- computer vision
 title: Deep learning music classifier part 1. 30 seconds disco!
 topics:
 - topic 1

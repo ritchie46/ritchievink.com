@@ -4,13 +4,13 @@ date: 2017-04-23T13:07:00+02:00
 description: 
 draft: false
 keywords:
-- FFT
-- Fourier Transform
-- Python
-- Vibrations
+- fft
+- fourier transform
+- python
+- vibrations
 tags:
-- Python
-- Vibrations
+- python
+- vibrations
 title: Understanding the Fourier Transform by example
 topics:
 - topic 1

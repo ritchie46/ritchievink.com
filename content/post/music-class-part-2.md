@@ -11,6 +11,7 @@ keywords:
 tags:
 - machine learning
 - music
+- computer vision
 title: Deep learning music classifier part 2. Computer says no!
 topics:
 - topic 1

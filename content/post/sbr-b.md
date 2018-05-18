@@ -4,12 +4,12 @@ date: 2017-05-07T20:27:28+02:00
 description: This post eloborates on two formula's desbribed in the SBR guideline.
 draft: false
 keywords:
-- Guidelines
+- guidelines
 - SBR-B
 tags:
-- Vibrations
-- Python
-- Engineering
+- vibrations
+- python
+- engineering
 title: What should be explained in the Dutch SBR-B Guideline!
 topics:
 - topic 1

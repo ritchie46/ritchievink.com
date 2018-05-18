@@ -3,15 +3,15 @@ title = "Transfer learning with Pytorch: Assessing road safety with computer vis
 date = "2018-04-12"
 description = ""
 categories = ["category"]
-tags = ["machine learning", "python"]
+tags = ["machine learning", "python", "deep learning", "computer vision"]
 draft = false
 author = "Ritchie Vink"
 +++
 
 For a project at Xomnia, I had the oppertunity to do a cool computer vision assignment. We tried to predict the input of a road safety model. [Eurorap](http://www.eurorap.org/) is such a model. 
-In short, it works something like this. You take some cars, mount them with cameras and drive around the road you're interested in. The 'Google Streetview' like material you've collected is sent to a 'mechanical turk' workforce to manually label the footage. 
+In short, it works something like this. You take some cars, mount them with cameras and drive around the road you're interested in. The 'Google Streetview' like material you've collected is sent to a crowdsourced workforce (at Amazon they are called Mechanical Turks) to manually label the footage. 
 
-{{< figure src="/img/post-13-eurorap/mechanical_turks.jpg" title="Mechanical Turks labeling images of Dutch Roads.">}}
+{{< figure src="/img/post-13-eurorap/mechanical_turks.jpg" title="Workforce labeling images of Dutch Roads.">}}
 
 This manually labeling of pictures is of course very time consuming, costly, not scalable and last but not least boooring!
 

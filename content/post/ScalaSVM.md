@@ -6,9 +6,9 @@ draft: false
 keywords:
 - support vector machine
 tags:
-- Scala
+- scala
 - machine learning
-
+- algorithm breakdown
 title: Implementing a Support Vector Machine in Scala
 ---
 

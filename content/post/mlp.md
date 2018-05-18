@@ -4,16 +4,16 @@ date: 2017-07-10T12:11:12+02:00
 description: 
 draft: false
 keywords:
-- Python
-- Machine learning
-- Deep learning
-- Neural network
-tags:
-- Python
+- python
 - machine learning
+- deep learning
+- neural network
+tags:
+- python
+- machine learning
+- algorithm breakdown
+
 title: Programming a neural network from scratch
-topics:
-- topic 1
 type: post
 ---
 
