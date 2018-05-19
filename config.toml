@@ -27,6 +27,7 @@ author = "Ritchie Vink"
 googleAnalytics = "UA-83196691-2"
 sharingicons = true
 keywords = ["keyword 1", "keyword 2", "keyword 3"]
+profilePicture = "/profile.jpg"
 
 [params.highlight]
 style = "github"
