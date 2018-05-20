@@ -4,7 +4,7 @@ description = ""
 tags = ["python", "machine learning", "algorithm breakdown"]
 draft = true
 author = "Ritchie Vink"
-title = "Algorithm Breakdown: Affinity propagation"
+title = "Algorithm Breakdown: Affinity Propagation"
 +++
 {{< figure src="/img/post-14-affinity_propagation/fw.jpg">}}
 
@@ -12,14 +12,19 @@ On a project I worked on at the ANWB (Dutch road side assistence company) we min
 
 A drawback is that often, k is not known. For the question about the numbers of persons driving a car, this isn't that big of a problem as we have a good estimate of what k should be. The number of persons driving on a regular basis would probably be in a range of 1 to 4. 
 
-Nevertheless, this did make me wonder if there were algorithms that would define k for me. This blog post will go through the implementation of Affinity propagation. We will implement the algorithm in two ways. In some more readible syntax, to get an idea of what the algorithm is doing. And in a vectorized syntax, to fully utilize the speed advantages of numpy.
+Nevertheless, this did make me wonder if there were algorithms that would define k for me. This blog post will go through the implementation of a clustering technique called 'Affinity Propagation'. We will implement the algorithm in two ways. In some more readible syntax, to get an idea of what the algorithm is doing. And in a vectorized syntax, to fully utilize the speed advantages of numpy.
 
-## Affinity propagation
-Affinity propagation is a clustering method that next to qualitative cluster, also determines the number of clusters, k, for you. Let's walk through the implementation of this algorithm, to see how it works.
+## Affinity Propagation
+Affinity Propagation is a clustering method that next to qualitative cluster, also determines the number of clusters, k, for you. Let's walk through the implementation of this algorithm, to see how it works.
 
-As it is a clustering algorithm, we also give it random data to let it's OCD work on.
+As it is a clustering algorithm, we also give it random data to cluster so it can go crazy with its OCD.
 
 ```python
+# all the imports needed for this blog
+import numpy as np
+import matplotlib.pyplot as plt
+from itertools import cycle
+
 n = 20
 size = (n, 2)
 np.random.seed(3)
@@ -39,12 +44,12 @@ for i in range(4):
 
 {{< figure src="/img/post-14-affinity_propagation/data.png">}}
 
-In affinity propagation the data points can be seen as a network where all the data points send messages to all other points. The subject of these messages are the willingness of being exemplars. Exemplars are points that explain the other data points and are the most significant of their cluster. A cluster only has one exemplar. All the data points want to collectively determine which data points are an exemplar for them. These messages are stored in two matrices. 
+In Affinity Propagation the data points can be seen as a network where all the data points send messages to all other points. The subject of these messages are the willingness of the points being exemplars. Exemplars are points that explain the other data points 'best' and are the most significant of their cluster. A cluster only has one exemplar. All the data points want to collectively determine which data points are an exemplar for them. These messages are stored in two matrices. 
 
 * The 'responsibility' matrix R. In this matrix, $r(i, k)$ reflects how well-suited point $k$ is to be an exemplar for point $i$.
 * The 'availability' matrix A. $a(i, k)$ reflects how appropriate it would be for point $i$ to choose point $k$ as its exemplar.
 
-Both matrices can be interpreted as log probabilities and are thus negative.
+Both matrices can be interpreted as log probabilities and are thus negative valued.
 
 Those two matrices actually represent a graph where every data point is connected with all other points. For five data points we could imagine a graph as seen below.
 
@@ -65,13 +70,13 @@ $$
 </div>
 
 ## Similarity 
-The algorithm converts throught iteration. The first messages send per iteration, are the responsibilities. These responsibility values are based on a similarity function $s$. 
+The algorithm converts through iteration. The first messages sent per iteration, are the responsibilities. These responsibility values are based on a similarity function $s$. 
 
 The similarity function used by the authors is the negative euclidian distance squared. 
 
 $$ s(i, k) = - \lvert\lvert x_i - x_k \rvert\rvert^2 $$
 
-We can simply implement this similarity function and define a similarity matrix $S$, which is a graph the similarities between all the points. We also initialize the $R$ and $A$ matrix to zeros.
+We can simply implement this similarity function and define a similarity matrix $S$, which is a graph of the similarities between all the points. We also initialize the $R$ and $A$ matrix to zeros.
 
 ```python
 def similarity(xi, xj):
@@ -151,7 +156,7 @@ idx_max = np.argmax(v, axis=1)
 first_max = v[rows, idx_max]
 ```
 
-Note that allmost all columns in a row have the same maximum row value. This is true for all but the maximum value itself. As the max function iterates over $k'$ where $k'$ is chosen so so that $k' \neq k$ The maximum value in a row may point to itself, but must choose the second maximum value. We can implement that by setting the indices where $k' = k$ to negative infinity and determine the new maximum value per row.
+Note that allmost all columns in a row have the same maximum row value. This is true for all but the maximum value itself. As the max function iterates over $k'$ where $k'$ is chosen so that $k' \neq k$ The maximum value in a row may point to itself, but must choose the second maximum value. We can implement that by setting the indices where $k' = k$ to negative infinity and determine the new maximum value per row.
 
 ```python
 v[rows, idx_max] = -np.inf
@@ -212,13 +217,13 @@ A, R, S = create_matrices()
 ```
 
 ## Availability
-The availability messages are defined by the following formulas. For all points not on the diagonal of A (i.e. all the messages going from one data point to all other points), the update is equal to the responsibility that point $k$ assigns to itself and the sum of the responsibilities that other data points (except the current point) assign to $k$. Note that, due to the min function, this holds only true for negative values.
+The availability messages are defined by the following formulas. For all points not on the diagonal of A (all the messages going from one data point to all other points), the update is equal to the responsibility that point $k$ assigns to itself and the sum of the responsibilities that other data points (except the current point) assign to $k$. Note that, due to the min function, this holds only true for negative values.
 
 <div>
 $$ a(i, k) \leftarrow \min\{0, r(k,k) + \sum\limits_{i' s.t. i' \notin \{i, k\}}{\max\{0, r(i', k)\}} \tag{2.0} $$
 </div>
 
-For points on the diagonal of A (i.e. the availability value that a data point sends to itself), the message value is equal to the sum of all positive responsibility values send to the current data point.
+For points on the diagonal of A (the availability value that a data point sends to itself), the message value is equal to the sum of all positive responsibility values send to the current data point.
 
 <div>
 $$ a(k, k) \leftarrow \sum\limits_{i' \neq k}\max(0, r(i', k)) \tag{2.1} $$
@@ -246,7 +251,7 @@ def update_a(damping=0.9):
                 A[k, k] = A[k, k] * damping + (1 - damping) * a.sum()
 ```
 
-This function works and is pretty readable. However let's go through the optimization process again and try to vectorize the above logic, exchanging readability for performance in doing so. 
+This function works and is pretty readable. However let's go through the optimization process again and try to vectorize the logic above, exchanging readability for performance in doing so. 
 
 The current execution time is 53 milliseconds.
 
@@ -275,7 +280,7 @@ The part $i' \neq k$ is easy. This means that the diagonal $ r(k, k) $ is not in
 np.fill_diagonal(a, 0)
 ```
 
-The part $i' \neq i$ is harder. As $i$ is the index the sum iterates over, this means that for every index $i$ the same index is excluded. This is harder to vectorize. However we can get around this by first including it in the sum, and finally subtracting the value for every index $r(i, k)$. In the code below we also add the $ r(k, k) $. We will have defined the $ r(k,k) + \sum\limits_{i' s.t. i' \notin \\{i, k\\}}{\max\\{0, r(i', k)\\}} $ part of **eq.2.0**. 
+The part $i' \neq i$ is harder, as $i$ is the index the sum iterates over. This means that for every index $i$ the same index is excluded. This is harder to vectorize. However, we can get around this by first including it in the sum, and finally subtracting the value for every index $r(i, k)$. In the code below we also add the $ r(k, k) $. We will have defined the $ r(k,k) + \sum\limits_{i' s.t. i' \notin \\{i, k\\}}{\max\\{0, r(i', k)\\}} $ part of **eq.2.0**. 
 
 These sums are the same for every row in the matrix. The 1D sum vector can be broadcasted to a matrix with the shape of A. Once we have reshaped by broadcasting we subtract positive values we unjustly included in the sum.
 
@@ -309,6 +314,151 @@ With all the zeros on the right places we can now compute the sum and add it to 
 ```python
 a[k_k_idx, k_k_idx] = w.sum(axis=0) 
 ```
+
+Combining it all in one function we'll get: 
+
+<h4>Vectorized implementation</h4>
+```python
+def update_a(damping=0.9):
+    global A
+
+    k_k_idx = np.arange(x.shape[0])
+    # set a(i, k)
+    a = np.array(R)
+    a[a < 0] = 0
+    np.fill_diagonal(a, 0)
+    a = a.sum(axis=0) # columnwise sum
+    a = a + R[k_k_idx, k_k_idx]
+
+    # broadcasting of columns 'r(k, k) + sum(max(0, r(i', k))) to rows.
+    a = np.ones(A.shape) * a
+
+    # For every column k, subtract the positive value of k. 
+    # This value is included in the sum and shouldn't be
+    a -= np.clip(R, 0, np.inf)
+    a[a > 0] = 0
+
+    # set(a(k, k))
+    w = np.array(R)
+    np.fill_diagonal(w, 0)
+
+    w[w < 0] = 0
+
+    a[k_k_idx, k_k_idx] = w.sum(axis=0) # column wise sum
+    A = A * damping + (1 - damping) * a
+```
+
+This vectorized function has an average execution time of 70 microseconds. This is approximately 590x faster than the nested implementation! Affinity Propagation has a complexity of $O(n^2)$. So with increasing data points the optimization isn't a luxury.
+
+## Exemplars
+
+The final examplars are chosen by the maximum value of $A + B$.
+
+<div>
+$$ exemplar(i, k) = \max\{a(i', k) + b(i', k)  \} $$
+</div>
+
+We implement this in a function where we immediatly plot the final clustering result.
+
+```python
+def plot_iteration(A, R):
+    fig = plt.figure(figsize=(12, 6))
+    sol = A + R
+    # every data point i chooses the maximum index k
+    labels = np.argmax(sol, axis=1)
+    exemplars = np.unique(labels)
+    colors = dict(zip(exemplars, cycle('bgrcmyk')))
+    
+    for i in range(len(labels)):
+        X = x[i][0]
+        Y = x[i][1]
+        
+        if i in exemplars:
+            exemplar = i
+            edge = 'k'
+            ms = 10
+        else:
+            exemplar = labels[i]
+            ms = 3
+            edge = None
+            plt.plot([X, x[exemplar][0]], [Y, x[exemplar][1]], c=colors[exemplar])
+        plt.plot(X, Y, 'o', markersize=ms,  markeredgecolor=edge, c=colors[exemplar])
+        
+
+    plt.title('Number of exemplars: %s' % len(exemplars))
+    return fig, labels, exemplars
+```
+
+## Clustering
+
+Now we have got all set. We can execute this algorithm on our data that we generated earlier. The inputs for this algorithm are:
+
+* The number of iterations. (Which should be choosen so that the exemplars don't change, i.e. convergence is reached.)
+* The damping factor. (Could be changed for faster iterations or more nummerical stability.)
+* The preference.
+
+The last input, the preference, is set to the diagonal of the $S$ matrix. This preference value indicates how strongly a data point thinks itself should be an exemplar. In our case, the maximum similarity value is an euclidian distance of 0, which already is the value of the diagonal of $S$. If we choose the leave this value unmodified. We will see almost no clustering as most data points choose to be an exemplar for themselves.
+
+{{< figure src="/img/post-14-affinity_propagation/preference_0.gif" title="Clustering if a preference of 0 is chosen for all the data points.">}}
+
+Just as in the real world, when everybody is just thinking about themselves it doesn't result in all too much concencus. If you haven't got a priori knowledge of the data points it is advised to start with a preference equal to the median of $S$ (approximately -25 in our case). And let's see how we set this preference input and actually do the clustering iterations!
+
+```python
+A, R, S = create_matrices()
+preference = np.median(S)
+np.fill_diagonal(S, preference)
+damping = 0.5
+
+figures = []
+last_sol = np.ones(A.shape)
+last_exemplars = np.array([])
+
+c = 0
+for i in range(200):
+    update_r(damping)
+    update_a(damping)
+    
+    sol = A + R
+    exemplars = np.unique(np.argmax(sol, axis=1))
+    
+    if last_exemplars.size != exemplars.size or np.all(last_exemplars != exemplars):
+        fig, labels, exemplars = plot_iteration(A, R, i)
+        figures.append(fig)
+    
+    if np.allclose(last_sol, sol):
+        print(exemplars, i)
+        break
+        
+    last_sol = sol
+    last_exemplars = exemplars
+```
+
+{{< figure src="/img/post-14-affinity_propagation/preference_median.gif" title="Clustering if a preference of $median(S)$ is chosen for all the data points.">}}
+
+We see that the algorithm finds one more cluster then defined in our original data set. The original blue cluster is split into two clusters. If we want Affinity Propagation to be less eager in splitting clusters we can set the preference value lower.
+
+If we choose a value of -70 we will find our original clusters.
+
+{{< figure src="/img/post-14-affinity_propagation/preference_-70.gif" title="Clustering if a preference of -70 is chosen for all the data points.">}}
+
+And if we put this knowledge to the extreme and choose a preference of -1000, meaning that every data point is very likely to choose someother point to be their exemplar we'll only find two clusters.
+
+{{< figure src="/img/post-14-affinity_propagation/preference_-1000.gif" title="Clustering if a preference of -1000 is chosen for all the data points.">}}
+
+We can also give different preference values to certain data points. Below we have set the preference of all data points to $median(S)$ except for the original blue data points in the bottom left corner. These points have a preference of -200, meaning that they rather choose another point as their excemplar.
+
+{{< figure src="/img/post-14-affinity_propagation/preference_subset.gif" title="Clustering when a subset has a very low preference.">}}
+
+## Summary
+
+This post we dissected the Affinity Propagation algorithm. We've implemented the message exchanging formulas in a more readible but slower executing code and in a vectorized optimized code. This blog post is based on a jupyter notebook I've made, which can be found [here!: affinity_propagation.ipynb](https://github.com/ritchie46/vanilla-machine-learning/tree/master/clustering)
+
+Wan't to read more about other machine learning algorithms?
+
+* [Neural Networks]({{< ref "post/mlp.md" >}})
+* [Support Vector Machines]({{< ref "post/ScalaSVM.md" >}})
+
+
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
