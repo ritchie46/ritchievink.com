@@ -2,10 +2,23 @@
 date = "2018-05-18"
 description = ""
 tags = ["python", "machine learning", "algorithm breakdown"]
-draft = true
+draft = false
 author = "Ritchie Vink"
 title = "Algorithm Breakdown: Affinity Propagation"
 +++
+
+<head>
+
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+
+</head>
+
 {{< figure src="/img/post-14-affinity_propagation/fw.jpg">}}
 
 On a project I worked on at the ANWB (Dutch road side assistence company) we mined driving behavior data. We wanted to know how many persons were likely to drive a certain vehicle on a regular basis. Naturally k-means clustering came to mind. The k-means algorithm finds clusters with the least inertia for a given `k`.
@@ -58,7 +71,7 @@ Those two matrices actually represent a graph where every data point is connecte
 
 This network can be encoded in a matrix where every index $i, k$ is a connection between two points.
 
-<div>
+<div class="formula-wrap">
 $$
 messageGraph =
 \begin{bmatrix}
@@ -99,7 +112,7 @@ def create_matrices():
 
 The responsibility messages are defined by:
 
-<div>
+<div class="formula-wrap">
 $$
 r(i, k) \leftarrow s(i, k) - \max\limits_{k' s.t. k' \neq k}\{ a(i, k') + s(i, k') \} \tag{1.0}
 $$
@@ -134,7 +147,7 @@ A, R, S = create_matrices()
 
 Ok, 41 ms is our baseline. That shouldn't be too hard to beat. Note that $ s(i, k) $ in (**eq. 1.0**) is already defined and is equal to our matrix `S`. The harder part is $\max\limits_{k' s.t. k' \neq k}\{ a(i, k') + s(i, k') \}$, but we can make this easier by ignoring the limitations on the max function for a while. Let's first focus on the inner part of the max function.
 
-<div>
+<div class="formula-wrap">
 $$ v = a(i, k) + s(i, k) \tag{1.1} $$
 </div>
 
@@ -219,13 +232,13 @@ A, R, S = create_matrices()
 ## Availability
 The availability messages are defined by the following formulas. For all points not on the diagonal of A (all the messages going from one data point to all other points), the update is equal to the responsibility that point $k$ assigns to itself and the sum of the responsibilities that other data points (except the current point) assign to $k$. Note that, due to the min function, this holds only true for negative values.
 
-<div>
+<div class="formula-wrap">
 $$ a(i, k) \leftarrow \min\{0, r(k,k) + \sum\limits_{i' s.t. i' \notin \{i, k\}}{\max\{0, r(i', k)\}} \tag{2.0} $$
 </div>
 
 For points on the diagonal of A (the availability value that a data point sends to itself), the message value is equal to the sum of all positive responsibility values send to the current data point.
 
-<div>
+<div class="formula-wrap">
 $$ a(k, k) \leftarrow \sum\limits_{i' \neq k}\max(0, r(i', k)) \tag{2.1} $$
 </div>
 
@@ -354,7 +367,7 @@ This vectorized function has an average execution time of 70 microseconds. This 
 
 The final examplars are chosen by the maximum value of $A + B$.
 
-<div>
+<div class="formula-wrap">
 $$ exemplar(i, k) = \max\{a(i', k) + b(i', k)  \} $$
 </div>
 
