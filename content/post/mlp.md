@@ -12,6 +12,7 @@ tags:
 - python
 - machine learning
 - algorithm breakdown
+- deep learning
 
 title: Programming a neural network from scratch
 type: post

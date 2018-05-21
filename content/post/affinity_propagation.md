@@ -7,17 +7,7 @@ author = "Ritchie Vink"
 title = "Algorithm Breakdown: Affinity Propagation"
 +++
 
-<head>
 
-<style>
-
-.formula-wrap {
-overflow-x: scroll;
-}
-
-</style>
-
-</head>
 
 {{< figure src="/img/post-14-affinity_propagation/fw.jpg">}}
 
@@ -482,3 +472,15 @@ MathJax.Hub.Config({
 <script type="text/javascript" async
   src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
 </script>
+
+<head>
+
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+
+</head>

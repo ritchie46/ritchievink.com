@@ -4,7 +4,7 @@ date = "2017-02-12T21:35:33+02:00"
 draft = false
 title = "Python 1D FEM Example 2"
 description = "Example code for 1D FEM in Python."
-
+tags = ["fem"]
 +++
 
 # Example 2: Truss framework

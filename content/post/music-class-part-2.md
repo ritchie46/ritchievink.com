@@ -1,5 +1,5 @@
 ---
-author: author
+author: Ritchie Vink
 date: 2017-06-04T14:08:34+02:00
 description: 
 draft: false
@@ -12,6 +12,7 @@ tags:
 - machine learning
 - music
 - computer vision
+- deep learning
 title: Deep learning music classifier part 2. Computer says no!
 topics:
 - topic 1
