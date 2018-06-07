@@ -4,7 +4,7 @@ description = ""
 tags = ["python", "machine learning", "pymc3", "edward", "bayesian", "clustering"]
 draft = false
 author = "Ritchie Vink"
-title = "Clustering data with Dirichlet Mixtures in Edward and Pymc3."
+title = "Clustering data with Dirichlet Mixtures in Edward and Pymc3"
 +++
 
 {{< figure src="/img/post-15-mixture_models/gmount1.jpg">}}
