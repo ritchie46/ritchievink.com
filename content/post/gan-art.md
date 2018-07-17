@@ -4,15 +4,15 @@ description = ""
 tags = ["python", "machine learning", "pytorch", "gan", "deep learning"]
 draft = false
 author = "Ritchie Vink"
-title = "The distribution of Persian Carpets"
+title = "Generative Adverserial Networks in Pytorch: The distribution of Persian Carpets"
 +++
 
 {{< figure src="/img/post-16-gan_art/result.png">}}
 
-Generative adversarial networks are hypie and seem to be able to generate amazing stuff. Because I wanted to do a small project with GANs and I wanted to have something fancy on the wall, I tried to train a GAN on a dataset of art work. The goal to have something fancy on the wall is a hard goal I must conclude. The pictures above show some of the results from the model. They do look nice, but they won't I do think they look nice, however I've learned upscaling the images texponentially decreases the odds of a model that learns the distribution well.
+Generative adversarial networks seem to be able to generate amazing stuff. I wanted to do a small project with GANs and in the process create something fancy for on the wall. Therefore I tried to train a GAN on a dataset of art paintings. This post I'll explore if I'll succeed in getting a full hd new Picasso on the wall. The pictures above give you a glimplse of some of the results from the model.
 
 ## Generative Adverserial Networks
-So what are those GANs actually? These networks are a different approach to monolithic neural networks. GANs are influenced by game theory. They consist of two networks, which compete with each other. One network called the Discriminator tries to identify the authenticity of an image. Another network, called the Generator tries to fool the Discriminator by generating false images. The two networks are in an arms race and when this arms race is fruitful they will have learned to produce images that were not available to them in the dataset. The image below gives a visual explanation better than I did.
+So what are those GANs actually? These networks are a different approach to monolithic neural networks. GANs are influenced by game theory. They consist of two networks, which compete with each other. One network, called the Discriminator, tries to identify the authenticity of an image. Another network, called the Generator, tries to fool the Discriminator by generating false images. The two networks are in an arms race and when this arms race is fruitful they will have learned to produce images that were not available to them in the dataset. The image below gives a visual explanation of what GANs are.
 
 {{< figure src="/img/post-16-gan_art/gan.png" title="Generative Adversial networks">}}
 
@@ -302,6 +302,20 @@ where
 
 * $\theta$ = angle between the two vectors.
 * $\mu$ = interpolation factor between 0 and 1.
+
+In the visual below we're taking a small trip through the latent space of the 64x64 architecture.
+
+<div style="text-align: center;">
+<div style="display: inline-block;">
+{{< figure src="/img/post-16-gan_art/perfect_loop.gif" title="Small trip around the distribution." >}} 
+</div>
+</div>
+
+## Final words
+
+The generated images produced some really nice colors and shapes and in my opinion both network architectures learned the conditional probability of colors in art painings. Both networks didn't produce any sharp figurative image. I believe that this is harder and needs a more consistent dataset, for instance images containing only painting of flowers. 
+
+My budget for the cloud gpu's has run out, thus sadly my final conclusion is that the generated art on my wall at home won't be in full-hd just yet.
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
