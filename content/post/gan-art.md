@@ -4,7 +4,7 @@ description = ""
 tags = ["python", "machine learning", "pytorch", "gan", "deep learning"]
 draft = false
 author = "Ritchie Vink"
-title = "Generative Adverserial Networks in Pytorch: The distribution of Persian Carpets"
+title = "Generative Adverserial Networks in Pytorch: The distribution of Art?"
 +++
 
 {{< figure src="/img/post-16-gan_art/result.png">}}
@@ -16,7 +16,10 @@ So what are those GANs actually? These networks are a different approach to mono
 
 {{< figure src="/img/post-16-gan_art/gan.png" title="Generative Adversial networks">}}
 
-You see that we feed the Generator random noise. We sample this random noise from a normal distribution. We hope that through the magic of backpropagation the Generator will morph into a network that is able to transform this normal distribution to the actual distribution of the dataset. However GANs are notorious for being hard to train and instead of learning the latent distribution of a dataset they often learn just a small section of the hidden distribution or end up oscillating between only a few images during training. 
+You see that we feed the Generator random noise. We sample this random noise from a normal distribution. We hope that through the magic of backpropagation the Generator will become a network that is able to transform this normal distribution to the actual distribution of the dataset. 
+
+That is right, **the actual distribution of the dataset.**
+Unlike models used for classification that model $P(class | data)$, GANs are able to learn and maximize $P(data)$  However GANs are notorious for being hard to train and instead of learning the latent distribution of a dataset they often learn just a small section of the hidden distribution or end up oscillating between only a few images during training. 
 
 ## Art data
 [Kaggle](https://www.kaggle.com/c/painter-by-numbers) has a dataset containing the works of various painters. Shown below is an excerpt of the set. For the final dataset I've downloaded **train_1.zip** - **train_6.zip**.
@@ -40,7 +43,7 @@ from PIL import Image
 
 
 ### Discriminator
-In this network the Discriminator is very much like any other deep convolutional network. It takes images as input and used several feature extraction layers and finaly a fully connected layer to produce an output. The feature extraction layer is comprised of:
+In this network the Discriminator is very much like any other deep convolutional network. It takes images as input and uses several feature extraction layers and finaly a fully connected layer to produce an output. The feature extraction layer is comprised of:
 
 * Convolutional layer with 4x4 filters, a stride of 2 and a padding of 1 (downscaling an image by a factor 2).
 * Batch normalization layer.
@@ -172,10 +175,10 @@ x = next(iter(data))
 ```
 
 ## Training
-There are various tactics for stabilizing GAN training. I've used some of them. The tricks I used to stabilize the learning of the networks are:
+There are various tactics for stabilizing GAN training. The tricks I used to stabilize the learning of the networks are:
 
-* Sampling the random input vector $z$ from a Gaussian distribution.
-* Construct different mini-batches for real and fake data.
+* Sampling the random input vector $z$ from a Gaussian instead of a Uniform distribution.
+* Construct different mini-batches for real and fake data (i.e. not shuffling the real and fake in one mini-batch).
 * Soft labels for the Discriminator (preventing the discriminator to get too strong) [Salimans et. al. 2016](https://arxiv.org/abs/1606.03498).
 * Occasionally swap the labels for the Discriminator (preventing the discriminator to get too strong).
 * Use Adam hyperparameters as described by [See Radford et. al. 2015](https://arxiv.org/abs/1511.06434).
@@ -288,11 +291,11 @@ I've run two different variations of the GAN architecture described above. One t
 This variant was less stable in learning than the 64 pixel variant. The distribution of the images produced by this variant has got a lot less variance than the smaller network. Because of this smaller variance, I had to cherry pick the images at different weight configurations of the network.
 
 ### 64x64 GAN
-With the 64x64 architecture this isn't the case. The network has captured a distribution with a lot more variation and a lot less repetition in one single image. 
+With the 64x64 architecture this isn't the case. The network has captured a distribution with a lot more variation in both the images and the pixels. 
 
 {{< figure src="/img/post-16-gan_art/mntg.png" title="Images produced by the 64x64 GAN.">}} 
 
-[T. White et. al.](https://arxiv.org/abs/1609.04468) described a way of interpolating the manifold of the Gaussian input we sample. By interpolating the input vectors following the curve of the manifold we can see how on image continues in another. This is really cool! The method called slerp (spherical linear interpolation) is defined by:
+[T. White et. al.](https://arxiv.org/abs/1609.04468) described a way of interpolating the manifold of the Gaussian input we sample. By interpolating the input vectors and thereby following the curve of the manifold we can see how one image morphs in another. This is really cool! The method called slerp (spherical linear interpolation) is defined by:
 
 <div class="formula-wrap">
 $$ Slerp(q_1, q_2, \mu) = \frac{sin(1 - \mu)\theta}{sin \theta}q_1 + \frac{sin(\mu \theta)}{sin(\theta)}q_2 $$
