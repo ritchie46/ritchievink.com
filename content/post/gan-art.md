@@ -1,10 +1,10 @@
 +++
 date = "2018-07-15"
 description = ""
-tags = ["python", "machine learning", "pytorch", "gan", "deep learning"]
+tags = ["python", "machine learning", "pytorch", "deep learning"]
 draft = false
 author = "Ritchie Vink"
-title = "Generative Adverserial Networks in Pytorch: The distribution of Art?"
+title = "Generative Adverserial Networks in Pytorch: The distribution of Art"
 +++
 
 {{< figure src="/img/post-16-gan_art/result.png">}}
@@ -319,6 +319,12 @@ In the visual below we're taking a small trip through the latent space of the 64
 The generated images produced some really nice colors and shapes and in my opinion both network architectures learned the conditional probability of colors in art painings. Both networks didn't produce any sharp figurative image. I believe that this is harder and needs a more consistent dataset, for instance images containing only painting of flowers. 
 
 My budget for the cloud gpu's has run out, thus sadly my final conclusion is that the generated art on my wall at home won't be in full-hd just yet.
+
+## Read more?
+
+* [Classify music]({{< ref "post/music-class-part-1.md" >}})
+* [Transfer learning with Pytorch]({{< ref "post/eurorap.md" >}})
+* [Program a vanilla neural network]({{< ref "post/mlp.md" >}})
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
