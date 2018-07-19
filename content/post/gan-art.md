@@ -1,17 +1,18 @@
 +++
-date = "2018-07-15"
+date = "2018-07-16"
 description = ""
 tags = ["python", "machine learning", "pytorch", "deep learning"]
 draft = false
 author = "Ritchie Vink"
-title = "Generative Adverserial Networks in Pytorch: The distribution of Art"
+title = "Generative Adversarial Networks in Pytorch: The distribution of Art"
+og_image = "/img/post-16-gan_art/result.png"
 +++
 
 {{< figure src="/img/post-16-gan_art/result.png">}}
 
 Generative adversarial networks seem to be able to generate amazing stuff. I wanted to do a small project with GANs and in the process create something fancy for on the wall. Therefore I tried to train a GAN on a dataset of art paintings. This post I'll explore if I'll succeed in getting a full hd new Picasso on the wall. The pictures above give you a glimplse of some of the results from the model.
 
-## Generative Adverserial Networks
+## Generative Adversarial Networks
 So what are those GANs actually? These networks are a different approach to monolithic neural networks. GANs are influenced by game theory. They consist of two networks, which compete with each other. One network, called the Discriminator, tries to identify the authenticity of an image. Another network, called the Generator, tries to fool the Discriminator by generating false images. The two networks are in an arms race and when this arms race is fruitful they will have learned to produce images that were not available to them in the dataset. The image below gives a visual explanation of what GANs are.
 
 {{< figure src="/img/post-16-gan_art/gan.png" title="Generative Adversial networks">}}
