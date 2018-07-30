@@ -6,6 +6,7 @@ categories = ["category"]
 tags = ["machine learning", "engineering", "python"]
 draft = false
 author = "Ritchie Vink"
+og_image = "/img/post-12-ga-bridge/cb2.jpg"
 +++
 
 In earlier posts I've analyzed simple structures with a Python fem package called [anaStruct](https://github.com/ritchie46/anaStruct). And in this [post]({{< ref "post/nl_water_acc.md" >}}) I've used anaStruct to analyze a very non linear roof ponding problem.

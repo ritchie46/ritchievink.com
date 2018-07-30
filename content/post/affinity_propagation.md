@@ -5,6 +5,7 @@ tags = ["python", "machine learning", "algorithm breakdown"]
 draft = false
 author = "Ritchie Vink"
 title = "Algorithm Breakdown: Affinity Propagation"
+og_image = "/img/post-14-affinity_propagation/fw.jpg"
 +++
 
 

@@ -6,6 +6,7 @@ categories = ["category"]
 tags = ["machine learning", "python", "deep learning", "computer vision"]
 draft = false
 author = "Ritchie Vink"
+og_image = "/img/post-13-eurorap/results1.png"
 +++
 
 For a project at Xomnia, I had the oppertunity to do a cool computer vision assignment. We tried to predict the input of a road safety model. [Eurorap](http://www.eurorap.org/) is such a model. 
