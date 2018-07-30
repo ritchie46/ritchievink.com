@@ -17,6 +17,7 @@ title: Deep learning music classifier part 1. 30 seconds disco!
 topics:
 - topic 1
 type: post
+og_image: "/img/post-7-dl-music/ms_classical.png"
 ---
 
 ## Introduction

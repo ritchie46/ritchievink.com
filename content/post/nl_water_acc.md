@@ -12,7 +12,7 @@ tags:
 - python
 - engineering
 - fem
-
+og_image: "/img/post-10-water/frame.PNG"
 title: A nonlinear water accumulation analysis in Python
 
 type: post

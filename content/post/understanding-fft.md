@@ -12,9 +12,7 @@ tags:
 - python
 - vibrations
 title: Understanding the Fourier Transform by example
-topics:
-- topic 1
-type: post
+og_image: "/img/post-5-fft/fig_2.png"
 ---
 
 

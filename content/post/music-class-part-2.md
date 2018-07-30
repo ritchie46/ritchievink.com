@@ -14,8 +14,8 @@ tags:
 - computer vision
 - deep learning
 title: Deep learning music classifier part 2. Computer says no!
-topics:
-- topic 1
+og_image: "/img/post-7-dl-music/ms_reggae.png"
+
 type: post
 ---
 
