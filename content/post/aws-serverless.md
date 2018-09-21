@@ -10,7 +10,7 @@ og_image = "/img/post-17-serverless_model/serverless-architecture.png"
 
 {{< figure src="/img/post-17-serverless_model/serverless-architecture.png" >}}
 
-When a machine learning model goes into production, it is very likely to be idle most of the time. There are a lot of use cases, where a model only needs to run inference when new data is available. If we do have such a use case and we deploy a model on a server, it will eagerly be checking for new data, only te be dissapointed for most of its lifetime and meanwhile you pay for the live time of the server. 
+When a machine learning model goes into production, it is very likely to be idle most of the time. There are a lot of use cases, where a model only needs to run inference when new data is available. If we do have such a use case and we deploy a model on a server, it will eagerly be checking for new data, only to be disappointed for most of its lifetime and meanwhile you pay for the live time of the server. 
 
 Now the cloud era has arrived, we can deploy a model serverless. Meaning we only pay for the compute we need, and spinning up the resources when we need them. In this post we'll define a serverless infrastructure for a machine learning model. This infrastructure will be hosted on AWS.
 
@@ -28,14 +28,14 @@ The image below shows an overview of the serverless architecture we're deploying
 
 * AWS S3: Used for blob storage.
 * AWS Lambda: Executing functions without any servers. These functions are triggered by various events.
-* AWS SQS: Message queues for interaction between microservices and serverless aplications.
+* AWS SQS: Message queues for interaction between microservices and serverless applications.
 * AWS ECS: Run docker containers on AWS EC2 or AWS Fargate.
 
 <br>
 
 {{< figure src="/img/post-17-serverless_model/architecture.svg" title="The serverless architecture" >}}
 
-The serverless application works as follows. Every time new data is posted on a S3 bucket, it will trigger a Lambda function. This Lambda function will push some meta data (data location, output location etc.) to the SQS Queue and will check if there is already a ECS task running. If there is not, the Lambda will start a new container. The container, once started, will fetch messages from the SQS Queue and process them. Once there are no messages left, the container will shut down and the
+The serverless application works as follows. Every time new data is posted on a S3 bucket, it will trigger a Lambda function. This Lambda function will push some meta data (data location, output location etc.) to the SQS Queue and will check if there is already an ECS task running. If there is not, the Lambda will start a new container. The container, once started, will fetch messages from the SQS Queue and process them. Once there are no messages left, the container will shut down and the
 Batch Transform Job is finished!
 
 ## Docker image
@@ -43,7 +43,7 @@ Batch Transform Job is finished!
 Before we'll start with the resources in the cloud, we will prepare a Docker image, in which our model will reside.
 
 ### Requirements
-You'll need make sure you've got the following setup. You need to have access to a AWS account and install and configure the [aws cli](https://aws.amazon.com/cli/), and [Docker](https://docs.docker.com/install/). The aws cli enables us to interact with the AWS Cloud from the command line and Docker will help us containerize our model. 
+You'll need make sure you've got the following setup. You need to have access to an AWS account and install and configure the [aws cli](https://aws.amazon.com/cli/), and [Docker](https://docs.docker.com/install/). The aws cli enables us to interact with the AWS Cloud from the command line and Docker will help us containerize our model. 
 
 To make sure we don't walk into permission errors in AWS, make sure you've created admin access keys and add them to _~/.aws/credentials_.
 
@@ -77,7 +77,7 @@ project
 Let's go through the files one by one!
 
 ### Dockerfile
-In the Dockerfile we start from the Python 3.6 base image. If you depend on pickled files, make sure you use the same Python and library dependencies in the Dockerfile as the one you've use to train your model!
+In the Dockerfile we start from the Python 3.6 base image. If you depend on pickled files, make sure you use the same Python and library dependencies in the Dockerfile as the one you've used to train your model!
 
 The Dockerfile is fairly straightforward. We copy our project files in the image
 ```
@@ -364,7 +364,7 @@ We are not going to build and push our Docker image just jet, as a lot of the co
 
 This YAML file is actually the template for the [serverless platform](https://serverless.com/). Because it is easy to have all the settings in one file, we also add the settings for our Docker image in this template.
 
-The serverless framework let's us define a whole serverless AWS Cloudformation stack. This means we can define our infrastructure as code. This off course has a lot of benefits like source control, parameterized deployment etc.
+The serverless framework lets us define a whole serverless AWS Cloudformation stack. This means we can define our infrastructure as code. This of course has a lot of benefits like source control, parameterized deployment etc.
 
 ### Requirements
 First install [serverless](https://serverless.com/framework/docs/getting-started/). You'll need [NPM and Node.js](https://www.npmjs.com/get-npm) for this.
@@ -414,7 +414,7 @@ project
 
 ### serverless/batch-transform/handler.py
 This file contains the actual AWS Lambda function we are deploying. 
-This Lambda is triggered by a 'new data' trigger. In the _lambda\_handler_ function we push the bucket and key information of this new data to a SQS queue. Next we check if there are any ECS tasks running. If there aren't we start our container to process the messages on the SQS queue.
+This Lambda is triggered by a 'new data' trigger. In the _lambda\_handler_ function we push the bucket and key information of this new data to an SQS queue. Next we check if there are any ECS tasks running. If there aren't we start our container to process the messages on the SQS queue.
 
 Note that there are a lot of environment variables used (os.environ). Those environment variables are set in the serverless template.
 
@@ -492,7 +492,7 @@ def lambda_handler(event, context):
 ### serverless/batch-transform/serverless.yml
 This file is where all the settings for both the Docker image and the serverless infrastructure are defined. I won't explain the serverless syntax here, but I do encourage you to take a look at the serverless documentation to get a grasp of what is going on. The [quick start](https://serverless.com/framework/docs/providers/aws/guide/quick-start/) is a good place to begin.
 
-Below is the whole file shown. Everything defined under the _custom_ keyword are the settings that need to be changed for your specific model. The other keywords are the specifation of the serverless architecture. Everything enclosed in `${self:<some-variable>}` are variables.
+Below the whole file is shown. Everything defined under the _custom_ keyword, are the settings that need to be changed for your specific model. The other keywords are the specification of the serverless architecture. Everything enclosed in `${self:<some-variable>}` are variables.
 
 A quick overview of what is defined in this file:
 
