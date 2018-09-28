@@ -15,7 +15,7 @@ set of variables where we can fit a model on. Are stock markets dependent on pro
 
 A common approach to model time series is to regard the label at current time step $X\_{t}$ as a variable dependent on previous time steps $X\_{t-k}$. We thus analyze the time series on nothing more than the time series. 
 
-One of the most used models when handling time series are ARIMA models. In this post we'll explore how these models are defined and we are going to develop such a model in Python with nothing else but the numpy package.
+One of the most used models when handling time series are ARIMA models. In this post we'll explore how these models are defined and we are going to develop such a model in Python with nothing else but the numpy and the scipy package.
 
 ## Stochastic series
 ARIMA models are actually a combination of two, (or three if you count differencing as a model) processes that are able to generate series data. Those two models are based on an Auto Regressive (AR) process and a Moving Average process. Both AR and MA processes are stochastic processes. Stochastic means that the values come from a random probability distribution, which can be analized statisticly but may not be predicted precisely. In other words, both processes have some
@@ -31,6 +31,7 @@ $$ \epsilon \sim N(0, 1) $$
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import scipy
 
 n = 500
 fig, ax = plt.subplots(1,2, figsize=(16, 6), gridspec_kw={'width_ratios':[3, 1]})
@@ -88,7 +89,13 @@ Now we are able to easily take a look at different lags back in time, let's simu
 
 ``` python
 def ma_process(eps, theta):
-    theta = np.array([1] + list(theta))[:, None]
+    """
+    Creates an MA(q) process with a zero mean (mean not included in implementation).
+    :param eps: (array) White noise signal.
+    :param theta: (array/ list) Parameters of the process.
+    """
+    # reverse the order of theta as Xt, Xt-1, Xt-k in an array is Xt-k, Xt-1, Xt.
+    theta = np.array([1] + list(theta))[::-1][:, None]
     eps_q, _ = lag_view(eps, len(theta))
     return eps_q @ theta
 
@@ -105,7 +112,7 @@ for i in range(0, 11, 5):
 
 {{< figure src="/img/post-18-arima/ma-signal.png" title="MA processes from different orders." >}}
 
-Note that I've chosen positive values for $\theta$ which isn't required. An MA process can have both positive and negative values for $\theta$. In the plots above can be seen that when the order of $MA(q)$ continues the values are longer correlated with previous values. Actualy, because the process is a weighted average of the $\epsilon$ values until lag $q$, the correlation drops after this lag. Based on this property we can make an educated guess on the which order an $MA(q)$
+Note that I've chosen positive values for $\theta$ which isn't required. An MA process can have both positive and negative values for $\theta$. In the plots above can be seen that when the order of **MA(q)** continues the values are longer correlated with previous values. Actualy, because the process is a weighted average of the $\epsilon$ values until lag $q$, the correlation drops after this lag. Based on this property we can make an educated guess on the which order an **MA(q)**
 process is. This is great, because it is very hard to infer the order by looking at the plots directly. 
 
 ## Autocorrelation
@@ -121,24 +128,24 @@ def pearson_correlation(x, y):
 
 def acf(x, lag=40):
     """
-    Determine auto correlation factors.
+    Determine autocorrelation factors.
     :param x: (array) Time series.
     :param lag: (int) Number of lags.
     """
     return np.array([1] + [pearson_correlation(x[:-i], x[i:]) for i in range(1, lag)])
 
 lag = 40
-# Determine the ACF of an ma(1) and an ma(2) process.
-acf_1 = acf(ma_process(eps, [1]), lag)
-acf_2 = acf(ma_process(eps, [0.2, -0.3, 0.8]), lag)
+# Create an ma(1) and an ma(2) process.
+ma_1 = ma_process(eps, [1])
+ma_2 = ma_process(eps, [0.2, -0.3, 0.8])
 ```
 
-Above we have applied the ACF function on an $MA(1)$ and an $MA(2)$ process with different weights $\theta$. The weights for the models are:
+Above we have created an **MA(1)** and an **MA(2)** process with different weights $\theta$. The weights for the models are:
 
 * MA(1): [1]
 * MA(2): [0.2, -0.3, 0.8]
 
-Below we plot the result of both acf functions. We've also defined a helper function `bartletts_formula` which we use as a null hypothesis to determine if the correlation coefficients we've found are significant and not a statistical fluke. With this function we determine a confidence interval $CI$.
+Below we apply the acf function on both series and then we plot the result of both acf functions. We've also defined a helper function `bartletts_formula` which we use as a null hypothesis to determine if the correlation coefficients we've found are significant and not a statistical fluke. With this function we determine a confidence interval $CI$.
 
 $$CI = \pm z\_{1-\alpha/2} \sqrt{\frac{1+2 \sum\_{1 < i< h-1 }^{h-1}r^2\_i}{N}} $$
 
@@ -149,7 +156,7 @@ def bartletts_formula(acf_array, n):
     """
     Computes the Standard Error of an acf with Bartlet's formula
     Read more at: https://en.wikipedia.org/wiki/Correlogram
-    :param acf_array: (array) Containing auto correlation factors
+    :param acf_array: (array) Containing autocorrelation factors
     :param n: (int) Length of original time series sequence.
     """
     # The first value has autocorrelation with it self. So that values is skipped
@@ -159,29 +166,134 @@ def bartletts_formula(acf_array, n):
     return se
 
 
-# Statistical significance for confidence interval
-alpha = 0.05
-
-plt.figure(figsize=(16, 4 * 2))
-plt.suptitle('Correlogram')
-a = 210
-for array in [acf_1, acf_2]:
-    a += 1
-    plt.subplot(a)
-    plt.vlines(np.arange(lag), 0, array)
-    plt.scatter(np.arange(lag), array, marker='o')
+def plot_acf(x, alpha=0.05, lag=40):
+    """
+    :param x: (array)
+    :param alpha: (flt) Statistical significance for confidence interval.
+    :parm lag: (int)
+    """
+    acf_val = acf(x, lag)
+    plt.figure(figsize=(16, 4))
+    plt.vlines(np.arange(lag), 0, acf_val)
+    plt.scatter(np.arange(lag), acf_val, marker='o')
     plt.xlabel('lag')
-    plt.ylabel('auto correlation')
-
+    plt.ylabel('autocorrelation')
+    
     # Determine confidence interval
-    ci = stats.norm.ppf(1 - alpha / 2.) * bartletts_formula(array, len(eps))
+    ci = stats.norm.ppf(1 - alpha / 2.) * bartletts_formula(acf_val, len(x))
     plt.fill_between(np.arange(1, ci.shape[0] + 1), -ci, ci, alpha=0.25)
+
+for array in [ma_1, ma_2]:
+    plot_acf(array)
 ```
 
 {{< figure src="/img/post-18-arima/acf.png" >}}
 
-As we mentioned earlier, these plots help us infer the order of the $MA(q)$ model. In both plots we can see a clear cut off in significant values. Both plots start with an auto correlation of 1. This is the auto correlation at lag 0. The second value is the auto correlation at lag 1 etc. The first plot the cut off is after 1 lag and in the second plot the cut off is at lag 3. So in our artificial data set we are able to determine the order of different $MA(q)$ models by looking
+As we mentioned earlier, these plots help us infer the order of the **MA(q)** model. In both plots we can see a clear cut off in significant values. Both plots start with an autocorrelation of 1. This is the autocorrelation at lag 0. The second value is the autocorrelation at lag 1 etc. The first plot the cut off is after 1 lag and in the second plot the cut off is at lag 3. So in our artificial data set we are able to determine the order of different **MA(q)** models by looking
 at the ACF plot!
+
+## AR process
+In the section above we have seen and simulated an MA process and described the definition of autocorrelation to infer the order of a purely MA process. Now we are going to simulate another series called the Auto Regressive (RA) process. Again we're going to infer the order of the process visually. This time we will be doing that with a Partial AutoCorrelation Funtion (PACF).
+
+An **AR(p)** process is defined as:
+
+$$X\_t = c + \epsilon\_t \sum\_{i=1}^p{\phi\_i X\_{t-i}} $$
+
+Now $\phi$ are the parameters of the process and $p$ is the order of the process. Where **MA(q)** is a weighted average over the error terms (white noise), **AR(p)** is a weighted average over the previous values of the series $X\_{t-p}$. Note that this process also has a white noise variable, which makes this a stochastic series.
+
+```python
+def ar_process(eps, phi):
+    """
+    Creates a AR process with a zero mean.
+    """
+    # Reverse the order of phi and add a 1 for current eps_t
+    phi = np.r_[1, phi][::-1] 
+    ar = eps.copy()
+    offset = len(phi)
+    for i in range(offset, ar.shape[0]):
+        ar[i - 1] = ar[i - offset: i] @ phi
+    return ar
+
+fig = plt.figure(figsize=(16, 4 * 3))
+a = 310
+for i in range(0, 11, 5):
+    a += 1
+    phi = np.random.normal(0, 0.1, size=i + 1)
+    plt.subplot(a)
+    plt.title(f'$\\phi$ = {phi.round(2)}')
+    plt.plot(ar_process(eps, phi))
+```
+
+{{< figure src="/img/post-18-arima/ra-signal.png" title="AR processes from different orders." >}}
+
+Below we create three new **(AR(p)** processes and plot the ACF of these series. 
+
+``` python
+plot_acf(ar_process(eps, [0.3, -0.3, 0.5]))
+plot_acf(ar_process(eps, [0.5, -0.1, 0.1]))
+plot_acf(ar_process(eps, [0.2, 0.5, 0.1]))
+```
+{{< figure src="/img/post-18-arima/acf-ar.png" title="The ACF computed from 3 different AR series." >}}
+
+By analyzing these plots we can tell that the ACF plot of these **AR** processes don't necessarily cut off after after lag $p$. In the first plot we see that the ACF values tail off to zero, the second plot does has significant cut off at lag $p$ and the third plot has a linearly decreasing autocorrelation until lag 14. For the **AR(p)** process, the ACF clearly isn't decisive for determining the order of the process. Actually, for **AR** processes we can use
+another function for inferring the order of the process.
+
+## Partial autocorrelation
+The partial autocorrelation function shows the autocorrelation of value $X\_t$ and $X\_{t-k}$ after the correlation between $X\_t$ with the intermediate values $X\_{t-1} ... X\_{t-k+1}$ explained. Below we'll go through the steps required to determine partial auto correlation. 
+
+The partial correlation between $X\_t$ and $X\_{t-k}$ can be determined training two linear models.
+
+Let $\hat{X\_t}$ and $\hat{X\_{t-k}}$ be determined by a Linear Model optimized on $X\_{t-1} ... X\_{t-(k-1)} $ parameterized by $\alpha$ and $\beta$. 
+
+$$\hat{X\_t} = \alpha\_1 X\_{t-1} + \alpha\_2 X\_{t-2} ... \alpha\_{k-1} X\_{t-(k-1)}$$ 
+
+$$\hat{X\_{t-k}} = \beta\_1 X\_{t-1} + \beta\_2 X\_{t-2} ... \beta\_{k-1} X\_{t-(k-1)} $$ 
+
+The partial correlation is then defined by the Pearson's coefficient of the residuals of both predicted values $\hat{X\_t}$ and $\hat{X\_{t-k}}$.
+
+$$ PCAF(X\_t, X\_{t-k}) = corr((X\_t - \hat{X\_t}), (X\_{t-k} - \hat{X\_{t-k}})) $$
+
+### Intermezzo: Linear model
+Above we use a linear model to define the PACF. Later in this post we are also going to train an ARIMA model, which is linear. So let's quickly define a linear regression model.
+
+Linear regression is defined by:
+
+$$ y = \beta X + \epsilon $$ 
+
+Where the parameters can be find by ordinary least squares:
+
+$$ \beta = (X^TX)^{-1}X^Ty $$
+
+``` python
+def least_squares(x, y):
+    return np.linalg.inv((x.T @ x)) @ (x.T @ y)
+
+class LinearModel:
+    def __init__(self, fit_intercept=True):
+        self.fit_intercept = fit_intercept
+        self.beta = None
+        self.intercept_ = None
+        self.coef_ = None
+    
+    def _prepare_features(self, x):
+        if self.fit_intercept:
+            x = np.hstack((np.ones((x.shape[0], 1)), x))
+        return x
+    
+    def fit(self, x, y):
+        x = self._prepare_features(x)
+        self.beta = least_squares(x, y)
+        self.intercept_ = self.beta[0]
+        self.coef_ = self.beta[1:]
+        
+    def predict(self, x):
+        x = self._prepare_features(x)
+        return x @ self.beta
+    
+    def fit_predict(self, x, y):
+        self.fit(x, y)
+        return self.predict(x)
+```
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
