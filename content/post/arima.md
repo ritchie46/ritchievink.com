@@ -294,6 +294,76 @@ class LinearModel:
         self.fit(x, y)
         return self.predict(x)
 ```
+Above we have defined a scikit-learn stylish class that can perform linear regression. We train by applying the `fit` method. If we also want to train the model with an intercept, we add ones as features. This will result in a constant shift when applying $\beta X$.
+
+With the short intermezzo in place, we can finally define the partial auto correlation function and plot the results. 
+
+``` python
+def pacf(x, lag=40):
+    """
+    Partial auto correlation function.
+    
+    pacf results in:
+        [1, acf_lag_1, pacf_lag_2, pacf_lag_3]
+    :param x: (array)
+    :param lag: (int)
+    """
+    y = []
+    
+    # Partial auto correlation needs intermediate terms.
+    # Therefore we start at index 3
+    for i in range(3, lag + 2):
+        backshifted = lag_view(x, i)[0]
+
+        xt = backshifted[:, 0]
+        feat = backshifted[:, 1:-1]
+        xt_hat = LinearModel(fit_intercept=False).fit_predict(feat, xt)
+
+        xt_k = backshifted[:, -1]
+        xt_k_hat = LinearModel(fit_intercept=False).fit_predict(feat, xt_k)
+
+        y.append(pearson_correlation(xt - xt_hat, xt_k - xt_k_hat))
+    return np.array([1, acf(x, 2)[1]] +  y)
+
+def plot_pacf(x, alpha=0.05, lag=40, title=None):
+    """
+    :param x: (array)
+    :param alpha: (flt) Statistical significance for confidence interval.
+    :parm lag: (int)
+    """
+    pacf_val = pacf(x, lag)
+    plt.figure(figsize=(16, 4))
+    plt.vlines(np.arange(lag + 1), 0, pacf_val)
+    plt.scatter(np.arange(lag + 1), pacf_val, marker='o')
+    plt.xlabel('lag')
+    plt.ylabel('autocorrelation')
+    
+    # Determine confidence interval
+    ci = stats.norm.ppf(1 - alpha / 2.) * bartletts_formula(pacf_val, len(x))
+    plt.fill_between(np.arange(1, ci.shape[0] + 1), -ci, ci, alpha=0.25)
+
+plot_pacf(ar_process(eps, [0.3, -0.3, 0.5]))
+plot_pacf(ar_process(eps, [0.5, -0.1, 0.1]))
+plot_pacf(ar_process(eps, [0.2, 0.5, 0.1]))
+```
+
+{{< figure src="/img/post-18-arima/pacf-ar.png" title="The PACF for 3 AR processes."  >}}
+
+Now we see a significant cut off in after lag 3 for all 3 processes! We thus able to infer the order. The relationship between AR and MA processes and the ACF and PACF plots are one to keep in mind, as they help with inferring the order of a certain series.
+
+
+|   :) | AR(p)                  | MA(q)                  | ARMA(p, q) |
+|------|----------------------- |------------------------|------------|
+| ACF  | Tails off              | Cuts off after lag $q$ | Tails off  |
+| PACF | Cuts off after lag $p$ | Tails off              | Tails off  |
+
+In the table above we show this relationship. The **ARMA(p,q)** process is also included in this table. We haven't mentioned this process yet, but this is acutally just a combination of an **AR(p)** and an **MA(q)** series.
+
+## ARMA 
+This combination is defined as:
+
+$$ X\_t = c + \epsilon_t + \sum\_{i=1}^{p}{\phi\_i X\_{t - i}} + \sum\_{i = 1}^q{\theta\_i \epsilon\_{t-i}} $$
+
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
