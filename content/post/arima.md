@@ -406,53 +406,9 @@ The ARMA and ARIMA combination is defined as
 
 $$ X\_t = c + \epsilon_t + \sum\_{i=1}^{p}{\phi\_i X\_{t - i}} + \sum\_{i = 1}^q{\theta\_i \epsilon\_{t-i}} $$
 
-We see that the model is based on white noise terms, which we don't know as they come from a completely random process. Therefore we will use a trick for retrieving quasi-white noise terms. First, we will train five different **AR(p)** models from order 1 to 5 and then we'll take the model with the lowest [BIC score](https://en.wikipedia.org/wiki/Bayesian_information_criterion). Then we take the residuals from this model and use them as white noise values.
+We see that the model is based on white noise terms, which we don't know as they come from a completely random process. Therefore we will use a trick for retrieving quasi-white noise terms. First, we will train the **AR(p)** model and then we will take the residuals as $\epsilon\_t$ terms. With these white noise terms, we can start modelling the full **ARIMA(q, d, p)** model.
 
-``` python
-class AR(LinearModel):
-    def __init__(self, p, fit_intercept=True):
-        """
-        An AR model.
-        :param p: (int)
-        :param fit_intercept: (bool)
-        """
-        super().__init__(fit_intercept)
-        self.p = p
-        self.resid = None
-        self.variance = None
-        
-    def prepare_features(self, x):
-        features, x = lag_view(np.r_[np.zeros(self.p), x], self.p)
-        return features, x
-        
-    def fit_predict(self, x):
-        features, x = self.prepare_features(x)
-        super().fit(features, x)
-        return self.predict(x, prepared=(features, x))
-        
-    def predict(self, x, **kwargs):
-        """
-        :param x: (array)
-        :kwargs:
-            prepared: (tpl) containing the features and x
-        """
-        features, x = kwargs.get('prepared', self.prepare_features(x))
-        y = super().predict(features)
-        self.resid = x - y
-        self.variance = np.mean(self.resid**2)
-        return y
-    
-    @property
-    def bic(self):
-        n = len(self.resid)
-        return np.log(self.variance) + len(self.beta) * np.log(n) / n
-    
-    @property
-    def aic(self):
-        return np.log(self.variance) + 2 * len(self.beta) / len(self.resid)
-```
-
-For this, we define an `AR` class which inherits from `LinearModel`. Because of this inheritage, we can call the `fit` and `predict` methods from the parent. We will use an object of this `AR` class in the `ARIMA` class we'll define below.
+Below we've defined the `ARIMA` class which inherits form `LinearModel`. Because of this inheritage, we can call the `fit` and `predict` methods from the parent.
 
 ``` python
 class ARIMA(LinearModel):
@@ -463,41 +419,30 @@ class ARIMA(LinearModel):
         :param p: (int) Order of the AR model.
         :param d: (int) Number of times the data needs to be differenced.
         """
-        super().__init__(False)
+        super().__init__(True)
         self.p = p
         self.d = d
         self.q = q
+        self.ar = None
+        self.resid = None
         
     def prepare_features(self, x):
         if self.d > 0:
             x = difference(x, self.d)
-            
-        # save mean as we don't fit an intercept.
-        self.mean = x.mean()
-        x = x - self.mean
-        
+                    
         ar_features = None
         ma_features = None
         
         # Determine the features and the epsilon terms for the MA process
         if self.q > 0:
-            
-            ## Recursive estimation of mixed autoregressive-moving average order
-            # Select best AR model according to BIC and train an ARMA model on the 
-            # residuals
-            bic = []
-            for i in range(1, 5):
-                m = AR(i)
-                m.fit_predict(x)
-                bic.append(m.bic)
-
-            m = AR(np.argmin(bic) + 1)
-            m.fit_predict(x)
-            eps = m.resid
+            if self.ar is None:
+                self.ar = ARIMA(0, 0, self.p)
+                self.ar.fit_predict(x)
+            eps = self.ar.resid
             eps[0] = 0
             
             # prepend with zeros as there are no residuals_t-k in the first X_t
-            ma_features, eps_t = lag_view(np.r_[np.zeros(self.q), eps], self.q )
+            ma_features, _ = lag_view(np.r_[np.zeros(self.q), eps], self.q)
             
         # Determine the features for the AR process
         if self.p > 0:
@@ -518,16 +463,17 @@ class ARIMA(LinearModel):
         
         return features, x[:n]
     
+    def fit(self, x):
+        features, x = self.prepare_features(x)
+        super().fit(features, x)
+        return features
+            
     def fit_predict(self, x): 
         """
         Fit and transform input
         :param x: (array) with time series.
         """
-        # move eps_t to left side of the equation. 
-        # This needs to be corrected when predicting
-        features, x = self.prepare_features(x)
- 
-        super().fit(features, x)
+        features = self.fit(x)
         return self.predict(x, prepared=(features))
     
     def predict(self, x, **kwargs):
@@ -540,13 +486,39 @@ class ARIMA(LinearModel):
         if features is None:
             features, x = self.prepare_features(x)
         
-        y = super().predict(features) 
+        y = super().predict(features)
+        self.resid = x - y
+
+        return self.return_output(y)
+    
+    def return_output(self, x):
         if self.d > 0:
-            y += undo_difference(x, self.d) 
-        return y + self.mean
+            x = undo_difference(x, self.d) 
+        return x
+    
+    def forecast(self, x, n):
+        """
+        Forecast the time series.
+        
+        :param x: (array) Current time steps.
+        :param n: (int) Number of time steps in the future.
+        """
+        features, x = self.prepare_features(x)
+        y = super().predict(features)
+        
+        # Append n time steps as zeros. Because the epsilon terms are unknown
+        y = np.r_[y, np.zeros(n)]
+        for i in range(n):
+            feat = np.r_[y[-(self.p + n) + i: -n + i], np.zeros(self.q)]
+            y[x.shape[0] + i] = super().predict(feat[None, :])
+        return self.return_output(y)
 ```
 
-Now let's test the model above. We'll use some test data from [statsmodels](https://www.statsmodels.org/dev/index.html).
+Ok, let's go through this one! As I've just mentioned, the `ARIMA` class inherits from `LinearModel` so first we initiate the parent and we pass the boolean `True` so that we also fit an intercept for the model. In the `prepare_features` method, (note that this one has no \_ prefix and thus differs from the parent method) we create the features for the linear regression model. The features comprise of the lagging time steps $X\_{t-k}$ with order **q**, which is
+the **AR** part of the model, and of the lagging error terms $\epsilon\_{t-k}$, which is the **MA** part of the model. In this method we also train an **AR** model first, so that we can use the residuals of that model as error terms.
+Note that we prepend the $\epsilon$ and the $X$ with $n$ zeros, where $n$ is equal to order **q** and **p** respectively. This is done because there are no values $\epsilon\_{t-q}$ and $X\_{t-p}$ at time $X\_0$. Furthermore, we just implement some methods inspired by scikit-learn naming conventions, e.g. the `fit_predict`, `fit` and `predict` methods.
+
+We'll discuss the `forecast` method later. Let's first check how the class is doing by comparing it with [statsmodels](https://www.statsmodels.org/dev/index.html) implementation. We will also use test data coming from this library.
 
 ``` python
 data = sm.datasets.sunspots.load_pandas().data
@@ -597,11 +569,39 @@ pred_sm = results.plot_predict(ax=ax)
 
 {{< figure src="/img/post-18-arima/output-arima-sm.png" >}}
 
-As we can see in the plots above, our ARIMA model has almost the same output as the implementation of statsmodels. There are some differences though. The statsmodels implementation also determines **MA** features based on the residuals of an **AR** model, but they continue to update leading to a closer estimation.
+As we can see in the plots above, our ARIMA model has almost the same output as the implementation of statsmodels. There are some differences though. The statsmodels implementation also determines **MA** features based on the residuals of an **AR** model, but they continue to update leading to a closer estimation. How to optimize the parameters further isn't actually really clear to me. Hannan and Rissanen, described a method in 'Recursive estimation of mixed autoregressive-moving average
+order', but I haven't got access to that paper, so if anyone can refer me to that final optimization, I gladly hear from you!
+
+## Forecasting
+There is one method we haven't discussed, which is the `forecast` method. In this method we are trying to predict future values. By thinking about how we predict future values, we also see the weaknesses of this model. Because, as long as we have got labeled data points we can compute an error term $\epsilon\_t$. However when we are making predictions, we don't know the real data point $X\_{t+k}$ and therefore we cannot compute the residuals. This means that after makeing
+**q** (q being the order of the **MA** model), the **ARMA** model is only an **AR** model, as $E[\epsilon\_{t+k}] = 0$ canceling out the weights of the **MA** model. The remaining **AR** model describes how the time series responds to a shock pushing $X\_t$ from the mean value of the series.
+
+Below we make a forecast of 40 time steps and we can clearly see the models response to the latest shock by tailing of to the intercept of the trained **ARMA** model. This also shows the use case of this kind of model. It should be used for short term predictions as for long term predictions its output is just equal to the mean of the series.
+
+
+``` python
+pred = m.forecast(x, 40)
+plt.figure(figsize=(12,4))
+ax = plt.subplot(111)
+ax.plot(x[a:b])
+ax.plot(pred[a:b])
+```
+
+{{< figure src="/img/post-18-arima/forecast.png" >}}
 
 ## Last words
-What we haven't implemented is forecasting more than one day. I encourage you to look into that one yourself and investigate how an ARMA model responds to a new shock to the system over multiple time steps. With forecasting multiple time steps we don't know anything about the error term, so that one goes to zero, leaving just an **ARI** model. Finally, I wan't to conclude that not all is lost when you do have data that has seasonal patterns. There are also **SARIMA** models which
-implements an additional **ARMA** on seasonal lags.
+We've discussed the definition of **AR**, **MA** and **ARIMA** models in this post as well as the ACF and PACF. We've also come to the conclusion that these kind of models can only work with stationary data or data with a trend and that they are not suitable for long term forecasting. There is luckely an upgrade of the **ARIMA** model, called **SARIMA**. These models implement an **ARIMA** on p, d, and q and an addtional **ARIMA** on P, D, Q. The additional model works on the same
+time series, but then with a seasonal lag. For instance a seasonal lag of 4 would look like this
+
+$$ X\_{t}, X\_{t-4}, X\_{t-8} ... X\_{t-4k}$$
+
+With this extension, the model is also more suitable for longer term predictions.
+
+Do you wan't to read more algorithm breakdowns? Take a look at:
+
+* [Support Vector Machines]({{< ref "post/ScalaSVM.md" >}})
+* [Affinity propagation]({{< ref "post/affinity_propagation.md" >}})
+* [Multilayer perceptrons]({{< ref "post/mlp.md" >}})
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
