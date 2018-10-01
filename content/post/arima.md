@@ -406,7 +406,9 @@ The ARMA and ARIMA combination is defined as
 
 $$ X\_t = c + \epsilon_t + \sum\_{i=1}^{p}{\phi\_i X\_{t - i}} + \sum\_{i = 1}^q{\theta\_i \epsilon\_{t-i}} $$
 
-We see that the model is based on white noise terms, which we don't know as they come from a completely random process. Therefore we will use a trick for retrieving quasi-white noise terms. First, we will train the **AR(p)** model and then we will take the residuals as $\epsilon\_t$ terms. With these white noise terms, we can start modelling the full **ARIMA(q, d, p)** model.
+We see that the model is based on white noise terms, which we don't know as they come from a completely random process. Therefore we will use a trick for retrieving quasi-white noise terms. First, we will train the **AR(p)** model and then we will take the residuals as $\epsilon\_t$ terms. Note that this will lead in an estimation of an **ARIMA** model. We could estimate the error terms $\epsilon$ more accurate by iteratively training the **ARIMA** model and update the residuals. For
+now, we accept the quasi-white noise method. With these white noise terms, we can start modelling the full **ARIMA(q, d, p)** model.
+
 
 Below we've defined the `ARIMA` class which inherits form `LinearModel`. Because of this inheritage, we can call the `fit` and `predict` methods from the parent.
 
@@ -569,8 +571,7 @@ pred_sm = results.plot_predict(ax=ax)
 
 {{< figure src="/img/post-18-arima/output-arima-sm.png" >}}
 
-As we can see in the plots above, our ARIMA model has almost the same output as the implementation of statsmodels. There are some differences though. The statsmodels implementation also determines **MA** features based on the residuals of an **AR** model, but they continue to update leading to a closer estimation. How to optimize the parameters further isn't actually really clear to me. Hannan and Rissanen, described a method in 'Recursive estimation of mixed autoregressive-moving average
-order', but I haven't got access to that paper, so if anyone can refer me to that final optimization, I gladly hear from you!
+As we can see in the plots above, our ARIMA model has almost the same output as the implementation of statsmodels. There are some differences though. I assume these difference are present due to the fact that statsmodels keeps updating the residuals where we accepted the first residuals based on only the **AR** model.
 
 ## Forecasting
 There is one method we haven't discussed, which is the `forecast` method. In this method we are trying to predict future values. By thinking about how we predict future values, we also see the weaknesses of this model. Because, as long as we have got labeled data points we can compute an error term $\epsilon\_t$. However when we are making predictions, we don't know the real data point $X\_{t+k}$ and therefore we cannot compute the residuals. This means that after makeing
