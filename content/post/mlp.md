@@ -20,7 +20,7 @@ type: post
 
 ## Intro
 
-At the moment of writing this post it has been a few months since I've lost myself in the concept of machine learning. I have been using packages like TensorFlow, Keras and Scikit-learn to build a high conceptual understandig of the subject. I did understand intuitively what the backpropagation algorithm and the idea of minimizing costs does, but I hadn't programmed it myself. 
+At the moment of writing this post it has been a few months since I've lost myself in the concept of machine learning. I have been using packages like TensorFlow, Keras and Scikit-learn to build a high conceptual understanding of the subject. I did understand intuitively what the backpropagation algorithm and the idea of minimizing costs does, but I hadn't programmed it myself. 
 Tensorflow is regarded as quite a low level machine learning package, but it still abstracts the backpropagation algorithm for you. In order to better understand the underlying concepts I've decided to build a simple neural network without any machine learning framework. In this post I describe my implementation of a various depth multi layer perceptron in Python. We'll be only using the Numpy package for the linear algebra abstraction. 
 
 </br>
