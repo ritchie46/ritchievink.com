@@ -711,7 +711,10 @@ That is all the mathematics and code needed for the implementation of a multi la
 
 If you are interested in the complete code, [it is available on github!](https://github.com/ritchie46/vanilla-machines/blob/master/vanilla_mlp.py)
 
-[If you want to read a same kind of post about support vector machines, click here.]({{< ref "post/ScalaSVM.md" >}})
+Want to read more about machine learning algorithms?
+
+* [ARIMA (time series)]({{< ref "post/arima.md" >}})
+* [Support Vector Machines]({{< ref "post/ScalaSVM.md" >}})
 
 </br>
 

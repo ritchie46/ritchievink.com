@@ -3,6 +3,7 @@ date = "2018-05-18"
 description = ""
 tags = ["python", "machine learning", "algorithm breakdown"]
 draft = false
+keywords = ["python", "machine learning", "algorithm breakdown", "affinity propagation"]
 author = "Ritchie Vink"
 title = "Algorithm Breakdown: Affinity Propagation"
 og_image = "/img/post-14-affinity_propagation/fw.jpg"
@@ -461,7 +462,7 @@ Wan't to read more about other machine learning algorithms?
 
 * [Neural Networks]({{< ref "post/mlp.md" >}})
 * [Support Vector Machines]({{< ref "post/ScalaSVM.md" >}})
-
+* [ARIMA (time series)]({{< ref "post/arima.md" >}})
 
 
 <script type="text/x-mathjax-config">

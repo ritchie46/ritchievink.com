@@ -1,28 +1,29 @@
 +++
 date = "2018-09-26"
-description = ""
+description = "Analysis breakdown of the ARIMA model. In this post we'll define an ARIMA model with nothing else than Python and the numpy package."
 tags = ["machine learning", "python", "algorithm breakdown", "time series"]
 draft = false
+keywords =["machine learning", "python", "numpy", "arima", "time series", "moving average", "random walk", "partial", "autocorrelation"]
 author = "Ritchie Vink"
-title = "Algorithm Breakdown: AR, MA and ARIMA models."
+title = "Algorithm Breakdown: AR, MA and ARIMA models"
 og_image = "/img/post-18-arima/random-walk.png"
 +++
 
 {{< figure src="/img/post-18-arima/random-walk.png" >}}
 
-Time series are a quite unique topic within machine learning. In a lot of problems the dependent variable $y$, i.e. the thing we want to predict is dependent on very clear inputs, such as pixels of an image, words in a sentence, properties of a persons buying behavior, etc. In time series these indepent variables are often not known. For instance, in stock markets, we don't have a clear independent
+Time series are a quite unique topic within machine learning. In a lot of problems the dependent variable $y$, i.e. the thing we want to predict is dependent on very clear inputs, such as pixels of an image, words in a sentence, the properties of a persons buying behavior, etc. In time series these indepent variables are often not known. For instance, in stock markets, we don't have a clear independent
 set of variables where we can fit a model on. Are stock markets dependent on the properties of a company, or the properties of a country, or are they dependent on the sentiment in the news? Surely we can try to find a relation between those independent variables and stock market results, and maybe we are able to find some good models that map those relations. Point is that those relations are not very clear, nor is the independent data easily obtainable.
 
 A common approach to model time series is to regard the label at current time step $X\_{t}$ as a variable dependent on previous time steps $X\_{t-k}$. We thus analyze the time series on nothing more than the time series. 
 
-One of the most used models when handling time series are ARIMA models. In this post, we'll explore how these models are defined and we are going to develop such a model in Python with nothing else but the numpy and the scipy package.
+One of the most used models when handling time series are ARIMA models. In this post, we'll explore how these models are defined and we are going to develop such a model in Python with nothing else but the numpy package.
 
 ## Stochastic series
 ARIMA models are actually a combination of two, (or three if you count differencing as a model) processes that are able to generate series data. Those two models are based on an Auto Regressive (AR) process and a Moving Average process. Both AR and MA processes are stochastic processes. Stochastic means that the values come from a random probability distribution, which can be analyzed statistically but may not be predicted precisely. In other words, both processes have some
 uncertainty. 
 
 ## White noise
-Let's look at a very simple stochastic process called white noise. White noise can be drawn from many kinds of distributions, here we draw from a univariate Gaussian.
+Let's look at a very simple stochastic process called white noise. White noise can be drawn from many kinds of distributions. Here we draw from an univariate Gaussian.
 
 $$ \epsilon \sim N(0, 1) $$
 
@@ -41,7 +42,8 @@ sns.distplot(eps, ax=ax[1])
 ```
 
 {{< figure src="/img/post-18-arima/white-noise.png" title="White noise signal." >}}
-This process is completely random, though we are able to infer some properties from this series. By making a plot of the distribution we can assume that these variable come from a single normal distribution with zero mean and unit variance. Our best guess for any new variables value would be 0. A better model for this process doesn't exist as every new draw from the distribution is completely random and independent of the previous values. White noise is actually something we want
+
+This process is completely random, though we are able to infer some properties from this series. By making a plot of the distribution we can assume that these variables come from a single normal distribution with zero mean and unit variance. Our best guess for any new variables value would be the value 0. A better model for this process doesn't exist as every new draw from the distribution is completely random and independent of the previous values. White noise is actually something we want
 to see on the residuals after we've defined a model. If the residuals follow a white noise pattern, we can be certain that we've declared all the possible variance.
 
 ## MA process
@@ -85,7 +87,7 @@ array([[0, 1, 2],
        [6, 7, 8]])
 ```
 
-Now we are able to easily take a look at different lags back in time, let's simulate 3 different MA processes with order $q=1$, $q=6$ and $q=11$.
+Now we are able to easily take a look at different lags back in time. Let's simulate three different MA processes with order $q=1$, $q=6$, and $q=11$.
 
 ``` python
 def ma_process(eps, theta):
@@ -112,15 +114,14 @@ for i in range(0, 11, 5):
 
 {{< figure src="/img/post-18-arima/ma-signal.png" title="MA processes from different orders." >}}
 
-Note that I've chosen positive values for $\theta$ which isn't required. An MA process can have both positive and negative values for $\theta$. In the plots above can be seen that when the order of **MA(q)** continues the values are longer correlated with previous values. Actually, because the process is a weighted average of the $\epsilon$ values until lag $q$, the correlation drops after this lag. Based on this property we can make an educated guess on the which order an **MA(q)**
-process is. This is great because it is very hard to infer the order by looking at the plots directly. 
+Note that I've chosen positive values for $\theta$ which isn't required. An MA process can have both positive and negative values for $\theta$. In the plots above can be seen that when the order of **MA(q)** increases, the values are longer correlated with previous values. Actually, because the process is a weighted average of the $\epsilon$ values until lag $q$, the correlation drops after this lag. Based on this property we can make an educated guess on about order of an **MA(q)** process. This is great because it is very hard to infer the order by looking at the plots directly. 
 
 ## Autocorrelation
 When a value $X\_t$ is correlated with a previous value $X\_{t-k}$, this is called autocorrelation. The autocorrelation function is defined as:
 
 $$ACF(X\_t, X\_{t-k}) = \frac{E[(X\_t - \mu\_t)(X\_{t-k} - \mu\_{t-k})]}{\sigma\_t \sigma\_{t-k}}$$
 
-Numerically we can approximate it by determining the correlation between different arrays, namely $X\_t$ and array $X\_{t-k}$. By doing so we do need to truncate both arrays by $k$ elements in order to maintain equal length.
+Numerically we can approximate it by determining the correlation between different arrays, namely $X\_t$ and array $X\_{t-k}$. By doing so, we do need to truncate both arrays by $k$ elements in order to maintain an equal length.
 
 ``` python
 def pearson_correlation(x, y):
@@ -145,7 +146,7 @@ Above we have created an **MA(1)** and an **MA(2)** process with different weigh
 * MA(1): [1]
 * MA(2): [0.2, -0.3, 0.8]
 
-Below we apply the acf function on both series and then we plot the result of both acf functions. We've also defined a helper function `bartletts_formula` which we use as a null hypothesis to determine if the correlation coefficients we've found are significant and not a statistical fluke. With this function, we determine a confidence interval $CI$.
+Below we apply the ACF on both series and we plot the result of both applied functions. We've also defined a helper function `bartletts_formula` which we use as a null hypothesis to determine if the correlation coefficients we've found are significant and not a statistical fluke. With this function, we determine a confidence interval $CI$.
 
 $$CI = \pm z\_{1-\alpha/2} \sqrt{\frac{1+2 \sum\_{1 < i< h-1 }^{h-1}r^2\_i}{N}} $$
 
@@ -189,7 +190,7 @@ for array in [ma_1, ma_2]:
 
 {{< figure src="/img/post-18-arima/acf.png" >}}
 
-As we mentioned earlier, these plots help us infer the order of the **MA(q)** model. In both plots we can see a clear cut off in significant values. Both plots start with an autocorrelation of 1. This is the autocorrelation at lag 0. The second value is the autocorrelation at lag 1 etc. The first plot the cut off is after 1 lag and in the second plot the cut off is at lag 3. So in our artificial data set we are able to determine the order of different **MA(q)** models by looking
+As we mentioned earlier, these plots help us infer the order of the **MA(q)** model. In both plots we can see a clear cut off in significant values. Both plots start with an autocorrelation of 1. This is the autocorrelation at lag 0. The second value is the autocorrelation at lag 1, the third at lag 2, etc. The first plot, the cut off is after 1 lag and in the second plot the cut off is at lag 3. So in our artificial data set we are able to determine the order of different **MA(q)** models by looking
 at the ACF plot!
 
 ## AR process
@@ -241,9 +242,9 @@ another function for inferring the order of the process.
 ## Partial autocorrelation
 The partial autocorrelation function shows the autocorrelation of value $X\_t$ and $X\_{t-k}$ after the correlation between $X\_t$ with the intermediate values $X\_{t-1} ... X\_{t-k+1}$ explained. Below we'll go through the steps required to determine partial autocorrelation. 
 
-The partial correlation between $X\_t$ and $X\_{t-k}$ can be determined training two linear models.
+The partial correlation between $X\_t$ and $X\_{t-k}$ can be determined by training two linear models.
 
-Let $\hat{X\_t}$ and $\hat{X\_{t-k}}$ be determined by a Linear Model optimized on $X\_{t-1} ... X\_{t-(k-1)} $ parameterized by $\alpha$ and $\beta$. 
+Let $\hat{X\_t}$ and $\hat{X\_{t-k}}$ be determined by a Linear Model optimized on $X\_{t-1} ... X\_{t-(k-1)} $ and parameterized by $\alpha$ and $\beta$. 
 
 $$\hat{X\_t} = \alpha\_1 X\_{t-1} + \alpha\_2 X\_{t-2} ... \alpha\_{k-1} X\_{t-(k-1)}$$ 
 
@@ -297,7 +298,7 @@ class LinearModel:
         self.fit(x, y)
         return self.predict(x)
 ```
-Above we have defined a scikit-learn stylish class that can perform linear regression. We train by applying the `fit` method. If we also want to train the model with an intercept, we add ones as features. This will result in a constant shift when applying $\beta X$.
+Above we have defined a scikit-learn stylish class that can perform linear regression. We train by applying the `fit` method. If we also want to train the model with an intercept, we add ones to the feature matrix. This will result in a constant shift when applying $\beta X$.
 
 With the short intermezzo in place, we can finally define the partial autocorrelation function and plot the results. 
 
@@ -352,7 +353,7 @@ plot_pacf(ar_process(eps, [0.2, 0.5, 0.1]))
 
 {{< figure src="/img/post-18-arima/pacf-ar.png" title="The PACF for 3 AR processes."  >}}
 
-Now we see a significant cut off in after lag 3 for all 3 processes! We thus able to infer the order. The relationship between AR and MA processes and the ACF and PACF plots are one to keep in mind, as they help with inferring the order of a certain series.
+Now we see a significant cut off at lag 3 for all 3 processes! We thus are able to infer the order of the processes. The relationship between AR and MA processes and the ACF and PACF plots are one to keep in mind, as they help with inferring the order of a certain series.
 
 
 |   :) | AR(p)                  | MA(q)                  | ARMA(p, q) |
@@ -365,9 +366,10 @@ In the table above we show this relationship. The **ARMA(p,q)** process is also 
 Before we go into this combination of AR and MA processes. We'll go through one last definition, which is Integrated (the I in ARIMA). With that, we've touched all the parts of an ARIMA model.
 
 ## Stationary
-An ARMA model requires the data to be stationary, which an ARIMA model does not. A stationary series has a constant mean and a constant variance over time. For the white noise, AR and MA processes we've defined above, this requirement holds, but for a lot of real-world data this does not. ARIMA models can work with data that isn't stationary but has got a trend. For time series that also have recurring patterns (seasonality), ARIMA models don't work. 
+An ARMA model requires the data to be stationary, which an ARIMA model does not. A stationary series has a constant mean and a constant variance over time. For the white noise, AR and MA processes we've defined above, this requirement holds, but for a lot of real-world data this does not. ARIMA models can work with data that isn't stationary, but instead has got a trend. For time series that also have recurring patterns (seasonality), ARIMA models don't work. 
 
-When the data shows a trend, we can remove the data by differencing time step $X\_t$ with $X\_{t-1}$. We can difference **n** times until the data is stationary. We can test stationarity with a Dicker Fuller test, but that is beyond the scope of this post.
+
+When the data shows a trend, we can remove the trend by differencing time step $X\_t$ with $X\_{t-1}$. We can difference **n** times until the data is stationary. We can test stationarity with a Dicker Fuller test. How that is done is beyond the scope of this post.
 
 We can difference a time series by
 
@@ -396,7 +398,7 @@ def undo_difference(x, d=1):
 ```
 
 ## ARIMA
-Ok, finally we have touched (and implemented) all topics we need for defining an ARIMA model. Such a model has hyperparameters p, q and, d.
+Ok, finally we have discussed (and implemented) all topics we need for defining an ARIMA model. Such a model has hyperparameters p, q and, d.
 
 * p is the order of the AR model
 * q is the order of the MA model
@@ -406,11 +408,11 @@ The ARMA and ARIMA combination is defined as
 
 $$ X\_t = c + \epsilon_t + \sum\_{i=1}^{p}{\phi\_i X\_{t - i}} + \sum\_{i = 1}^q{\theta\_i \epsilon\_{t-i}} $$
 
-We see that the model is based on white noise terms, which we don't know as they come from a completely random process. Therefore we will use a trick for retrieving quasi-white noise terms. First, we will train the **AR(p)** model and then we will take the residuals as $\epsilon\_t$ terms. Note that this will lead in an estimation of an **ARIMA** model. We could estimate the error terms $\epsilon$ more accurate by iteratively training the **ARIMA** model and update the residuals. For
-now, we accept the quasi-white noise method. With these white noise terms, we can start modelling the full **ARIMA(q, d, p)** model.
+We see that the model is based on white noise terms, which we don't know as they come from a completely random process. Therefore we will use a trick for retrieving quasi-white noise terms. First, we will train the **AR(p)** model and then we will take the residuals as $\epsilon\_t$ terms. Note that this will lead to an estimation of an **ARIMA** model. We could estimate the error terms $\epsilon$ more accurate by iteratively training the **ARIMA** model whilst updating the residuals every iteration. For
+now, we'll accept the quasi-white noise method. With these white noise terms, we can start modelling the full **ARIMA(q, d, p)** model.
 
 
-Below we've defined the `ARIMA` class which inherits form `LinearModel`. Because of this inheritage, we can call the `fit` and `predict` methods from the parent.
+Below we've defined the `ARIMA` class which inherits from `LinearModel`. Because of this inheritage, we can call the `fit` and `predict` methods from the parent with the `super` function.
 
 ``` python
 class ARIMA(LinearModel):
@@ -520,7 +522,7 @@ Ok, let's go through this one! As I've just mentioned, the `ARIMA` class inherit
 the **AR** part of the model, and of the lagging error terms $\epsilon\_{t-k}$, which is the **MA** part of the model. In this method we also train an **AR** model first, so that we can use the residuals of that model as error terms.
 Note that we prepend the $\epsilon$ and the $X$ with $n$ zeros, where $n$ is equal to order **q** and **p** respectively. This is done because there are no values $\epsilon\_{t-q}$ and $X\_{t-p}$ at time $X\_0$. Furthermore, we just implement some methods inspired by scikit-learn naming conventions, e.g. the `fit_predict`, `fit` and `predict` methods.
 
-We'll discuss the `forecast` method later. Let's first check how the class is doing by comparing it with [statsmodels](https://www.statsmodels.org/dev/index.html) implementation. We will also use test data coming from this library.
+We'll discuss the `forecast` method later. Let's first check how an object of the class is doing by comparing it with [statsmodels](https://www.statsmodels.org/dev/index.html) implementation. We will also use test data coming from this library.
 
 ``` python
 data = sm.datasets.sunspots.load_pandas().data
@@ -532,7 +534,7 @@ plt.plot(x)
 ```
 {{< figure src="/img/post-18-arima/sunspots.png" >}}
 
-By the look of this data, it seems stationary. The mean and the variance don't seem to be changing over time, so we can infer the first hyperparameter for this model. We don't need to difference so **p** is set to 0.
+By the look of this data, it seems stationary. The mean and the variance don't seem to be changing over time, so we can infer the first hyperparameter for this model. We don't need to difference so **d** is set to 0.
 Let's make an ACF and a PACF plot.
 
 ``` python
@@ -571,27 +573,27 @@ pred_sm = results.plot_predict(ax=ax)
 
 {{< figure src="/img/post-18-arima/output-arima-sm.png" >}}
 
-As we can see in the plots above, our ARIMA model has almost the same output as the implementation of statsmodels. There are some differences though. I assume these difference are present due to the fact that statsmodels keeps updating the residuals where we accepted the first residuals based on only the **AR** model.
+As we can see in the plots above, our ARIMA model has almost the same output as the implementation of statsmodels. There are some differences though. I assume these differences are present due to the fact that statsmodels keeps updating the residuals where we accepted the first residuals based on only the **AR** model.
 
 ## Forecasting
-There is one method we haven't discussed, which is the `forecast` method. In this method we are trying to predict future values. By thinking about how we predict future values, we also see the weaknesses of this model. Because, as long as we have got labeled data points we can compute an error term $\epsilon\_t$. However when we are making predictions, we don't know the real data point $X\_{t+k}$ and therefore we cannot compute the residuals. This means that after makeing
-**q** (q being the order of the **MA** model), the **ARMA** model is only an **AR** model, as $E[\epsilon\_{t+k}] = 0$ canceling out the weights of the **MA** model. The remaining **AR** model describes how the time series responds to a shock pushing $X\_t$ from the mean value of the series.
+There is one method we haven't discussed, which is the `forecast` method. In this method we are trying to predict future values. By thinking about how we predict future values, we also see the weaknesses of this model. Because, as long as we have got labeled data points we can compute an error term $\epsilon\_t$. However when we are making predictions, we don't know the real data point $X\_{t+k}$ and therefore we cannot compute the residuals. This means that after making
+**q** (q being the order of the **MA** model) predictions, the **ARMA** model is only an **AR** model, as $E[\epsilon\_{t+k}] = 0$ canceling out the weights of the **MA** model. The remaining **AR** model describes how the time series responds to a shock pushing $X\_t$ from the mean value of the series.
 
-Below we make a forecast of 40 time steps and we can clearly see the models response to the latest shock by tailing of to the intercept of the trained **ARMA** model. This also shows the use case of this kind of model. It should be used for short term predictions as for long term predictions its output is just equal to the mean of the series.
+Below we make a forecast of 40 time steps and we can clearly see the models response to the latest shock by tailing of to the mean of the series. This also shows the use case of this kind of model. It should be used for short term predictions. For long term predictions its output is just equal to the mean of the series.
 
 
 ``` python
 pred = m.forecast(x, 40)
 plt.figure(figsize=(12,4))
 ax = plt.subplot(111)
-ax.plot(x[a:b])
-ax.plot(pred[a:b])
+ax.plot(x)
+ax.plot(pred)
 ```
 
-{{< figure src="/img/post-18-arima/forecast.png" >}}
+{{< figure src="/img/post-18-arima/forecast.png" title="Forecasting with an ARMA model" >}}
 
 ## Last words
-We've discussed the definition of **AR**, **MA** and **ARIMA** models in this post as well as the ACF and PACF. We've also come to the conclusion that these kind of models can only work with stationary data or data with a trend and that they are not suitable for long term forecasting. There is luckely an upgrade of the **ARIMA** model, called **SARIMA**. These models implement an **ARIMA** on p, d, and q and an addtional **ARIMA** on P, D, Q. The additional model works on the same
+We've discussed the definition of **AR**, **MA**, and **ARIMA** models in this post as well as the ACF and PACF. We've also come to the conclusion that these kind of models can only work with stationary data or data with a trend and that they are not suitable for long term forecasting. There is luckely an upgrade of the **ARIMA** model, called **SARIMA**. These models implement an **ARIMA** on p, d, and q and an addtional **ARIMA** on P, D, Q. The additional model works on the same
 time series, but then with a seasonal lag. For instance a seasonal lag of 4 would look like this
 
 $$ X\_{t}, X\_{t-4}, X\_{t-8} ... X\_{t-4k}$$
