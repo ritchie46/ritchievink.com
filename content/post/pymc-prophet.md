@@ -1,11 +1,11 @@
 +++
-date = "2018-10-07"
+date = "2018-10-09"
 description = "Analysis breakdown of the Facebooks prophet model. In this post we implement prophet in PyMC3."
 tags = ["machine learning", "python", "algorithm breakdown", "time series", "pymc3"]
-draft = true
+draft = false
 keywords =["machine learning", "python", "numpy", "arima", "time series", "prophet", "facebook"]
 author = "Ritchie Vink"
-title = "Rebuild Facebook's prophet in PyMC3; Bayesian time series analyis with generalized additive models"
+title = "Build Facebook's Prophet in PyMC3; Bayesian time series analyis with Generalized Additive Models"
 og_image = "/img/post-19-prophet/head.png"
 +++
 
@@ -544,7 +544,7 @@ plt.fill_between(date, quant[0, :], quant[1, :], alpha=0.25)
 Above we see the result of 1000 samples. Due to the flexibility of the hyperprior $\tau$ the model was able to fit the data very well. However by doing so the variance of the changepoints adjustments $\delta$ is quite high, resulting in wide uncertainty bands.
 
 ## Final words
-The last model we set a hyperprior on $\tau$. If we don't set this hyperprior and instead and use the `changepoint\_scale\_prior = 0.05` we get exactly the same results as Facebook Prophet gets in their Quick Start tutorial. The Prophet implementation comes with more features than we discussed in this post. Their implementation also has an option to model recurring events, (they call them holidays). With the base of this model ready, it is fairly easy to add another linear model that is dependent on other
+The last model we set a hyperprior on $\tau$. If we don't set this hyperprior and instead and use the `changepoint_scale_prior = 0.05` we get exactly the same results as Facebook Prophet gets in their Quick Start tutorial. The Prophet implementation comes with more features than we discussed in this post. Their implementation also has an option to model recurring events, (they call them holidays). With the base of this model ready, it is fairly easy to add another linear model that is dependent on other
 predictors like the weather. Facebook writes in the introduction of their paper, that Prophet is a good plug and play library for business analysts to do time series analysis. Besides that, it is a very good Bayesian base model to further implement while modeling time series.
 
 Want to read more Algorithm Breakdowns?
