@@ -40,7 +40,7 @@ The mathematics of a single layer are the same for every layer. This means that 
 
 If we look at this first layer, it has got a certain input vector <span>\\( \vec{x} \\)</span> representing the data. This data is multiplied with the weights <span>\\( \vec{w} \\)</span> and shifted over <span>\\( \vec{b} \\)</span>. The output is: 
 
-<div>$$ \sum{\vec{x} \odot \vec{w} + \vec{b}} = z \tag{1.1.0} $$</div>
+<div class="formula-wrap">$$ \sum{\vec{x} \odot \vec{w} + \vec{b}} = z \tag{1.1.0} $$</div>
 
 Note that <span>\\( \odot \\)</span> means the Hadamard product and is just elementwise multiplication. If we would make this visual in vector or neuron form it would look something like this.
 
@@ -52,7 +52,7 @@ The figures above show the connection of three input nodes to one node of a hidd
 
 Note that we can also replace the bias vector with one bias scalar. By doing so we can use the dot product of the weights and the activations of the previous layer <span>\\( x \\)</span>.
 
-<div>$$ \vec{x} \cdot \vec{w_1} + b_1 = z \tag{1.1.1} $$</div>
+<div class="formula-wrap">$$ \vec{x} \cdot \vec{w_1} + b_1 = z \tag{1.1.1} $$</div>
 
 </br>
 
@@ -61,7 +61,7 @@ As discussed above figure 1 shows a network that consists of inputs. The input v
 
 A concatenation of multiple linear functions can thus be replaced by one linear function and isn't beneficial to the model. To give the second layer any purpose the output of the first layer <span>\\( z \\)</span> is multiplied with a non linear function <span>\\( f(x) \\)</span> resulting in:
 
-<div>$$ f(\vec{x} \cdot \vec{w^{(1)}} + b^{(1)}) = a^{(2)} \tag{1.2.0} $$</div>
+<div class="formula-wrap">$$ f(\vec{x} \cdot \vec{w^{(1)}} + b^{(1)}) = a^{(2)} \tag{1.2.0} $$</div>
 
 The final output a<sup>(2)</sup> is called the activation of the neuron. In this case we use the supercript 2, as it is the activation of the node in the second layer. 
 
@@ -69,13 +69,13 @@ The non linear functions we are going to use are the Relu function and the Sigmo
 
 Relu function:
 
-<div>$$ f(x) = max(0, x) \tag{1.2.1}$$</div>
+<div class="formula-wrap">$$ f(x) = max(0, x) \tag{1.2.1}$$</div>
 
 <div style="text-align:center">{{< figure src="/img/post-9-mlp/relu.png">}}</div>
 
 Sigmoid function:
 
-<div>$$ f(x) = \frac{1}{1 + e^{-x}} \tag{1.2.2} $$</div>
+<div class="formula-wrap">$$ f(x) = \frac{1}{1 + e^{-x}} \tag{1.2.2} $$</div>
 
 <div style="text-align:center">{{< figure src="/img/post-9-mlp/sigmoid.png">}}</div>
 
@@ -193,8 +193,8 @@ Activation classes:
 ## 1.3 Feeding forward
 Now we are going to implement the forward pass. The forward pass is how the network generates output. The inputs that are fed into the network are multiplied with the weights and shifted along the biases of every layer (if they pass through the Relu function) and finaly they pass the sigmoid function resulting in an output between 0 and 1. The mathematics of the forward pass are the same for every layer. The only variable is the activation function <span>\\( f(x) \\)</span>.
 
-<div>$$ \vec{a_(i - 1)} \cdot \vec{w_i} + b_i = z_i \tag{1.3.0} $$</div>
-<div>$$ f(z_i) = a_i \tag{1.3.1} $$</div>
+<div class="formula-wrap">$$ \vec{a_(i - 1)} \cdot \vec{w_i} + b_i = z_i \tag{1.3.0} $$</div>
+<div class="formula-wrap">$$ f(z_i) = a_i \tag{1.3.1} $$</div>
 
 However algorithmicly we have abstracted the activation function with activation classes. All the activation classes have got the method `.activation()`. This means that we can loop over all the layers doing the same mathematical operation. Finally we call the varying activation function with the `.activation()` method. We add a `._feed_forward()` method to the `Network` class.
 
@@ -264,7 +264,7 @@ Well, that's nice. We now have created a neural network that can produce outputs
 ### 2.1 Loss function
 The network should be able to learn and optimize its inner state. This is done by minimizing a loss function. A loss function describes the rate of error of the predictive power of a neural network. We define a loss function that gives high error rates when the model is very bad at predictions and low error rates when the model gives good predictions. The loss function we define is dependent of the weights and biases of the model. We can tweak the weights and the biases in such a way the output of loss function declines, minimizing the loss function and maximizing the predictive power of the neural network. As a lost function (J) we use the squared error loss.
 
-<div>$$ J = \sum{\frac{1}{2}(y - \hat{y})^2} \tag{2.1.0} $$</div>
+<div class="formula-wrap">$$ J = \sum{\frac{1}{2}(y - \hat{y})^2} \tag{2.1.0} $$</div>
 
 Where <span>\\( y \\)</span> is the neural networks prediction and <span>\\( \hat{y} \\)</span> is the ground truth label, the real world observation. 
 
@@ -281,7 +281,7 @@ We can go in this opposite direction by reducing the value <span> \\( w_i \\) </
 ### Chain rule
 To determine the partial derivative of J with respect to a certain weight, we need to apply the [chain rule in differentiation](https://en.wikipedia.org/wiki/Chain_rule), meaning we can break the problem down in subsequent multiplications of derivatives. The chain rule is noted as:
 
-<div>$$ \frac{dz}{dx} = \frac{dz}{dy} \cdot \frac{dy}{dx} \tag{2.1.1}$$</div>
+<div class="formula-wrap">$$ \frac{dz}{dx} = \frac{dz}{dy} \cdot \frac{dy}{dx} \tag{2.1.1}$$</div>
 
 And because of the [sum rule in differentiation](https://en.wikipedia.org/wiki/Sum_rule_in_differentiation) we can also say that the derivative of the sum is equal to the sum of the derivates, therefore we can lose the sum sign in the loss function and determine the derivative of a single weight. 
 
@@ -297,11 +297,11 @@ In the following part we are going to walk through the derivation of the partial
 
 So let's start with the derivative of a weight in layer 2, <span>\\( w^{(2)} \\)</span>. If we apply the chain rule upon <span>\\( w^{(2)} \\)</span>, we derive:
 
-<div>$$ \frac{\partial{J}}{\partial{w^{(2)}}} = \frac{\partial{J}}{\partial{y}} \cdot \frac{\partial{y}}{\partial{z^{(3)}}} \cdot \frac{\partial{z^{(3)}}}{\partial{w^{(2)}}} \tag{2.2.0} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(2)}}} = \frac{\partial{J}}{\partial{y}} \cdot \frac{\partial{y}}{\partial{z^{(3)}}} \cdot \frac{\partial{z^{(3)}}}{\partial{w^{(2)}}} \tag{2.2.0} $$</div>
 
 We are grouping the first two derivatives of the formula above in a new variable <span>\\( \delta^{(L)} \\)</span> where the superscript L means 'Last layer'.
 
-<div>$$ \delta^{(L)} = \frac{\partial{J}}{\partial{y}} \cdot \frac{\partial{y}}{\partial{z^{(3)}}} \tag{2.2.1} $$</div>
+<div class="formula-wrap">$$ \delta^{(L)} = \frac{\partial{J}}{\partial{y}} \cdot \frac{\partial{y}}{\partial{z^{(3)}}} \tag{2.2.1} $$</div>
 
 
 Breaking apart the two derivates that make up <span>\\( \delta^{(L)} \\)</span> we find:
@@ -313,13 +313,13 @@ Breaking apart the two derivates that make up <span>\\( \delta^{(L)} \\)</span> 
 
 ##### Derivative of the loss function
 
-<div>$$ J = \frac{1}{2}(y - \hat{y})^2 \tag{2.2.2} $$</div>
-<div>$$ \frac{\partial{J}}{\partial{y}} = y - \hat{y} \tag{2.2.3} $$</div>
+<div class="formula-wrap">$$ J = \frac{1}{2}(y - \hat{y})^2 \tag{2.2.2} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{y}} = y - \hat{y} \tag{2.2.3} $$</div>
 
 ##### Derivative of the sigmoid function
 
-<div>$$ \sigma(z) = \frac{1}{1 + e^{-z}} \tag{2.2.4} $$</div>
-<div>$$ \frac{\partial{\sigma}}{\partial{z}} =  \sigma(z) \cdot (1 - \sigma(z)) \tag{2.2.5} $$</div>
+<div class="formula-wrap">$$ \sigma(z) = \frac{1}{1 + e^{-z}} \tag{2.2.4} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{\sigma}}{\partial{z}} =  \sigma(z) \cdot (1 - \sigma(z)) \tag{2.2.5} $$</div>
 
 </br>
 
@@ -375,15 +375,15 @@ class MSE:
 
 The last derivative we need is <span>\\( \frac{\partial{z^{(3)}}}{\partial{w^{(2)}}} \\)</span>. The derivative of the output of
 
-<div>$$ z^{(3)}(a^{(2)}) = a^{(2)} \cdot w^{(2)} + b^{(2)}  \tag{2.2.6}$$</div>
-<div>$$ \frac{\partial{z^{(3)}}}{\partial{w^{(2)}}} = a^{(2)} \tag{2.2.7} $$</div>
+<div class="formula-wrap">$$ z^{(3)}(a^{(2)}) = a^{(2)} \cdot w^{(2)} + b^{(2)}  \tag{2.2.6}$$</div>
+<div class="formula-wrap">$$ \frac{\partial{z^{(3)}}}{\partial{w^{(2)}}} = a^{(2)} \tag{2.2.7} $$</div>
 
 
 ##### Conclusion weights layer 2
 
 Summing it all up we can conclude that we can define the partial derivative of the loss function with respect to <span>\\( w^{(2)} \\)</span> as the product of the <span>\\( \delta^{(L)} \\)</span> and the activations of the layer before the weights (i - 1).
 
-<div>$$ \frac{\partial{J}}{\partial{w^{(2)}}} = \delta^{(L)} \cdot a^{(2)} \tag{2.2.8} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(2)}}} = \delta^{(L)} \cdot a^{(2)} \tag{2.2.8} $$</div>
 
 </br>
 
@@ -391,18 +391,18 @@ Summing it all up we can conclude that we can define the partial derivative of t
 
 For the weights in the first layer we can start with the chain rule right where we left off with <span>\\( \delta^{(L)} \\)</span>.
 
-<div>$$ \frac{\partial{J}}{\partial{w^{(1)}}} = \delta^{(L)} \cdot \frac{\partial{z^{(3)}}}{\partial{a^{(2)}}} \cdot \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}}  \cdot \frac{\partial{z^{(2)}}}{\partial{w^{(1)}}}  \tag{2.3.0} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(1)}}} = \delta^{(L)} \cdot \frac{\partial{z^{(3)}}}{\partial{a^{(2)}}} \cdot \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}}  \cdot \frac{\partial{z^{(2)}}}{\partial{w^{(1)}}}  \tag{2.3.0} $$</div>
 
 </br>
 ##### Backpropagating error
 For this layer we can also determine a backpropagating error <span>\\( \delta^{(2)} \\)</span>. By doing so we'll find a repetitive pattern regarding the previous layer. The backpropagation error <span>\\( \delta \\)</span> is equal to the outcome of all the products of the chain rule except the last.
 
-<div>$$ \delta^{(2)} =  \delta^{(L)} \cdot \frac{\partial{z^{(3)}}}{\partial{a^{(2)}}} \cdot \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}}  \tag{2.3.1} $$</div>
+<div class="formula-wrap">$$ \delta^{(2)} =  \delta^{(L)} \cdot \frac{\partial{z^{(3)}}}{\partial{a^{(2)}}} \cdot \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}}  \tag{2.3.1} $$</div>
 
 ##### Derivative of the z function
 For the derivate of <span>\\( z^{(3)} \\)</span> with respect to the activations of the second layer we find:
-<div>$$ z^{(3)}(a^{(2)}) = a^{(2)} \cdot w^{(2)} + b^{(2)} \tag{2.3.2} $$</div>
-<div>$$ \frac{\partial{z^{(3)}}}{\partial{a^{(2)}}} =  w^{(2)} \tag{2.3.3} $$</div>
+<div class="formula-wrap">$$ z^{(3)}(a^{(2)}) = a^{(2)} \cdot w^{(2)} + b^{(2)} \tag{2.3.2} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{z^{(3)}}}{\partial{a^{(2)}}} =  w^{(2)} \tag{2.3.3} $$</div>
 
 
 ##### Derivative of the activation function
@@ -410,30 +410,30 @@ And for the derivate of <span>\\( a^{(2)} \\)</span> we need to determine the pr
 
 This derivative is zero for any negative value and one for any positive value. 
 
-<div>$$  (a^{(2)} > 0)  \quad \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}} = 1 \tag{2.3.4} $$</div>
-<div>$$  (a^{(2)} <= 0)  \quad \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}} = 0 \tag{2.3.5} $$</div>
+<div class="formula-wrap">$$  (a^{(2)} > 0)  \quad \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}} = 1 \tag{2.3.4} $$</div>
+<div class="formula-wrap">$$  (a^{(2)} <= 0)  \quad \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}} = 0 \tag{2.3.5} $$</div>
 
 For simplicity we'll just note this as:
 
-<div>$$ \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}} = f'^{(2)}(z^{(2)}) \tag{2.3.6} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}} = f'^{(2)}(z^{(2)}) \tag{2.3.6} $$</div>
 
 Resulting in <span>\\( \delta^{(2)} \\)</span> being:
-<div>$$ \delta^{(2)} =  \delta^{(L)} \cdot w^{(2)} \cdot f'^{(2)}(z^{(2)}) \tag{2.3.7} $$</div>
+<div class="formula-wrap">$$ \delta^{(2)} =  \delta^{(L)} \cdot w^{(2)} \cdot f'^{(2)}(z^{(2)}) \tag{2.3.7} $$</div>
 
 By substituting **eq. (2.3.7)**  in **eq. (2.3.0)** we'll find:
 
-<div>$$ \frac{\partial{J}}{\partial{w^{(1)}}} = \delta^{(2)} \cdot \frac{\partial{z^{(2)}}}{\partial{w^{(1)}}} \tag{2.3.8} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(1)}}} = \delta^{(2)} \cdot \frac{\partial{z^{(2)}}}{\partial{w^{(1)}}} \tag{2.3.8} $$</div>
 
 In the equation above we only need to solve the last term.
 
-<div>$$ z^{(2)}(w^{(1)}) = x \cdot w^{(1)} + b^{(1)} \tag{2.3.9} $$</div>
-<div>$$ \frac{\partial{z^{(2)}}}{\partial{w^{(1)}}}  = x = a^{(1)} \tag{2.3.10} $$</div>
+<div class="formula-wrap">$$ z^{(2)}(w^{(1)}) = x \cdot w^{(1)} + b^{(1)} \tag{2.3.9} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{z^{(2)}}}{\partial{w^{(1)}}}  = x = a^{(1)} \tag{2.3.10} $$</div>
 
 ##### Conclusion weights layer 1
 
 Just as we did for the weights in layer 2 we can define the partial derivative of the loss function with respect to <span>\\( w^{(1)} \\)</span> as the product of a backpropagating error <span>\\( \delta \\)</span> and the activations of the layer before the weights (i - 1).
 
-<div>$$ \frac{\partial{J}}{\partial{w^{(1)}}} = \delta^{(2)} \cdot a^{(1)} \tag{2.2.9} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(1)}}} = \delta^{(2)} \cdot a^{(1)} \tag{2.2.9} $$</div>
 
 </br>
 
@@ -445,16 +445,16 @@ The important formulas for backpropagation are:
 ##### output layer
 
 
-<div>$$ \delta^{(L)} = J' \cdot f'^{(L)}(z^{(L)}) \tag{2.4.0} $$</div>
+<div class="formula-wrap">$$ \delta^{(L)} = J' \cdot f'^{(L)}(z^{(L)}) \tag{2.4.0} $$</div>
 
 ##### hidden layers
 
-<div>$$ \delta^{(n)} =  \delta^{(n + 1)} \cdot w^{(n)} \cdot f'^{(n)}(z^{(n)}) \tag{2.4.1} $$</div>
+<div class="formula-wrap">$$ \delta^{(n)} =  \delta^{(n + 1)} \cdot w^{(n)} \cdot f'^{(n)}(z^{(n)}) \tag{2.4.1} $$</div>
 
 ##### all layers
 
-<div>$$ \frac{\partial{J}}{\partial{w^{(n - 1)}}} = \delta^{(n)} \cdot a^{(n - 1)} \tag{2.4.2} $$</div>
-<div>$$ \frac{\partial{J}}{\partial{b^{(n - 1)}}} = \delta^{(n)}  \tag{2.4.3} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(n - 1)}}} = \delta^{(n)} \cdot a^{(n - 1)} \tag{2.4.2} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{b^{(n - 1)}}} = \delta^{(n)}  \tag{2.4.3} $$</div>
 
 ##### updating weights and biases
 
@@ -468,11 +468,11 @@ To keep things simple, we have only regarded a single weight in the derivation a
 Let's see how the backpropagation formulas look in vector notation if we used a batch of three inputs. In the following vectors every row is a new training sample.
 
 The notation for a single weight was:
-<div>$$ \delta^{(L)} = (y - \hat{y}) \odot f'^{(3)}(z^{(3)}) \tag{2.5.0} $$</div> 
+<div class="formula-wrap">$$ \delta^{(L)} = (y - \hat{y}) \odot f'^{(3)}(z^{(3)}) \tag{2.5.0} $$</div> 
 
 If we rewrite <span>\\( f'^{(3)}(z^{(3)}) \\)</span> in a shorter notation <span>\\( f' \\)</span>, the vector notation of the **eq. (2.5.0)** becomes:
 
-<div>$$
+<div class="formula-wrap">$$
 \begin{bmatrix}
 y_1 - \hat{y_1}  \\ 
 y_2 - \hat{y_2}  \\
@@ -495,11 +495,11 @@ $$</div>
 
 The next step is multiplying the backpropagating error <span>\\( \delta \\)</span> with our activities <span>\\( a^{(2)}\\)</span>. For a single weight the notation was:
 
-<div>$$ \frac{\partial{J}}{\partial{w^{(2)}}} = \delta^{(L)} \cdot a^{(2)} \tag{2.5.2} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(2)}}} = \delta^{(L)} \cdot a^{(2)} \tag{2.5.2} $$</div>
 
 We have got three nodes in layer 2 and three batched inputs. So our activity matrix has a shape of 3x3. Where every row represents the three nodes per input x.
 
-<div>$$
+<div class="formula-wrap">$$
  a^{(2)} =
 \begin{bmatrix}
 a^{(2)}_{11} & a^{(2)}_{12} & a^{(2)}_{13} \\ 
@@ -511,7 +511,7 @@ $$</div>
 
 If we transpose matrix <span>\\( a^{(2)}\\)</span> and matrix multiply with <span>\\( \delta^{(L)} \\)</span> we retrieve 3x1 vector representing the three derivatives for our three weights <span>\\( w^{(2)} \\)</span>.
 
-<div>$$
+<div class="formula-wrap">$$
 a^{(2)T} = 
 \begin{bmatrix}
 a^{(2)}_{11} & a^{(2)}_{21} & a^{(2)}_{31} \\ 
@@ -521,7 +521,7 @@ a^{(2)}_{13} & a^{(2)}_{23} & a^{(2)}_{33} &
 \tag{2.5.4} 
 $$</div>
 
-<div>$$
+<div class="formula-wrap">$$
 \begin{bmatrix}
 a^{(2)}_{11} & a^{(2)}_{21} & a^{(2)}_{31} \\ 
 a^{(2)}_{12} & a^{(2)}_{22} & a^{(2)}_{32}& \\
@@ -544,7 +544,7 @@ $$</div>
 
 These matrix multiplications are way faster in an algorithm than a loop could be, so this is what we are going to implement for our neural net class. The backpropagation formula can be rewritten as:
 
-<div>$$ \frac{\partial{J}}{\partial{w^{(n - 1)}}} = \delta^{(n)} \cdot a^{(n - 1)T} \tag{2.5.6} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(n - 1)}}} = \delta^{(n)} \cdot a^{(n - 1)T} \tag{2.5.6} $$</div>
 
 </br>
 
@@ -724,3 +724,15 @@ I wrote a simple multi layer perceptron using only Numpy and Python and learned 
 <script type="text/javascript" async
   src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
 </script>
+
+<head>
+
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+
+</head>
