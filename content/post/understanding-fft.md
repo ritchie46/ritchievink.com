@@ -112,7 +112,7 @@ fft = np.fft.fft(s)
 
 
 for i in range(2):
-    print("Value at index {}:\t{}".format(i, yf[i + 1]), "\nValue at index {}:\t{}".format(yf.size -1 - i, yf[-1 - i]))
+    print("Value at index {}:\t{}".format(i, fft[i + 1]), "\nValue at index {}:\t{}".format(fft.size -1 - i, fft[-1 - i]))
 
 >>>
 Value at index 0:	(0.0003804834928402556-0.060555031761900024j) 
