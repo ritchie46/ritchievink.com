@@ -219,8 +219,6 @@ With this insight, we can now finish the L1 version of the model. Note that mini
 ```python
 class L1GradientBooster:
     def __init__(self, n_trees=20):
-        # It seems that the decision tree splits have a random process?
-        np.random.seed(132)
         self.f = []
         self.learning_rates = []
         self.n_trees = n_trees
