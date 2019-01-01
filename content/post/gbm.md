@@ -217,6 +217,13 @@ Every boost iteration is now a two-step process. Just as in the earlier method w
 With this insight, we can now finish the L1 version of the model. Note that minimal absolute error for set $\mathbb{A}$ is $median(\mathbb{A})$. Therefore we can just modify the regions of the trained tree, so that they return the median of that subset $R\_{mj}$.
 
 ```python
+class MAE:
+    def loss(y_true, y_pred):
+        return y_true - y_pred
+    
+    def prime(y_true, y_pred):
+        return np.sign(y_pred - y_true)
+
 class L1GradientBooster:
     def __init__(self, n_trees=20):
         self.f = []
@@ -237,12 +244,12 @@ class L1GradientBooster:
             res = y - y_pred
             m.fit(x, -MAE.prime(y, y_pred))
             
-            leaf_idx = self.m.apply(x)
-            y_pred_tree = self.m.predict(x)
+            leaf_idx = m.apply(x)
+            y_pred_tree = m.predict(x)
             
             for leaf in set(leaf_idx):
                 current_leaf_idx = np.where(leaf_idx == leaf)[0]  
-                self.m.tree_.value[leaf, 0, 0] = np.median(res[current_leaf_idx])  
+                m.tree_.value[leaf, 0, 0] = np.median(res[current_leaf_idx])  
    
             self.f.append(m)
             self.learning_rates.append(lr)
