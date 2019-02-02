@@ -143,7 +143,7 @@ Putting it all together we can plot the frequency spectrum for our simple sine w
 
 ```python
 fft = np.fft.fft(s)
-T = t[1] - t[0]  # sample rate
+T = t[1] - t[0]  # sampling interval 
 N = s.size
 
 # 1/T = frequency

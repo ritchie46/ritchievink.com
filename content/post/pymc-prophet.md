@@ -1,7 +1,7 @@
 +++
 date = "2018-10-09"
 description = "Analysis breakdown of the Facebooks prophet model. In this post we implement prophet in PyMC3."
-tags = ["machine learning", "python", "algorithm breakdown", "time series", "pymc3"]
+tags = ["machine learning", "python", "algorithm breakdown", "time series", "pymc3", "Bayesian"]
 draft = false
 keywords =["machine learning", "python", "numpy", "arima", "time series", "prophet", "facebook"]
 author = "Ritchie Vink"

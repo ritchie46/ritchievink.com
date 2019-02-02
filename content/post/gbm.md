@@ -1,5 +1,5 @@
 +++
-date = "2018-10-09"
+date = "2018-11-19"
 description = "This post an in depth analysis of Gradient Boosting with different loss functions."
 tags = ["machine learning", "python", "algorithm breakdown", "gradient boosting"]
 draft = false
