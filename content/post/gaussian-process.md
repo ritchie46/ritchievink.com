@@ -11,8 +11,8 @@ og_image = "/img/post-21-gp/waves-banner.png"
 
 {{< figure src="/img/post-21-gp/waves-banner.png" >}}
 
-Christopher Fonnesbeck had a talk about [Bayesian Non-parametric Models for Data Science using PyMC3 on PyCon 2018](https://youtu.be/-sIOMs4MSuA). In this talk, he glanced over Bayes' modeling, the neat properties of Gaussian distributions and then quickly turned to the application of Gaussian Processes, a distribution over infinite functions. Wait, but what?! How does a Gaussian represent a function? I did not understand how, but the promise of what these Gaussian Processes representing a distribution over nonlinear and nonparametric
-functions really intrigued me and therefore turned into a new subject for a post. This post we'll go, a bit slower than Christopher did, through what a Gaussian Processes are.
+Christopher Fonnesbeck did a talk about [Bayesian Non-parametric Models for Data Science using PyMC3 on PyCon 2018](https://youtu.be/-sIOMs4MSuA). In this talk, he glanced over Bayes' modeling, the neat properties of Gaussian distributions and then quickly turned to the application of Gaussian Processes, a distribution over infinite functions. Wait, but what?! How does a Gaussian represent a function? I did not understand how, but the promise of what these **Gaussian Processes representing a distribution over nonlinear and nonparametric
+functions** really intrigued me and therefore turned into a new subject for a post. This post we'll go, a bit slower than Christopher did, through what Gaussian Processes are.
 
 In the first part of this post we'll glance over some properties of multivariate Gaussian distributions, then we'll examine how we can use these distributions to express our expected function values and then we'll combine both to find a posterior distribution for Gaussian processes.
 
@@ -526,7 +526,7 @@ plt.figure(figsize=(16, 6))
 
 {{< figure src="/img/post-21-gp/smoes.png" title="Three functions sampled from $\mathcal{N}(\vec{0}, k(x, x))$ " >}}
 
-## Gaussian Processes
+## 4. Gaussian Processes
 Ok, now we have enough information to get started with Gaussian processes. GPs are used to define a prior distribution of the functions that could explain our data. And conditional on the data we have observed we can find a posterior distribution of functions that fit the data. Let's say we have some **known function outputs $f$** and we want to infer **new unknown data points $f\_\*$**. With the kernel we've described above, we can define the joint distribution $p(f, f\_\*)$. 
 
 <div class="formula-wrap">
@@ -743,7 +743,7 @@ plt.show()
 In the plot above we see the result from our posterior distribution. We sample functions that fit our training data (the red squares). So the amount of possible infinite functions that could describe our data has been reduced to a lower amount of infinite functions [if that makes sense ;)]. It is also very nice that we get uncertainty boundaries are smaller in places where we have observed data and widen where we have not. For now, we did noiseless regressions, so the
 uncertainty is nonexistent where we observed data. We could generalize this example to noisy data and also include functions that are within the noise margin. The red dashed line shows the mean of the posterior and would now be our best guess for $f(x)$.
 
-This post was an introduction to Gaussian processes and described what it meant to express functions as samples from a distribution. I hope it gave some insight into the abstract definition of **GPs**. You may also take a look at [Gaussian mixture models]({{< ref "post/gaussian_mixture.md" >}}) where we utilize Gaussian and Dirichlet distributions to do parameterless clustering.
+This post was an introduction to Gaussian processes and described what it meant to express functions as samples from a distribution. I hope it gave some insight into the abstract definition of **GPs**. You may also take a look at [Gaussian mixture models]({{< ref "post/gaussian_mixture.md" >}}) where we utilize Gaussian and Dirichlet distributions to do nonparametric clustering.
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
