@@ -1,7 +1,7 @@
 +++
 date = "2019-03-17"
 description = "Embedding jupyter notebook in an iframe and serve as a reverse proxy behind NGINX"
-tags = ["web", "python"]
+tags = ["save-some-time", "web", "python"]
 draft = false
 keywords =["web", "python"]
 author = "Ritchie Vink"
@@ -40,6 +40,9 @@ http {
         location /notebook {
             # validate the request with the /auth endpoint
             auth_request       /auth;
+
+            # Allow iframe inbedding from this parent <your-website.com>
+            add_header Content-Security-Policy "frame-ancestors http://<your-website.com>:80";
             
             # websocket proxy
             proxy_http_version 1.1;
@@ -76,11 +79,6 @@ c.NotebookApp.ip = '*'
 c.NotebookApp.base_url = 'notebook'
 c.NotebookApp.allow_origin = '*'
 c.NotebookApp.open_browser = False
-
-c.NotebookApp.tornado_settings = {
-    'headers':
-        {'Content-Security-Policy': "frame-ancestors http://<your-website.com>:80"}
-}
 ```
 
 ## HTML
