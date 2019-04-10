@@ -79,7 +79,7 @@ Besides comparing the clusters by similarity, we can also run inference for the 
 This is quite powerful. During inference we can decide to use the cluster bias, or if we have our own prior believes about the soil conditions, we could decide to use a different bias. 
 
 ## Metrics
-Often when training a machine learning model we have ground truth labels being binary **True** or **False**, i.e. $y \in \{0, 1\}$. 
+Now comes the hard part. Often when training a machine learning model we have ground truth labels being binary **True** or **False**, i.e. $y \in \{0, 1\}$. 
 
 <img src="/img/soil-classification/babydog.jpeg" style="float: left;"/>
 
@@ -96,64 +96,23 @@ The soil labels are actually distributions. Every layer contains different volum
 #### Cross Entropy
 Classification models are often trained by minimizing cross entropy.
 
-$$ H(P, Q) = -\sum\_{x \in X} {P(x) \cdot log(Q(x))}$$
+$$ H(p, q) = -\sum\_{x \in X} {p(x) \cdot log(q(x))}$$
 
 In this loss function, it is assumed that that only one index in the ground truth distribution $p=1$, i.e. the labels are one hot encoded. As we've just seen, this is not the case for the soil distributions. 
 
 #### Kullback-Leibler divergence
 A better metric is the KL-divergence. With this we actually compare the divergence between two probability distributions.
 
-$$ H(P, Q) = -\sum\_{x \in X} {P(x) \cdot log( \frac{Q(x)}{P(x)} )}$$
+$$ H(p, q) = -\sum\_{x \in X} {p(x) \cdot log( \frac{q(x)}{p(x)} )}$$
 
 #### Wasserstein distance
-The best metric I've tried for this problem is the [Wasserstein distance](https://en.wikipedia.org/wiki/Wasserstein_metric) also being called the **Earth mover's metric**. For formality, the definition is shown below. 
 
-$$ EMD(P, Q) = \frac{\sum\_{i=1}^m \sum\_{j=1}^m f\_{i,j}d\_{i, j}} {\sum\_{i=1}^m \sum\_{j=1}^n f\_{i,j}} $$
+$$ EMD(p, q) = \frac{\sum\_{i=1}^m \sum\_{j=1}^m f\_{i,j}d\_{i, j}} {\sum\_{i=1}^m \sum\_{j=1}^n f\_{i,j}} $$
 
 where $ D = [d\_{i, j}]$ is the distance between $p\_i$ and $q\_j$, and $F=[f\_{i, j}]$ the flow between $p\_i$ and $q\_j$ that minimizes the overall costs of moving $Q$ to $P$.
 
-$$ \text{min} \sum\_{i=1}^m \sum\_{j=1}^n f\_{i, j} d\_{i, j}$$
-
-I've actually used the [Squared Earth Mover's Distance-based Loss for Training Deep Neural Networks from Le Hou, Chen-Ping Ye and Dimitris Samaras](https://arxiv.org/abs/1611.05916)
-
-This metric makes most sense in this use case as different soil types have different similarities. This is best explained with an example. 
-
-{{< figure src="/img/soil-classification/distance-compare.png" title="Outcomes of KL-divergence compared to the Wasserstein distance." >}}
-
-In the figure above, we see the outcomes of the KL-divergence and the Wasserstein distance. The KL-divergence only compares the probabilites of the seperate classes, but not the shape of the distributions. The KL-divergence outcomes are therefore equal for both predictions. This does not represent that what we really want. I believe that assigning volume probability to peat is worse than assigning volume probability to sand when the most true volume is gravel. By training on the
-Wasserstein distance we learn the model the order of preference between seperate classes.
-
-### Validation metrics
-Comparing the outputs of the model, optimized by KL-divergence and Wasserstein distance, with Robertson is quite hard. Robertson does not predict a soil distribution, but assigns ambiguous names to soil layers, e.g. *'Silt mixtures: clayey silt & silty clay'* and *'Sand mixtures: silty sand & sandy silt'*. To be able to make a comparison these, classification were transformed to a soil class $\\{G, S, L, C, P\\}$.
-
-#### The bad
-A naive way of doing validation is by looking at precision and recall scores by transforming the probability distributions to main soil classes by $\text{argmax}\\{P(x)\\}$.
-
-**F1 scores (higher is better)**
-
-| Soil Type | Support | Robertson F1 | KL-divergence F1 | Wasserstein F1 |
-|-----------|---------|--------------|------------------|----------------|
-| Gravel    | 3731    | 0.15         | 0.15             | 0.10           |
-| Sand      | 137998  | 0.86         | 0.83             | 0.85           |
-| Loam      | 0       | 0            | 0                | 0              |
-| Clay      | 91523   | 0.64         | 0.70             | 0.67           |
-| Peat      | 21398   | 0.37         | 0.57             | 0.74           |
-
-This comparison is of course really bad as we are wasting a lot of information if we bring down a distribution to it's mode. If we look at the loam soil type, we can clearly see how bad it is. Because loam almost always is a subtype in soil layers it will never come out as the main soil, making it look that no model can predict this class.
-
-#### The good
-Below we show the error distributions. Because we are talking about probabilities, these distributions show us our error margins. In the plots we also show the Mean Absolute Error (MAE), per soil type, so we can make a proper comparison. We show the absolute errors on two subsets of the test set. 
-
-* A subset where the true distribution has non zero probability for that class. Can intuitevely be regarded as **recall**.
-* A subset where the models assign significant probability to that class $P(y) \gt 0.025$. Can intuitevely be regarded as precision.
-
-{{< figure src="/img/soil-classification/precisionbased.png" title="Precision based absolute errors (lower is better)" >}}
-
-{{< figure src="/img/soil-classification/recallbased.png" title="Recall based absolute errors" >}}
-
-Now we can clearly how the models are performing. When looking at the precision based results, we for instance see that most of Robertson's loam and gravel classifications are wrong, and for peat a classifcation is wrong ~50% of the time. Due to this sensitivety to Loam, Robertson's recall based error is much lower. Further we see, that the KL-divergence model does best for the soil types loam, clay, and peat. For the soil types gravel and sand, the Wasserstein model shows the least
-errors, and has a slightly lower error rate for peat at the recall subset. These plots are way more informative than the main soil based f1 scores. We do see that both models outperform Robertson on the soil classification task.
-
+### The bad
+A naive way of doin metric
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
