@@ -172,6 +172,9 @@ Oh and remember... it only knows:
 
 It is of course also interesting to see how the model classifies genres it hasn't learned. But I cannot promise you it would be a sane prediction though.
 
+## Update 11-04-2019
+*The widget below doesn't work because I didn't want to maintain the backend anymore.*
+
 <div class="base-input">
 <label>Artist:</label> <input type="text" class="input-style-1" value="coolio" id="artist"></input> </br>
 <label>Song:</label> <input type="text" class="input-style-1" value="gangsta's paradise" id="track"></input> </br>
