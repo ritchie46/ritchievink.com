@@ -538,7 +538,7 @@ sns.distplot(y[:, 2], bins=20, kde=None, norm_hist=True, rug=True, )
 
 ## Conclusion
 
-We've seen two different generative models that utilize the Dirichlet distribution and the Dirichlet Process to cluster observed data. In the first model we defined the number of clusters as a hyperparameter. In the last model the number of clusters was defined nonparameterically by the model itself. The latter seems very powerfull for data mining, however I did find it was harder to find the right hyperparameters for the priors than in the fixed cluster model and found that it to becomes much more complex if we want to do the same in multiple dimensions.
+We've seen two different generative models that utilize the Dirichlet distribution and the Dirichlet Process to cluster observed data. In the first model we defined the number of clusters as a hyperparameter. In the last model the number of clusters was defined nonparameterically by the model itself. The latter seems very powerful for data mining, however I did find it was harder to find the right hyperparameters for the priors than in the fixed cluster model and found that it to becomes much more complex if we want to do the same in multiple dimensions.
 
 Read more!
 
