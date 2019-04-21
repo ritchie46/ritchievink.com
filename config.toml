@@ -1,7 +1,7 @@
 baseurl = "https://www.ritchievink.com/"
 relativeURLs = true
 title = "Ritchie Vink"
-copyright = "(c) 2018 Ritchie Vink."
+copyright = "(c) 2019 Ritchie Vink."
 languageCode = "en-EN"
 metaDataFormat = "yaml"
 theme = "humin"
@@ -59,7 +59,4 @@ tag = "about"
 url = "/anastruct/"
 tag = "anastruct"
 
-[[params.static_pages]]
-url = "/mnkappa/"
-tag = "m-n-kappa"
 
