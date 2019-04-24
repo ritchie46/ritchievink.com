@@ -46,7 +46,7 @@ $$ k + \sum\_{j: t > s\_j} \delta\_j \tag{3}$$
  a(t)=
 
 \begin{cases}
-    1,              & \text{if } t\geq s\_j, \\
+    1,              & \text{if } t\geq s_j, \\
     0,              & \text{otherwise}
 \end{cases}
 
