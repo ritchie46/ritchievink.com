@@ -57,7 +57,7 @@ By taking the dot product, all the changepoints $s\_j > t$ cancel out. The growt
 
 $$ k + a(t)^T \delta \tag{5} $$
 
-We can actually rewrite the whole function for all time value $t$ by defining a matrix $A$.
+We can actually rewrite the whole function for all time values $t$ by defining a matrix $A$.
 
 As an example, let $S$ be the changepoints $2, 5, 8$, and time steps $t = 1, 2, \dots, 10$
 
