@@ -39,7 +39,7 @@ The growth rate is adjusted every time step that $t$ surpasses a changepoints $s
 
 $$ k + \sum\_{j: t > s\_j} \delta\_j \tag{3}$$
 
-**Eq (3)** can be vectorized by defining $a(t) \in {0, 1}^S$ such that
+**Eq (3)** can be vectorized by defining $a(t) \in \{0, 1\}^S$ such that
 
 <div>$$ 
 
