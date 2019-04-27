@@ -411,8 +411,8 @@ pm.traceplot(trace)
 
 {{< figure src="/img/post-19-prophet/param-dis.png" title="Posterior parameter distribution." >}}
 
-Above we see the result of our MCMC sampling. We have found an estimate of the posterior distribution of out parameters. Now that we have got this, we can take a look at how the model has fit the data. Below we are computing the trend and the seasonalities for all the drawn samples. This will result in a matrix of shape $T \times S$, with $T$ being the number of data points and $S$ the number of drawn samples. With this matrix, we can finally compute the confidence intervals of
-our fit. Below is the plot shown with confidence intervals of 95%.
+Above we see the result of our MCMC sampling. We have found an estimate of the posterior distribution of our parameters. Now that we have got this, we can take a look at how the model has fit the data. Below we are computing the trend and the seasonalities for all the drawn samples. This will result in a matrix of shape $T \times S$, with $T$ being the number of data points and $S$ the number of drawn samples. With this matrix, we can finally compute the credible intervals of
+our fit. Below is the plot shown with credible intervals of 95%.
 
 ``` python
 def det_seasonality_posterior(beta, x):
@@ -468,7 +468,7 @@ plt.fill_between(weekdays, quant[0, sunday: sunday + 7],
                  quant[1, sunday: sunday + 7], alpha=0.25)
 ```
 
-{{< figure src="/img/post-19-prophet/fit.png" title="Fitted model with 95% confidence intervals." >}}
+{{< figure src="/img/post-19-prophet/fit.png" title="Fitted model with 95% credible intervals." >}}
 
 ## Trend forecasts and uncertainty
 The uncertainty of the predictions you make in Prophet is determined by the number of changepoints that are allowed, whilst fitting the training data and the flexibility of the changepoint adjustments $\delta$. Intuitively, it says that if we have seen a lot of change in the time history, we can expect a lot of change in the future.
@@ -539,7 +539,7 @@ plt.fill_between(date, quant[0, :], quant[1, :], alpha=0.25)
 ```
 
 
-{{< figure src="/img/post-19-prophet/forecast.png" title="Trend forecast with 95% confidence intervals." >}}
+{{< figure src="/img/post-19-prophet/forecast.png" title="Trend forecast with 95% credible intervals." >}}
 
 Above we see the result of 1000 samples. Due to the flexibility of the hyperprior $\tau$ the model was able to fit the data very well. However by doing so the variance of the changepoints adjustments $\delta$ is quite high, resulting in wide uncertainty bands.
 
