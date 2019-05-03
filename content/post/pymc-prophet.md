@@ -487,7 +487,7 @@ The uncertainty is modeled by sampling changepoints and change adjustments follo
 \tag{11}
 $$</div>
 
-where $T$ is the complete history, and $S$ are the number of changepoints fitted in the training data. For all time steps larger than $T$ there is a probability of occurring a new changepoint $\delta\_j$, which is sampled from a Laplace distribution. The scale $lambda$ of the Laplace distribution is determined by one of the following.
+where $T$ is the complete history, and $S$ are the number of changepoints fitted in the training data. For all time steps larger than $T$ there is a probability of occurring a new changepoint $\delta\_j$, which is sampled from a Laplace distribution. The scale $\lambda$ of the Laplace distribution is determined by one of the following.
 
 * The mean of the posterior of the hyperprior $\tau$
 * If the hyperprior is not set, $\lambda = \frac{1}{S} \sum\_{j=1}^S |\delta\_j|$.
