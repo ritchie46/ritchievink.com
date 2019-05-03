@@ -360,7 +360,7 @@ $$ m \sim N(0, 5) $$
 $$ g|k, \delta, m, \tau = (k + A \delta) \odot t + (m + A (-s \odot \delta)) $$
 $$ \beta \sim N(0, 10) $$
 $$ s| \beta = X(t) \beta $$
-$$ \sigma \sim N(0, 0.5) $$
+$$ \sigma \sim HalfCauchy(0, 0.5) $$
 $$ y| g, \sigma, s \sim N(g + s, \sigma) $$
 
 Below we build the model defined above. First, we define a function `seasonality_model` which initiates the priors $\beta$ for seasonality regression. Note that we MinMax scale the period of the Fourier series, as $t$ is also MinMax scaled. The prior output is defined by
