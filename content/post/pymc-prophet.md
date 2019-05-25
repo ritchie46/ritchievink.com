@@ -33,7 +33,7 @@ $$ g(t) = (k + a(t)^T \delta)t + (m + a(t)^T \gamma) \tag{2}$$
 
 where $k$ is the growth rate, $m$ is the offset parameter, $\delta$ is a vector with growth rate adjustments, and $\gamma\_j$ is set to $-s\_j \delta\_j$, where $s\_j$ is a changepoint in time.
 
-This growth model consists of a base trend $k$ and preset changepoints at which the growth rate can be adjusted by $s\_j$. Those preset changepoints are defined in a vector $S$ with changepoints at times $s\_j$, $j = 1, ..., S$. At each unique changepoint $s\_j$, the growth rate is adjusted by $\delta\_j$. We can define all growth rate adjustments by the vector $\delta \in \mathbb{R}^S$
+This growth model consists of a base trend $k$ and preset changepoints at which the growth rate can be adjusted by $s\_j$. Those preset changepoints are defined in a vector with $S$ changepoints at times $s\_j$, $j = 1, ..., S$. At each unique changepoint $s\_j$, the growth rate is adjusted by $\delta\_j$. We can define all growth rate adjustments by the vector $\delta \in \mathbb{R}^S$
 
 The growth rate is adjusted every time step that $t$ surpasses a changepoints $s\_j$, the growth rate becomes the base rate plus the sum of all adjustments up to that point
 
