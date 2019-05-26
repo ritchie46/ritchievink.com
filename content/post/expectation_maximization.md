@@ -27,18 +27,19 @@ import numpy as np
 from scipy import stats
 
 np.random.seed(654)
-m = np.array([stats.norm(2, 1), stats.norm(5, 1.8)])
+# Draw samples from two Gaussian w.p. z_i ~ Bernoulli(phi)
+generative_m = np.array([stats.norm(2, 1), stats.norm(5, 1.8)])
 z_i = stats.bernoulli(0.75).rvs(100)
-x_i = np.array([g.rvs() for g in m[z_i]])
+x_i = np.array([g.rvs() for g in generative_m[z_i]])
 
-# plot the generated data and the latent distributions.
+# plot generated data and the latent distributions
 x = np.linspace(-5, 12, 150)
 plt.figure(figsize=(16, 6))
-plt.plot(x, m[0].pdf(x))
-plt.plot(x, m[1].pdf(x))
-plt.plot(x, m[0].pdf(x) + m[1].pdf(x), lw=1, ls='-.', color='black')
-plt.fill_betweenx(m[0].pdf(x), x, alpha=0.1)
-plt.fill_betweenx(m[1].pdf(x), x, alpha=0.1)
+plt.plot(x, generative_m[0].pdf(x))
+plt.plot(x, generative_m[1].pdf(x))
+plt.plot(x, generative_m[0].pdf(x) + generative_m[1].pdf(x), lw=1, ls='-.', color='black')
+plt.fill_betweenx(generative_m[0].pdf(x), x, alpha=0.1)
+plt.fill_betweenx(generative_m[1].pdf(x), x, alpha=0.1)
 plt.vlines(x_i, 0, 0.01, color=np.array(['C0', 'C1'])[z_i])
 ```
 
@@ -81,6 +82,121 @@ $$ \mu\_j := \frac{\sum\_{i=1}^nw\_{ij} x\_i} {\sum\_{i=1}^nw\_{ij}} $$
 $$ \sigma_j :=  \sqrt{\frac{\sum\_{i=1}^nw\_{ij}(x_i - \mu_j)^2} {\sum\_{i=1}^nw\_{ij}}}  $$
 
 If we iterate the E-M steps, we hope to converge to maximum likelihood. (The log likelihood function, is multi-modal so we could get stuck in a local optimum)
+
+## Python example
+Below we have implemented the algorithm in Python. 
+
+``` python
+class EM:
+    def __init__(self, k):
+        self.k = k
+        self.mu = None
+        self.std = np.ones(k)
+        self.w_ij = None
+        self.phi = np.ones(k) / k
+
+    def expectation_step(self, x):
+        for z_i in range(self.k):
+            self.w_ij[z_i] = stats.norm(self.mu[z_i], self.std[z_i]).pdf(x) * self.phi[z_i]
+	# normalize zo that marginalizing z would lead to p = 1
+	self.w_ij /= self.w_ij.sum(0)
+
+    def maximization_step(self, x):
+        self.phi = self.w_ij.mean(1)
+        self.std = ((self.w_ij * (x - self.mu[:, None])**2).sum(1) / self.w_ij.sum(1))**0.5
+        self.mu = (self.w_ij * x).sum(1) / self.w_ij.sum(1)
+
+    def fit(self, x):
+        self.mu = np.random.uniform(x.min(), x.max(), size=self.k)
+        self.w_ij = np.zeros((self.k, x.shape[0]))
+
+        last_mu = np.ones(self.k) * np.inf
+        while ~np.all(np.isclose(self.mu, last_mu)):
+            last_mu = self.mu
+            self.expectation_step(x)
+            self.maximization_step(x)
+
+m = EM(2)
+m.fit(x_i)
+```
+
+We can examine the final fit by reparameterizing the two Gaussians once the algorithm has converged. 
+
+``` python
+fitted_m = [stats.norm(mu, std) for mu, std in zip(m.mu, m.std)]
+
+plt.figure(figsize=(16, 6))
+plt.vlines(x_i, 0, 0.01, color=np.array(['C0', 'C1'])[z_i])
+plt.plot(x, fitted_m[0].pdf(x))
+plt.plot(x, fitted_m[1].pdf(x))
+plt.plot(x, generative_m[0].pdf(x), color='black', lw=1, ls='-.')
+plt.plot(x, generative_m[1].pdf(x), color='black', lw=1, ls='-.')
+```
+
+{{< figure src="/img/post-24-em/fitted_gmm.png" title="Optimized Gaussian Mixture Model." >}}
+
+As we can see. We have a reasonable fit. The black dashed lines show the original data generating Gaussians. The blue and the orange Gaussian are the result of our parameter search. 
+
+
+# General Expectation Maximization
+Above we've shown EM in relation to GMMs. However, EM can be applied in a more general sense to a wider range of algorithms. We noted earlier that we cannot optimize the log likelihood directly because we haven't observed $Z$. It turns out that we can find a lower bound to the log likelihood function, which we can optimize.  
+
+In the figure below, we see the intuition behind optimizing a lower bound of the log likelihood. A lower bound $g$ of $f$ exists if $g(x) \leq f(x)$ for all $x$ in its domain.
+
+{{< figure src="/img/post-24-em/lower_bound_functions.png" title="Iteratively maximizing a lower bound of $\ell(\theta)$." >}}
+
+## Jensen's inequality
+How do we obtain a lower bound function of the log likelihood? Jensen's inequality theorem states that for every strictly concave function $f$ (i.e. $f^{\prime\prime} < 0$ for the whole domain range $x$) applied on a random variable $X$:
+
+**Jensen's inequality:**
+$$ E[f(X)] \leq f(E[X]) $$
+
+This inequality will be an equality if and only if $X = E[X]$ with probability 1. In other words if $X$ is a constant.
+
+**Jensen's equality:**
+$$ E[f(X)] = f(E[X]) \text{ iff } X = E[X]$$
+
+Below we'll get some intuition for the theorem. We define a range of $x := (0, 15)$, take log as our function $f(x)$ and computer the lhs and rhs of Jensens inequality. For plotting purposes, the theorem is applied on the full range $(0, 15)$, where we would normally apply it to samples from a probability distribution.
+
+``` python
+x = np.linspace(1, 15)
+
+plt.figure(figsize=(16, 6))
+plt.title('Log(x) is concave')
+plt.plot(x, np.log(x))
+plt.annotate(r'$f(x)$', (13, np.log(13) + 0.1))
+
+plt.hlines(np.log(np.mean(x)), 0, np.mean(x), linestyles='-.', lw=1)
+plt.annotate(r'$f(E[x])$', (0, np.log(np.mean(x)) + 0.1))
+
+plt.hlines(np.mean(np.log(x)), 0, np.exp(np.mean(np.log(x))), linestyles='-.', lw=1)
+plt.annotate(r'$E[f(x)])$', (0, np.mean(np.log(x)) - 0.15))
+```
+
+{{< figure src="/img/post-24-em/jensens.png" title="Jensen's inequality applied on $(0, 15)$." >}}
+
+## Evidence Lower Bound ELBO
+Now we are going to define a lower bound function on the evidence $p(x)$. This marginal likelihood over $z_i$ is often intractible, as we need to integrate over all posible parameters to compute it. 
+
+Recall the log likelihood we try to optimize.
+
+$$ \ell(\theta) = \sum\_{i=1}^n \log p(x_i; \theta)$$
+
+As we assume a latent variable $Z$ which we haven't observed, we can rewrite it including $z_i$ (which is marginalized out).
+
+$$ \ell(\theta) = \sum\_{i=1}^n\log\sum\_{z_i}p(x_i, z_i; \theta)$$
+
+Now we can multiply the equation above with an arbitrarely distribution over $z_i$, $\frac{Q(z)}{Q(z)}=1$.
+
+$$ \ell(\theta) = \sum\_{i=1}^n\log\sum\_{z_i} Q(z)  \frac{p(x_i, z_i; \theta)} {Q(z)}$$
+
+Now note that expectation of a random variable $X$ is defined as $E[X] = \sum\_{i=1}^n p_ixi$. Which means we can rewrite the log likelihood as
+
+$$ \ell(\theta) = \sum\_{i=1}^n\log E\_{z \sim Q}[\frac{p(x_i, z_i; \theta)} {Q(z)}]$$
+
+As the $\log$ function is a concave function we can apply Jensen's inequality to the right hand side.
+
+$$ \sum\_{i=1}^n\log E\_{z \sim Q}[\frac{p(x_i, z_i; \theta)} {Q(z)}] \geq \underbrace{\sum\_{i=1}^n E\_{z \sim Q}[ \log \frac{p(x_i, z_i; \theta)} {Q(z)}]}\_{\text{lower bound of }\ell(\theta) = p(x; \theta)}$$
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
