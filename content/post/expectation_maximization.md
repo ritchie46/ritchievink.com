@@ -10,8 +10,11 @@ og_image = "/img/post-24-em/grand_canyon.jpg"
 +++
 
 {{< figure src="/img/post-24-em/grand_canyon.jpg" >}}
+<br>	
+I wanted to learn something about variational inference, a technique used to approximate the posterior distribution in Bayesian modeling. However, during my research, I bounced on quite some mathematics that led me to another optimization technique called Expectation Maximization. I believe the theory behind this algorithm is a stepping stone to the mathematics behind variational inference. So we tackle the problems one problem at a time! 
 
-SOME INTRO
+The first part of this post will focus on Gaussian Mixture Models, as expectation maximization is the standard optimization algorithm for these models. The second part of the post, we will focus on a broader view on expectation maximization, and we will get the mathematical intuition of what we are optimizing.
+
 
 ## Gaussian Mixture Model
 The schoolbook example of Expectation Maximization starts with a Gaussian Mixture model. Below we will go through the definition of a GMM in 1D, but note that this will generalize to ND. Gaussian Mixtures help with the following cluster problem. Assume the following generative process. Let $X$ be an observed random variable.
@@ -58,30 +61,30 @@ In such a case we could model the joint distribution $p(x_i, z_i) = p(x_i| z_i) 
 With observing only $X$, it has become a lot harder to determine $p(x_i, z_i)$, as we are not sure by which Gaussian $x_i$ is produced.
 
 # Expectation Maximization in GMM
-The log likelihood of the model is defined below, but as $Z$ is unobserved, the log likelihood function has no closed form for the maximum likelihood. 
+The log-likelihood of the model is defined below, but as $Z$ is unobserved, the log-likelihood function has no closed form for the maximum likelihood. 
 
 $$\ell(\phi, \theta) = \sum_{i=1}^n \text{log} p(x_i| \theta, \phi)$$
 
 $$\ell(\phi, \theta) = \sum\_{i=1}^n \text{log} \sum\_{z\_i=1}^k p(x\_i| \theta, z\_i) p(z\_i| \phi)$$
 
-Because of this we will use an optimization algorithm called Expectation Maximization, where we guess $Z$ and iteratively try to maximize the log likelihood.
+Because of this, we will use an optimization algorithm called Expectation Maximization, where we guess $Z$ and iteratively try to maximize the log-likelihood.
 
 ## E-step
 Given a set of initialized chosen (or updated) parameters we determine $w_{ij}$ for each data point. 
 
 $$ w_{ij} := p(z_i = j|x_i; \theta, \phi)$$
 
-Given the current set of parameters, what is the likelihood of data point $i$, being assigned to Gaussian $j$.
+Asking the questions, what is the likelihood of data point $x_i$, being assigned to Gaussian $j$.
 
 ## M-step
-Now we are going the parameters by applying an algorithmic step, quite similar to K-means, but now we are weighing them with the likelihoods $wi\_{ij}$. In K-means, we have a hard cut off, and determine the new means, from the data points assigned to the cluster from the previous iteration. Now we will use all the data points for determining the new mean, but we scale them.
+Now we are going to optimize the parameters by applying an algorithmic step, quite similar to K-means, but now we are weighing them with the likelihoods $w\_{ij}$. In K-means, we have a hard cut off, and determine the new means from the data points assigned to the cluster from the previous iteration. Now we will use all the data points for determining the new mean, but we scale them.
 
 
 $$ \phi\_j := \frac{1}{n}\sum\_{i=1}^n w\_{ij} $$ 
 $$ \mu\_j := \frac{\sum\_{i=1}^nw\_{ij} x\_i} {\sum\_{i=1}^nw\_{ij}} $$ 
 $$ \sigma_j :=  \sqrt{\frac{\sum\_{i=1}^nw\_{ij}(x_i - \mu_j)^2} {\sum\_{i=1}^nw\_{ij}}}  $$
 
-If we iterate the E-M steps, we hope to converge to maximum likelihood. (The log likelihood function, is multi-modal so we could get stuck in a local optimum)
+If we iterate the E-M steps, we hope to converge to maximum likelihood. (The log-likelihood function, is multi-modal so we could get stuck in a local optimum)
 
 ## Python example
 Below we have implemented the algorithm in Python. 
@@ -135,28 +138,28 @@ plt.plot(x, generative_m[1].pdf(x), color='black', lw=1, ls='-.')
 
 {{< figure src="/img/post-24-em/fitted_gmm.png" title="Optimized Gaussian Mixture Model." >}}
 
-As we can see. We have a reasonable fit. The black dashed lines show the original data generating Gaussians. The blue and the orange Gaussian are the result of our parameter search. 
+As we can see. We have a reasonable fit. The black dashed lines show the original data generating Gaussians. The blue and the orange Gaussians are the result of our parameter search. 
 
 
 # General Expectation Maximization
-Above we've shown EM in relation to GMMs. However, EM can be applied in a more general sense to a wider range of algorithms. We noted earlier that we cannot optimize the log likelihood directly because we haven't observed $Z$. It turns out that we can find a lower bound to the log likelihood function, which we can optimize.  
+Above we've shown EM in relation to GMMs. However, EM can be applied in a more general sense to a wider range of algorithms. We noted earlier that we cannot optimize the log-likelihood directly because we haven't observed $Z$. It turns out that we can find a lower bound to the log-likelihood function, which we can optimize.  
 
-In the figure below, we see the intuition behind optimizing a lower bound on the log likelihood. A lower bound $g$ of $f$ exists if $g(x) \leq f(x)$ for all $x$ in its domain.
+In the figure below, we see the intuition behind optimizing a lower bound on the log-likelihood. A lower bound $g$ of $f$ exists if $g(x) \leq f(x)$ for all $x$ in its domain.
 
 {{< figure src="/img/post-24-em/lower_bound_functions.png" title="Iteratively maximizing a lower bound of $\ell(\theta)$." >}}
 
 ## Jensen's inequality
-How do we obtain a lower bound function of the log likelihood? Jensen's inequality theorem states that for every strictly concave function $f$ (i.e. $f^{\prime\prime} < 0$ for the whole domain range $x$) applied on a random variable $X$:
+How do we obtain a lower bound function of the log-likelihood? Jensen's inequality theorem states that for every strictly concave function $f$ (i.e. $f^{\prime\prime} < 0$ for the whole domain range $x$) applied on a random variable $X$:
 
 **Jensen's inequality:**
 $$ E[f(X)] \leq f(E[X]) $$
 
-This inequality will be an equality if and only if $X = E[X]$ with probability 1. In other words if $X$ is a constant.
+This inequality will be an equality if and only if $X = E[X]$ with probability 1. In other words, if $X$ is a constant.
 
 **Jensen's equality:**
 $$ E[f(X)] = f(E[X]) \text{ iff } X = E[X]$$
 
-Below we'll get some intuition for the theorem. We define a range of $x := (0, 15)$, take log as our function $f(x)$ and computer the lhs and rhs of Jensens inequality. For plotting purposes, the theorem is applied on the full range $(0, 15)$, where we would normally apply it to samples from a probability distribution.
+Below we'll get some intuition for the theorem. We define a range of $x := (0, 15)$, take $\log$ as our function $f(x)$ and compute the **lhs** and **rhs** of Jensens inequality. For plotting purposes, the theorem is applied on the full range $(0, 15)$, where we would normally apply it to samples from a probability distribution.
 
 ``` python
 x = np.linspace(1, 15)
@@ -186,15 +189,15 @@ As we assume a latent variable $Z$ which we haven't observed, we can rewrite it 
 
 $$  \ell(\theta) = \sum\_{i=1}^n\log\sum\_{z_i}p(x_i, z_i; \theta)$$
 
-Now we can multiply the equation above with an arbitrarely distribution over $Z$, $\frac{Q(z)}{Q(z)}=1$.
+Now we can multiply the equation above with an arbitrarily distribution over $Z$, $\frac{Q(z)}{Q(z)}=1$.
 
 $$ \ell(\theta) = \sum\_{i=1}^n\log\sum\_{z_i} Q(z_i)  \frac{p(x_i, z_i; \theta)} {Q(z_i)}$$
 
-Now note that expectation of a random variable $X$ is defined as $E[X] = \sum\_{i=1}^n p_ixi$. Which means we can rewrite the log likelihood as
+Now note that expectation of a random variable $X$ is defined as $E[X] = \sum\_{i=1}^n p_ixi$. Which means we can rewrite the log-likelihood as
 
 $$ \ell(\theta)  = \sum\_{i=1}^n\log E\_{z \sim Q}[\frac{p(x_i, z; \theta)} {Q(z)}]$$
 
-As the $\log$ function is a concave function, we can apply Jensen's inequality to the right hand side. Note that we put the $\log$ **inside the expectation**.
+As the $\log$ function is a concave function, we can apply Jensen's inequality to the right-hand side of the equation. Note that we put the $\log$ **inside the expectation**.
 
 $$ \sum\_{i=1}^n\log E\_{z \sim Q}[\frac{p(x_i, z; \theta)} {Q(z)}] \geq \underbrace{\sum\_{i=1}^n E\_{z \sim Q}[ \log \frac{p(x_i, z; \theta)} {Q(z)}]}\_{\text{lower bound of }\ell(\theta) = p(x; \theta)}$$
 
@@ -202,7 +205,7 @@ Now we continue with this **lower bound** of $p(X; \theta)$ and unpack the **exp
 
 $$ \ell(\theta) \geq \sum\_{i=1}^n\log\sum\_{z_i} Q(z_i) \log  \frac{p(x_i, z_i; \theta)} {Q(z_i)}$$
 
-The equation above holds true for every distribiution we choose for $Q(z)$, but ideally we choose a distribution that leads to a lower bound that is close to the log likelihood function. It turns out we can choose a distribution that will make the lower bound equal to $p(X; \theta)$. This is due to the fact that Jensen's inequality holds to equality **if and only if** $X = E[X]$, i.e. $X$ is **constant**. Where $X$ in this case is part inside the $\log$ function; $ \frac{p(x_i, z_i; \theta)} {Q(z_i)}$.
+The equation above holds true for every distribution we choose for $Q(z)$, but ideally, we choose a distribution that leads to a lower bound that is close to the log-likelihood function. It turns out we can choose a distribution that will make the lower bound equal to $p(X; \theta)$. This is due to the fact that Jensen's inequality holds to equality **if and only if** $X = E[X]$, i.e. $X$ is **constant**. Where $X$, in this case, is part inside the $\log$ function; $ \frac{p(x_i, z_i; \theta)} {Q(z_i)}$.
 
 Therefore we must choose a distribution of $Q(z)$ that leads to:
 
@@ -224,20 +227,23 @@ $$ Q(z_i) = \frac{p(x\_i, z\_i; \theta)}{p(x\_i; \theta)} $$
 
 $$ Q(z_i) = p(z\_i | x_i; \theta)$$
 
-And that leaves us with the final form of lower bound on the log likelihood (**ELBO**).
+And that leaves us with the final form of lower bound on the log-likelihood (**ELBO**).
 
 $$ \log p(x; \theta) \geq \text{ELBO}(x; Q, \theta) $$ 
 
 
 ### Relation to Expectation Maximization
-In the section above, we've found a lower bound on the log likelihood for the current values of $\theta$ and $Q(z)$. And our goal is to optimize $\theta$ so that we maximize the log likelihood $\log p(x; \theta)$. Because we cannot optimize this function directly we try to optimize its lower bound $\sum\_{i=1}^n\log\sum\_{z_i} Q(z_i) \log ( \frac{p(x_i, z_i; \theta)} {Q(z_i)}) $. 
+In the section above, we've found a lower bound on the log-likelihood for the current values of $\theta$ and $Q(z)$. And our goal is to optimize $\theta$ so that we maximize the log-likelihood $\log p(x; \theta)$. Because we cannot optimize this function directly we try to optimize its lower bound $\sum\_{i=1}^n\log\sum\_{z_i} Q(z_i) \log ( \frac{p(x_i, z_i; \theta)} {Q(z_i)}) $. 
 
-This lower bound was equal to the log likelihood if we choose $Q(z) = p(z|x; \theta)$. On the current parameters $\theta\_t$ and $Q(z)$, we optimize to $\theta\_{t+1}$. However, once we do the optimization step, Jensen's equality doesn't hold anymore, as $Q(z)$ is still parameterized on the previous parameter step $\theta_t$. For this reasons we optimize in two steps; 
+This lower bound was equal to the log-likelihood if we choose $Q(z) = p(z|x; \theta)$. On the current parameters $\theta\_t$ and $Q(z)$, we optimize to $\theta\_{t+1}$. However, once we do the optimization step, Jensen's equality doesn't hold anymore, as $Q(z)$ is still parameterized on the previous parameter step $\theta_t$. For these reasons we optimize in two steps; 
 
 * The **Expectation** step: Under current parameters $\theta_t$, find $Q(z) = p(z| x; \theta\_t)$
-* The **Maximization** step: With $Q(z; \theta\_t)$, optimize the lower bound of the log likelihood: $\underset{\theta}{\arg\max}\text{ELBO}(x; Q, \theta)$ so that we obtain $\theta\_{t+1}$.
+* The **Maximization** step: With $Q(z; \theta\_t)$, optimize the lower bound of the log-likelihood: $\underset{\theta}{\arg\max}\text{ELBO}(x; Q, \theta)$ so that we obtain $\theta\_{t+1}$.
 
-Which is exactly what we did in our earlier Gaussian Mixture example. We set $w_{ij} := p(z_i = j|x_i; \theta, \phi)$, and then we used $w\_{ij}$ to find $\theta\_{t+1}$ increasing the log likelihood.
+Which is exactly what we did in our earlier Gaussian Mixture example. We set $w_{ij} := p(z_i = j|x_i; \theta, \phi)$, and then we used $w\_{ij}$ to find $\theta\_{t+1}$ increasing the log-likelihood.
+
+## Further readings
+In an earlier post, we also took a look at [Gaussian Mixture Models]({{< ref "post/gaussian_mixture.md" >}}). In the example in this post, **k** was a hyperparameter of the algorithm. In [the post about Dirichlet Mixtures]({{< ref "post/gaussian_mixture.md" >}}), we don't specify **k**, but we use Dirichlet processes to inferr **k**, which means that we do non parametric clustering!
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
