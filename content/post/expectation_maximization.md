@@ -141,7 +141,7 @@ As we can see. We have a reasonable fit. The black dashed lines show the origina
 # General Expectation Maximization
 Above we've shown EM in relation to GMMs. However, EM can be applied in a more general sense to a wider range of algorithms. We noted earlier that we cannot optimize the log likelihood directly because we haven't observed $Z$. It turns out that we can find a lower bound to the log likelihood function, which we can optimize.  
 
-In the figure below, we see the intuition behind optimizing a lower bound of the log likelihood. A lower bound $g$ of $f$ exists if $g(x) \leq f(x)$ for all $x$ in its domain.
+In the figure below, we see the intuition behind optimizing a lower bound on the log likelihood. A lower bound $g$ of $f$ exists if $g(x) \leq f(x)$ for all $x$ in its domain.
 
 {{< figure src="/img/post-24-em/lower_bound_functions.png" title="Iteratively maximizing a lower bound of $\ell(\theta)$." >}}
 
@@ -176,27 +176,68 @@ plt.annotate(r'$E[f(x)])$', (0, np.mean(np.log(x)) - 0.15))
 {{< figure src="/img/post-24-em/jensens.png" title="Jensen's inequality applied on $(0, 15)$." >}}
 
 ## Evidence Lower Bound ELBO
-Now we are going to define a lower bound function on the evidence $p(x)$. This marginal likelihood over $z_i$ is often intractible, as we need to integrate over all posible parameters to compute it. 
+Now we are going to define a lower bound function on the evidence $p(x)$. This marginal likelihood over $Z$ is often intractable, as we need to integrate over all possible values of $z_i$ to compute it.
 
-Recall the log likelihood we try to optimize.
+Recall that we try to optimize the evidence $p(X; \theta)$ under the current guess of the parameters $\theta$.
 
-$$ \ell(\theta) = \sum\_{i=1}^n \log p(x_i; \theta)$$
+$$ \ell(\theta) = p(X; \theta) = \sum\_{i=1}^n \log p(x_i; \theta)$$
 
 As we assume a latent variable $Z$ which we haven't observed, we can rewrite it including $z_i$ (which is marginalized out).
 
-$$ \ell(\theta) = \sum\_{i=1}^n\log\sum\_{z_i}p(x_i, z_i; \theta)$$
+$$  \ell(\theta) = \sum\_{i=1}^n\log\sum\_{z_i}p(x_i, z_i; \theta)$$
 
-Now we can multiply the equation above with an arbitrarely distribution over $z_i$, $\frac{Q(z)}{Q(z)}=1$.
+Now we can multiply the equation above with an arbitrarely distribution over $Z$, $\frac{Q(z)}{Q(z)}=1$.
 
-$$ \ell(\theta) = \sum\_{i=1}^n\log\sum\_{z_i} Q(z)  \frac{p(x_i, z_i; \theta)} {Q(z)}$$
+$$ \ell(\theta) = \sum\_{i=1}^n\log\sum\_{z_i} Q(z_i)  \frac{p(x_i, z_i; \theta)} {Q(z_i)}$$
 
 Now note that expectation of a random variable $X$ is defined as $E[X] = \sum\_{i=1}^n p_ixi$. Which means we can rewrite the log likelihood as
 
-$$ \ell(\theta) = \sum\_{i=1}^n\log E\_{z \sim Q}[\frac{p(x_i, z_i; \theta)} {Q(z)}]$$
+$$ \ell(\theta)  = \sum\_{i=1}^n\log E\_{z \sim Q}[\frac{p(x_i, z; \theta)} {Q(z)}]$$
 
-As the $\log$ function is a concave function we can apply Jensen's inequality to the right hand side.
+As the $\log$ function is a concave function, we can apply Jensen's inequality to the right hand side. Note that we put the $\log$ **inside the expectation**.
 
-$$ \sum\_{i=1}^n\log E\_{z \sim Q}[\frac{p(x_i, z_i; \theta)} {Q(z)}] \geq \underbrace{\sum\_{i=1}^n E\_{z \sim Q}[ \log \frac{p(x_i, z_i; \theta)} {Q(z)}]}\_{\text{lower bound of }\ell(\theta) = p(x; \theta)}$$
+$$ \sum\_{i=1}^n\log E\_{z \sim Q}[\frac{p(x_i, z; \theta)} {Q(z)}] \geq \underbrace{\sum\_{i=1}^n E\_{z \sim Q}[ \log \frac{p(x_i, z; \theta)} {Q(z)}]}\_{\text{lower bound of }\ell(\theta) = p(x; \theta)}$$
+
+Now we continue with this **lower bound** of $p(X; \theta)$ and unpack the **expectation** in the summation form.
+
+$$ \ell(\theta) \geq \sum\_{i=1}^n\log\sum\_{z_i} Q(z_i) \log  \frac{p(x_i, z_i; \theta)} {Q(z_i)}$$
+
+The equation above holds true for every distribiution we choose for $Q(z)$, but ideally we choose a distribution that leads to a lower bound that is close to the log likelihood function. It turns out we can choose a distribution that will make the lower bound equal to $p(X; \theta)$. This is due to the fact that Jensen's inequality holds to equality **if and only if** $X = E[X]$, i.e. $X$ is **constant**. Where $X$ in this case is part inside the $\log$ function; $ \frac{p(x_i, z_i; \theta)} {Q(z_i)}$.
+
+Therefore we must choose a distribution of $Q(z)$ that leads to:
+
+$$ \frac{p(x_i, z_i; \theta)}{Q(z_i)} = 1$$
+
+Which means that
+
+$$ p(x_i, z_i; \theta) \propto Q(z_i) $$
+
+And because $Q(z)$ is a probability distribution, it must integrate to one; $\sum\_{z_i}Q(z_i) = 1$. So ideally we want to take joint distribution $p(x_i, z_i ; \theta)$ and transform it so that it is proportional to itself, but also sums to 1 over all values of $z_i$. It turns out we can find that by normalizing the joint distribution.
+
+$$ \sum\_{z_i} \frac{p(x\_i, z\_i; \theta)}{\sum\_{z\_i} p(x\_i, z\_i; \theta)} = 1 $$
+
+We can rewrite the equation inside the summation to a conditional probability.
+
+$$ Q(z_i) = \frac{p(x\_i, z\_i; \theta)}{\sum\_{z\_i} p(x\_i, z\_i; \theta)} $$
+
+$$ Q(z_i) = \frac{p(x\_i, z\_i; \theta)}{p(x\_i; \theta)} $$
+
+$$ Q(z_i) = p(z\_i | x_i; \theta)$$
+
+And that leaves us with the final form of lower bound on the log likelihood (**ELBO**).
+
+$$ \log p(x; \theta) \geq \text{ELBO}(x; Q, \theta) $$ 
+
+
+### Relation to Expectation Maximization
+In the section above, we've found a lower bound on the log likelihood for the current values of $\theta$ and $Q(z)$. And our goal is to optimize $\theta$ so that we maximize the log likelihood $\log p(x; \theta)$. Because we cannot optimize this function directly we try to optimize its lower bound $\sum\_{i=1}^n\log\sum\_{z_i} Q(z_i) \log ( \frac{p(x_i, z_i; \theta)} {Q(z_i)}) $. 
+
+This lower bound was equal to the log likelihood if we choose $Q(z) = p(z|x; \theta)$. On the current parameters $\theta\_t$ and $Q(z)$, we optimize to $\theta\_{t+1}$. However, once we do the optimization step, Jensen's equality doesn't hold anymore, as $Q(z)$ is still parameterized on the previous parameter step $\theta_t$. For this reasons we optimize in two steps; 
+
+* The **Expectation** step: Under current parameters $\theta_t$, find $Q(z) = p(z| x; \theta\_t)$
+* The **Maximization** step: With $Q(z; \theta\_t)$, optimize the lower bound of the log likelihood: $\underset{\theta}{\arg\max}\text{ELBO}(x; Q, \theta)$ so that we obtain $\theta\_{t+1}$.
+
+Which is exactly what we did in our earlier Gaussian Mixture example. We set $w_{ij} := p(z_i = j|x_i; \theta, \phi)$, and then we used $w\_{ij}$ to find $\theta\_{t+1}$ increasing the log likelihood.
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
