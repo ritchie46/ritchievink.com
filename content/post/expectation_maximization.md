@@ -48,7 +48,7 @@ plt.vlines(x_i, 0, 0.01, color=np.array(['C0', 'C1'])[z_i])
 
 {{< figure src="/img/post-24-em/gmm-example.png" title="Generative process Gaussian Mixture Models." >}}
 
-The picture above clearly describes the generative process of a Gaussian Mixture model. The dashed line shows $p(x_i|\theta)$. The blue Gaussian shows $p(x_i|z_i=1, \theta)$, and the orange Gaussian shows $p(x_i|z_i=2, \theta)$. Note that $\theta$ are the parameters of the Gaussians, $\mu$ and $\sigma$.
+The picture above clearly depicts the generative process of a Gaussian Mixture model. The dashed line shows $p(x_i|\theta)$. The blue Gaussian shows $p(x_i|z_i=1, \theta)$, and the orange Gaussian shows $p(x_i|z_i=2, \theta)$. Note that $\theta$ are the parameters of the Gaussians, $\mu$ and $\sigma$.
 
 If $Z$ was an observed variable we would know that all data points would come from two Gaussians and for each single data point we could tell from which Gaussian it has originated.
 
