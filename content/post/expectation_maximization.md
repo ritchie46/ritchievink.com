@@ -17,7 +17,7 @@ The first part of this post will focus on Gaussian Mixture Models, as expectatio
 
 
 ## Gaussian Mixture Model
-The schoolbook example of Expectation Maximization starts with a Gaussian Mixture model. Below we will go through the definition of a GMM in 1D, but note that this will generalize to ND. Gaussian Mixtures help with the following cluster problem. Assume the following generative process. Let $X$ be an observed random variable.
+The schoolbook example of Expectation Maximization starts with a Gaussian Mixture model. Below we will go through the definition of a GMM in 1D, but note that this will generalize to ND. Gaussian Mixtures help with the following cluster problem. Assume a generative process where $X$ is an observed random variable.
 
 $$ z_i \sim Multionomial(\phi) $$
 $$ x_i|z_i \sim N(\mu_k, \sigma_k^2) $$
