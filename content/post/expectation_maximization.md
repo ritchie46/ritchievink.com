@@ -240,7 +240,7 @@ This lower bound was equal to the log-likelihood if we choose $Q(z) = p(z|x; \th
 * The **Expectation** step: Under current parameters $\theta_t$, find $Q(z) = p(z| x; \theta\_t)$
 * The **Maximization** step: With $Q(z; \theta\_t)$, optimize the lower bound of the log-likelihood: $\underset{\theta}{\arg\max}\text{ELBO}(x; Q, \theta)$ so that we obtain $\theta\_{t+1}$.
 
-Which is exactly what we did in our earlier Gaussian Mixture example. We set $w_{ij} := p(z_i = j|x_i; \theta, \phi)$, and then we used $w\_{ij}$ to find $\theta\_{t+1}$ increasing the log-likelihood.
+Which is exactly what we did in our earlier Gaussian Mixture example. We set $w_{ij} := p(z_i = j|x_i; \theta, \phi)$, and then we used $w\_{ij}$ to find $\theta\_{t+1}$, and thus increasing the log-likelihood.
 
 ## Further readings
 In an earlier post, we also took a look at [Gaussian Mixture Models]({{< ref "post/gaussian_mixture.md" >}}). In the example in this post, **k** was a hyperparameter of the algorithm. In [the post about Dirichlet Mixtures]({{< ref "post/gaussian_mixture.md" >}}), we don't specify **k**, but we use Dirichlet processes to inferr **k**, which means that we do non parametric clustering!
