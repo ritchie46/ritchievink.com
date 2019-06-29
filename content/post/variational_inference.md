@@ -211,12 +211,14 @@ By yet applying another log rule; $\log A = -\log \frac{1}{A}$ we obtain:
 
 $$ D\_\text{KL}  = \log P(D) -\int Q(\theta) \log \frac{P(\theta, D)}{Q(\theta)}\text{d}\theta  $$
 
-And now we can see that the first term on the *rhs* is actually the **ELBO**, which can be written in expectation (over $\theta$) form.
+And now we can see that the second term on the *rhs* is actually the **ELBO**, which can be written in expectation (over $\theta$) form.
 
 
 $$ D\_\text{KL}  = \log P(D) - E\_{\theta \sim Q}[\log \frac{P(\theta, D)}{Q(\theta)} ] $$
 
-Now comes the **key insight**; The KL-divergence range is always positive. That means that in order to **minimize KL-divergence** we need to **maximize the ELBO** and we don't need to know the value of $P(D)$. *Further we see here another derivation of the ELBO (the lower bound on the evidence $P(D)$ in the [Expectation Maximization]({{< ref "post/expectation_maximization.md" >}}) post, we derived it using [Jensen's Inequality](https://en.wikipedia.org/wiki/Jensen%27s_inequality).*
+Now comes the **key insight**; The KL-divergence range is always positive. That means that in order to **minimize KL-divergence** we need to **maximize the ELBO** and we don't need to know the value of $P(D)$. 
+
+*In the [Expectation Maximization]({{< ref "post/expectation_maximization.md" >}}) post we see another derivation of the ELBO (the lower bound on the evidence $P(D)$. In that post we derived it using [Jensen's Inequality](https://en.wikipedia.org/wiki/Jensen%27s_inequality).*
 
 The ELBO is something we can compute as it only contains the approximation distribution $Q(\theta)$ (which we determine), and the joint probability $P(\theta, D)$, i.e. the prior times the likelihood!
 
