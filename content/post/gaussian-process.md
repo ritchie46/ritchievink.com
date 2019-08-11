@@ -501,7 +501,7 @@ plt.figure(figsize=(16, 6))
 
 As you can see we've sampled different functions from our multivariate Gaussian. In fact, we can sample an infinite amount of functions from this distribution. And if we would want a more fine grid of values, we could also reparameterize our Gaussian to include a new set of $X$.
 
-However, these functions we sample now are pretty random and maybe doesn't seem likely for some real-world processes. Let's say we only want to sample functions that are **smooth**. Besides that smoothness looks very slick, it is also a reasonable assumption. Values that are close to each other in domain $X$, will also be mapped close to each other in the codomain $Y$. We could construct such functions by defining the covariance matrix $\Sigma$ in such a way that values close to
+However, these functions we sample now are pretty random and maybe don't seem likely for some real-world processes. Let's say we only want to sample functions that are **smooth**. Besides that smoothness looks very slick, it is also a reasonable assumption. Values that are close to each other in domain $X$, will also be mapped close to each other in the codomain $Y$. We could construct such functions by defining the covariance matrix $\Sigma$ in such a way that values close to
 each other have larger correlation than values with a larger distance between them.
 
 ### Squared exponential kernel
