@@ -630,7 +630,7 @@ So now we have a joint distribution, which we can fairly easily assemble for any
 
 Because this distribution only forces the samples to be smooth functions, there should be infinitely many functions that fit $f$.
 
-And now comes the most important part. **We know the values of $f$, so we are interested in the conditional probabilty $p(f\_\*| f)$**. Which is something we can calculate because it is a Gaussian. However, to do so, we need to go through some very tedious mathematics. We will take this for granted and will only work with the end result. [Gaussian processes for machine learning](http://www.gaussianprocess.org/gpml/chapters/), presents the algebraic steps needed to compute this
+And now comes the most important part. **Given a prior $f\_{prior}$ Gaussian, wich we assume to be the marginal distribution, we can compute the conditional distribution $f\_\*|f$ (as we have observed $f$).**. Which is something we can calculate because it is a Gaussian. However, to do so, we need to go through some very tedious mathematics. We will take this for granted and will only work with the end result. [Gaussian processes for machine learning](http://www.gaussianprocess.org/gpml/chapters/), presents the algebraic steps needed to compute this
 conditional probability. We'll end up with the two parameters need for our new probability distribution $\mu\_\*$ and $\Sigma\_\*$, giving us the distribution over functions we are interested in.
 
 $$f\_\* = \mathcal{N}(\mu\_\*, \Sigma\_\*)$$
