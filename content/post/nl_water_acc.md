@@ -410,7 +410,7 @@ for cubic in range(80, 150, 5):  # This loop computes the results per m3 of stor
             break
 ```
 
-If we run this loop, your machine will number crunch a few minutes. Which I think isn't that bad as the same model scripted in DIANA FEA (a finite element analyser like Abaqua and Ansys) took almost a day! Of course this is comparing apples to peaches, but the sheer magnitude of speed difference does make me very happy!  
+If we run this loop, your machine will number crunch a few minutes. Which I think isn't that bad as the same model scripted in DIANA FEA (a finite element analyser like Abaqus and Ansys) took almost a day! Of course this is comparing apples to peaches, but the sheer magnitude of speed difference does make me very happy!  
 
 {{< figure src="/img/post-10-water/volume_height_diagram.png" title="Result of the ponding analysis." >}}
 
