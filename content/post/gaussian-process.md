@@ -1,7 +1,7 @@
 +++
 date = "2019-02-01"
 description = "Finally some intuition for Gaussian Processes."
-tags = ["machine learning", "python", "gaussian processes", "bayesian"]
+tags = ["algorithm breakdown", "machine learning", "python", "gaussian processes", "bayesian"]
 draft = false
 keywords = ["machine learning", "python", "gaussian processes", "bayesian"]
 author = "Ritchie Vink"
