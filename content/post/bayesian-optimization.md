@@ -423,7 +423,7 @@ np.random.seed(3)
 bo = BayesOpt(param_ranges, evaluate_params, random_trials=2)
 ```
 
-Next we iterate over 8 optimization loops. 
+Next we take 8 optimization iterations and plot the fitted GP (left) and $EI(x)$ over our domain $(0, 10)$ (right). We also plot the trials we already have observed. The random trials in red, and the trials that we took during the optimization in green. Finally, we plot the the new proposal point for the next iteration. This is the dashed vertical line.
 
 ```python
 bo._random_search()
@@ -487,6 +487,31 @@ for i in range(2, 10):
 {{< figure src="/img/post-26/iteration6.png" >}}
 {{< figure src="/img/post-26/iteration7.png" >}}
 {{< figure src="/img/post-26/iteration8.png" title="Explore the uncertainty by maximizing $EI(x)$" >}}
+
+What is interesting to note, is that $EI(x)$ is not high in area's we've already observed, It really favours unobserved area that maximize the probability of increasing $f(x)$, hence Expected Improvement. If we continue the optimization we will be certain over the whole range $f(x)$ and $EI(x)$ will be close to zero for the whole range. Which reflects what we want, as we have a limited budget, there is no use in testing something we know the outcome of. The exploration characteristics of $EI(x)$ can clearly be seen in the figure below, which depicts the relation between $\delta = \mu(x^\*) - f(x^+)$ and $\sigma(x^\*)$.
+
+``` python
+delta = np.linspace(0, 1)
+sigma = np.linspace(0, 1)[::-1]
+# get a square grid w/ the delta and sigma inputs
+dd, ss = np.meshgrid(delta, sigma)
+
+# this is just the EI function
+z = dd / ss
+unit_norm = stats.norm()
+ei = dd * unit_norm.cdf(z) + ss * unit_norm.pdf(z)
+ei[np.isnan(ei)] = 0
+
+plt.figure(figsize=(7, 7))
+plt.title('$EI(x)$')
+plt.contourf(delta, sigma, ei)
+plt.xlabel('$\delta$')
+plt.ylabel('$\sigma(x^*)$')
+```
+{{< figure src="/img/post-26/EI.png" title="Exploration characteristics of $EI(x)$. $EI(x)$ is high where both the uncertainty $\sigma(x^*)$ and the improvement $\delta$ are high." >}}
+
+We can also observe that our proposal algorithm isn't perfect, as the proposal of the first iteration is a local optimum. This isn't too worrying as that point would probably a global optimum in a later iteration and it helps the GP with extra data points.
+
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
