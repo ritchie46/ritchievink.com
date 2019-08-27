@@ -512,6 +512,10 @@ plt.ylabel('$\sigma(x^*)$')
 
 We can also observe that our proposal algorithm isn't perfect, as the proposal of the first iteration is a local optimum. This isn't too worrying as that point would probably a global optimum in a later iteration and it helps the GP with extra data points.
 
+## Higher dimensions
+Bayesian optimization is of course not limited to 1D input. In [this notebook](https://github.com/ritchie46/vanilla-machine-learning/blob/master/bayesian/bayesian_optimization/bayesopt_water_accumulation.ipynb) I have an example how we could use Bayesian Optimization to find more optimal solutions for a structural engineering problem. For an introduction to the problem you can check [this post]({{< ref "nl_water_acc.md" >}}).
+
+
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
