@@ -516,6 +516,13 @@ We can also observe that our proposal algorithm isn't perfect, as the proposal o
 Bayesian optimization is of course not limited to 1D input. In [this notebook](https://github.com/ritchie46/vanilla-machine-learning/blob/master/bayesian/bayesian_optimization/bayesopt_water_accumulation.ipynb) I have an example how we could use Bayesian Optimization to find more optimal solutions for a structural engineering problem. For an introduction to the problem you can check [this post]({{< ref "nl_water_acc.md" >}}).
 
 
+## A word about kernels
+Kernels restrict the prior distribution of functions. A standard kernels is the Radius Basis Function kernel (RBF), which results into 'smooth' functions. It ensures that values, that are relatively close in the domain of $f$ are also relatively close in the codomain $f(x)$. This isn't always a sensible default. In a step function, for instance, we have huge steps at a small change of $x$.
+
+Kernels can also be combined, where multiplying can be seen as an **AND** operation and addition as an **OR** operation. There are a lot of kernels with different properties. I'd recommend to take a look at [this kernel cookbook](https://www.cs.toronto.edu/~duvenaud/cookbook/) to get a concise overview.
+
+## Implemenations
+
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
