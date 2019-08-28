@@ -11,14 +11,14 @@ og_image = "/img/post-26/explore-forest.png"
 
 {{< figure src="/img/post-26/explore-forest.png" >}}
 
-Not that long ago I wrote an introduction post on [Gaussian Processes]({{< ref "gaussian-process.md" >}}) (GP's), a regression technique where we condition a Gaussian prior distribution over functions on observed data. GP's can model any function that is possible within a given prior distribution. And we don't get a function $f$, we get a whole posterior distritbution of functions $P(f|X)$.
+Not that long ago I wrote an introduction post on [Gaussian Processes]({{< ref "gaussian-process.md" >}}) (GP's), a regression technique where we condition a Gaussian prior distribution over functions on observed data. GP's can model any function that is possible within a given prior distribution. And we don't get a function $f$, we get a whole posterior distribution of functions $P(f|X)$.
 
-This of course sounds very cool and all, but there is no free lunch. GP's have a complexity $\mathcal{O}(N^3)$, where $N$ is the number of data points. GP's work well up to approximately 1000 data points (I should note that there are approximating solutions that scale better). This led me to believe that I wouldn't be using them too much in real world problems, but luckily I was very wrong! 
+This of course, sounds very cool and all, but there is no free lunch. GP's have a complexity $\mathcal{O}(N^3)$, where $N$ is the number of data points. GP's work well up to approximately 1000 data points (I should note that there are approximating solutions that scale better). This led me to believe that I wouldn't be using them too much in real-world problems, but luckily I was very wrong! 
 
 
 ## Bayesian Optimization
-This post is about bayesian optimization (BO), an optimization technique, that gains more tractions over the past few years, as its being used to search for optimal hyperparameters in neural networks. BO is actually a useful optimization algorithm for any black-box function that is costly to evaluate. Black box, in this sense, means that we observe only the (noisy) outputs of the function and not more information that could be to our advantage (i.e. first or second order derivatives).
-By 'costly', we mean that the function evaluations are on a certain budget. There are resource required to evaluate the function. These resources are often time or money.
+This post is about bayesian optimization (BO), an optimization technique, that gains more tractions over the past few years, as its being used to search for optimal hyperparameters in neural networks. BO is actually a useful optimization algorithm for any black-box function that is costly to evaluate. Black box, in this sense, means that we observe only the (noisy) outputs of the function and not more information that could be to our advantage (i.e. first- or second-order derivatives).
+By 'costly', we mean that the function evaluations are on a certain budget. There are resources required to evaluate the function. These resources are often time or money.
 
 Some examples where bayesian optimization can be useful are:
 
@@ -27,32 +27,32 @@ Some examples where bayesian optimization can be useful are:
 * Calibration of environmental models
 * Increasing conversion rates
 
-These subjects are time consuming, have a large parameter space, and the implementations are 'black-box' as we can't compute derivatives.
+These subjects are time-consuming, have a large parameter space, and the implementations are 'black-box' as we can't compute derivatives.
 
-Some examples where you shouldn't use bayesian optimization:
+Some examples where you shouldn't use Bayesian Optimization:
 
 * Curve fitting
 * Linear programming
 
-For these kind of problems there are better optimization algorithms that can, for instance, take advantage of the shape of the functions range (convex problems).
+For these kinds of problems, there are better optimization algorithms that can, for instance, take advantage of the shape of the function's codomain (convex problems).
 
 This post we are going to implement a Bayesian Optimization algorithm in Python and while doing so we are going to explore some properties of the algorithm.
 
 ## Why Gaussian Processes?
-Baysian optimization is thus used to model unknown, time consuming to evaluate, non-convex, black-box functions $f$. Let's think for a moment about some of the properties we would want for such a model. 
+Bayesian optimization is thus used to model unknown, time-consuming to evaluate, non-convex, black-box functions $f$. Let's think for a moment about some of the properties we would want for such a model. 
 
 **Exploration** 
 
-Most models fit in a frequentist manner and lead to a point estimate of the parameters that best fit the function. Once we've fitted a model on $f(x)$, it is hard to get a sense of the uncertainty of our model. We want to have a notion of uncertainty because we don't want to explore a space where we are very certain and we already know what the outcome will be. This would be a waiste of our limited budget. So we want to be able to do exploration and for that we need to know the uncertainty, i.e. we need Bayesian models. On to the second requirement!
+Most models fit in a frequentist manner and lead to a point estimate of the parameters that best fit the function. Once we've fitted a model on $f(x)$, it is hard to get a sense of the uncertainty of our model. We want to have a notion of uncertainty because we don't want to explore a space where we are very certain and we already know what the outcome will be. This would be a waste of our limited budget. So we want to be able to do exploration and for that, we need to know the uncertainty, i.e. we need Bayesian models. On to the second requirement!
 
 **Versatility**
 
-As BO is useful for any black box function (which can have any output shape), we do need a versatile model to be able to approximate the unknown black-box function. For this reason we can't use linear or polynomial regression as we restrict our model to a certain function family. Gaussian Processes fit this requirement. We can just set a prior distribution over functions and with a kernel we can restrict (or not) the family of possible functions as much as we want.
+As BO is useful for any black-box function (which can have any output shape), we do need a versatile model to be able to approximate the unknown black-box function. For this reason, we can't use linear or polynomial regression as we restrict our model to a certain function family. Gaussian Processes fit this requirement. We can just set a prior distribution over functions and with a kernel, we can restrict (or not) the family of possible functions as much as we want.
 
-The limiting scalability properties of GP's now actually don't matter as the function evaluations are on a limiting budget. Every new data point is costly, so we'll stay wel below 1000 data points!
+The limiting scalability properties of GP's now actually don't matter as the function evaluations are on a limiting budget. Every new data point is costly, so we'll stay well below 1000 data points!
 
 ## The algorithm
-Below is the BO algorithm shown in pseudo-code. Later we will implement in Python.
+Below the BO algorithm is shown in pseudo-code. Later we will implement in Python.
 
 ``` text
 Place prior over f.
@@ -188,7 +188,7 @@ See the docstring for the input and outputs given by this function.
 
 ### Bayesian Optimization class 
 
-These are all the utility functions we need. Now we can implement the whole Bayesian Optimization model. For reading purposed the whole implmentation is shown at once. Below the code snippet we'll go through some methods of this class to get an understanding of what we are doing.
+These are all the utility functions we need. Now we can implement the whole Bayesian Optimization model. For reading purposed the whole implementation is shown at once. Below the code snippet, we'll go through some methods of this class to get an understanding of what we are doing.
 
 ```python
 class BayesOpt:
@@ -368,22 +368,22 @@ class BayesOpt:
         return hp
 ```
 
-I will go through some of the methods. Not all as most will be self explanatory (I hope).
+I will go through some of the methods. Not all as most will be self-explanatory (I hope).
 
 ### `__init__(self)`
-Here we instantiate the `BayesOpt` model. We'll set some attributes we'll need for the model. It is important to note that we pass `f` here. This is the black box function we want to approximate. Furthermore we set the number of `random_trials` and `optimization_trials` here. The sum of those are the total budget of function evaluations we may use.
+Here we instantiate the `BayesOpt` model. We'll set some attributes we'll need for the model. It is important to note that we pass `f` here. This is the black box function we want to approximate. Furthermore, we set the number of `random_trials` and `optimization_trials` here. The sum of those is the total budget of function evaluations we may use.
 
 ### `__single_iter(self)`
-This is the method were we do a single Bayesian Optimization iteration. It consists of training a GP on the data points we've observed thusfar. Then we pass this GP to the acquisition function and obtain a new parameter proposal by maximizing the acquisition function. With this new proposal $x^\*$ we evaluate $f(x^\*)$ and save the results.
+This is the method where we do a single Bayesian Optimization iteration. It consists of training a GP on the data points we've observed thus far. Then we pass this GP to the acquisition function and obtain a new parameter proposal by maximizing the acquisition function. With this new proposal $x^\*$ we evaluate $f(x^\*)$ and save the results.
 
 ### `_new_proposal(self, n)`
-In this method we actually maximize the $EI(x)$ function. We'll use `scipy` for that, but there are many optimization algorithms that can be used for this (don't use Bayesian Optimization though, recursion induced stack-overflow ;) ). Note that we pass `n` as parameter. This dictates how many times we should restart the optimization algorithm that maximizes $EI(x)$ from a different (random) starting point. This is to reduce the chance of proposing a solution that is a local optimum.
+In this method, we actually maximize the $EI(x)$ function. We'll use `scipy` for that, but many optimization algorithms can be used for this (don't use Bayesian Optimization though, recursion induced stack-overflow ;) ). Note that we pass `n` as a parameter. This dictates how many times we should restart the optimization algorithm that maximizes $EI(x)$ from a different (random) starting point. This is to reduce the chance of proposing a solution that is a local optimum.
 
 Okay, that was it. Now let's take this baby for a spin!
 
 
 ## 1D examples
-Okay let's start with an example in 1D. This will give us a good feeling of how the Bayesian Optimization uses GP's and the acquisition function for exploration.
+Let's start with an example in 1D. This will give us a good feeling of how Bayesian Optimization uses GP's and the acquisition function for exploration.
 
 First we generate a multi model function over a range $(0, 10)$.
 
@@ -488,7 +488,7 @@ for i in range(2, 10):
 {{< figure src="/img/post-26/iteration7.png" >}}
 {{< figure src="/img/post-26/iteration8.png" title="Explore the uncertainty by maximizing $EI(x)$" >}}
 
-What is interesting to note, is that $EI(x)$ is not high in area's we've already observed, It really favours unobserved area that maximize the probability of increasing $f(x)$, hence Expected Improvement. If we continue the optimization we will be certain over the whole range $f(x)$ and $EI(x)$ will be close to zero for the whole range. Which reflects what we want, as we have a limited budget, there is no use in testing something we know the outcome of. The exploration characteristics of $EI(x)$ can clearly be seen in the figure below, which depicts the relation between $\delta = \mu(x^\*) - f(x^+)$ and $\sigma(x^\*)$.
+What is interesting to note, is that $EI(x)$ is not high in area's we've already observed, It really favors unobserved areas that maximize the probability of increasing $f(x)$, hence Expected Improvement. If we continue the optimization we will be certain over the whole range $f(x)$ and $EI(x)$ will be close to zero for the whole range. Which reflects what we want, as we have a limited budget, there is no use in testing something we know the outcome of. The exploration characteristics of $EI(x)$ can clearly be seen in the figure below, which depicts the relation between $\delta = \mu(x^\*) - f(x^+)$ and $\sigma(x^\*)$.
 
 ``` python
 delta = np.linspace(0, 1)
@@ -513,15 +513,26 @@ plt.ylabel('$\sigma(x^*)$')
 We can also observe that our proposal algorithm isn't perfect, as the proposal of the first iteration is a local optimum. This isn't too worrying as that point would probably a global optimum in a later iteration and it helps the GP with extra data points.
 
 ## Higher dimensions
-Bayesian optimization is of course not limited to 1D input. In [this notebook](https://github.com/ritchie46/vanilla-machine-learning/blob/master/bayesian/bayesian_optimization/bayesopt_water_accumulation.ipynb) I have an example how we could use Bayesian Optimization to find more optimal solutions for a structural engineering problem. For an introduction to the problem you can check [this post]({{< ref "nl_water_acc.md" >}}).
+Bayesian optimization is of course not limited to 1D input. In [this notebook](https://github.com/ritchie46/vanilla-machine-learning/blob/master/bayesian/bayesian_optimization/bayesopt_water_accumulation.ipynb) I have an example of how we could use Bayesian Optimization to find more optimal solutions for a structural engineering problem. For an introduction to the problem, you can check [this post]({{< ref "nl_water_acc.md" >}}).
 
 
 ## A word about kernels
-Kernels restrict the prior distribution of functions. A standard kernels is the Radius Basis Function kernel (RBF), which results into 'smooth' functions. It ensures that values, that are relatively close in the domain of $f$ are also relatively close in the codomain $f(x)$. This isn't always a sensible default. In a step function, for instance, we have huge steps at a small change of $x$.
+Kernels restrict the prior distribution of functions. A standard kernels is the Radius Basis Function kernel (RBF), which results in 'smooth' functions. It ensures that values, that are relatively close in the domain of $f$ are also relatively close in the codomain $f(x)$. This isn't always a sensible default. In a step function, for instance, we have huge steps at a small change of $x$.
 
-Kernels can also be combined, where multiplying can be seen as an **AND** operation and addition as an **OR** operation. There are a lot of kernels with different properties. I'd recommend to take a look at [this kernel cookbook](https://www.cs.toronto.edu/~duvenaud/cookbook/) to get a concise overview.
+Kernels can also be combined, where multiplying can be seen as an **AND** operation and addition as an **OR** operation. There are a lot of kernels with different properties. I'd recommend taking a look at [this kernel cookbook](https://www.cs.toronto.edu/~duvenaud/cookbook/) to get a concise overview.
 
-## Implemenations
+## Further reading and Implementations
+Want to read more about Bayesian Optimization? Take a look at the following:
+
+* [Constrained Bayesian Optimization with NoisyExperiments (Letham et al.)](https://research.fb.com/wp-content/uploads/2018/08/Constrained-Bayesian-Optimization-with-Noisy-Experiments.pdf)
+* [Excellent blog post by Martin Krasser](http://krasserm.github.io/2018/03/21/bayesian-optimization/)
+* [A Tutorial on Bayesian Optmization (Peter Frazier)](https://arxiv.org/abs/1807.02811)
+
+Some implementations of Bayesian Optimization are:
+
+* [GPyOpt (from the makers of GPy](https://github.com/SheffieldML/GPyOpt)
+* [Ax.dev (They use GPytorch for GP fitting)](https://ax.dev/)
+* [Robust and Efficient Hyperparameter Optimization at Scale](https://www.automl.org/automl/bohb/)
 
 
 <script type="text/x-mathjax-config">
