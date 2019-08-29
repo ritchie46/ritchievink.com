@@ -517,12 +517,14 @@ Bayesian optimization is of course not limited to 1D input. In [this notebook](h
 
 
 ## A word about kernels
-Kernels restrict the prior distribution of functions. A standard kernels is the Radius Basis Function kernel (RBF), which results in 'smooth' functions. It ensures that values, that are relatively close in the domain of $f$ are also relatively close in the codomain $f(x)$. This isn't always a sensible default. In a step function, for instance, we have huge steps at a small change of $x$.
+Kernels restrict the prior distribution of functions. A standard kernel is the Radius Basis Function kernel (RBF), which results in 'smooth' functions. It ensures that values, that are relatively close in the domain of $f$ are also relatively close in the codomain $f(x)$. This isn't always a sensible default. In a step function, for instance, we have huge steps at a small change of $x$.
 
 Kernels can also be combined, where multiplying can be seen as an **AND** operation and addition as an **OR** operation. There are a lot of kernels with different properties. I'd recommend taking a look at [this kernel cookbook](https://www.cs.toronto.edu/~duvenaud/cookbook/) to get a concise overview.
 
 ## Further reading and Implementations
-Want to read more about Bayesian Optimization? Take a look at the following:
+This post we looked at how Bayesian Optimization can be used to optmize black box models. We've implemented BO in Python using GPy for the Gaussian Processes, and we've seen how Expected Improvement leads to exploring uncertain areas in of our black box function's output.
+
+Want to read more about Bayesian Optimization? Take a look at the following posts/ papers:
 
 * [Constrained Bayesian Optimization with NoisyExperiments (Letham et al.)](https://research.fb.com/wp-content/uploads/2018/08/Constrained-Bayesian-Optimization-with-Noisy-Experiments.pdf)
 * [Excellent blog post by Martin Krasser](http://krasserm.github.io/2018/03/21/bayesian-optimization/)
