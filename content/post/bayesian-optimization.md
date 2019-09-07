@@ -74,13 +74,13 @@ while i < budget do:
 
 
 ## Expected Improvement
-In the pseudo-code example we define an **acquisition function**. The acquisition function can be any function that reflectsthe location we want to evaluate next. A function that is often used is called Expected Improvement;
+In the pseudo-code example we define an **acquisition function**. The acquisition function can be any function that reflects the location we want to evaluate next. A function that is often used is called Expected Improvement;
  
  $$\text{EI}(x) = \mathbb{E}\max(f(x^\*) - f(x^+), 0)$$
  
 Where $x^\*$ are the proposal parameters, and $x^+$ are the current highest evaluated parameters. This expectation has a closed form solution defined by;
 
-$$\text{EI}(x) = (\delta) \Phi(Z) + \sigma(x^\*) \phi(Z)$$
+$$\text{EI}(x) = \delta \Phi(Z) + \sigma(x^\*) \phi(Z)$$
 
 Where $\delta = \mu(x^\*) - f(x^+)$ and 
 
@@ -416,7 +416,7 @@ param_ranges = {
 }
 ```
 
-With these we can instantiate the `BayesOpt` class. We set at least 2 random trials otherwise it is impossible conditional a Gaussian Process.
+With these we can instantiate the `BayesOpt` class. We set at least 2 random trials otherwise it is impossible to fit a Gaussian Process.
 
 ``` python
 np.random.seed(3)
