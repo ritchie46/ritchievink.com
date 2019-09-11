@@ -188,7 +188,7 @@ Below this goal is shown visually. From a set of *easy to work with* distributio
 ### 3.2 Kullback-Leibler to ELBO
 Now your head should be filled with question marks! 
 
-How can we compute the KL-divergence $D\_{\text{KL}}(Q(\theta) \\: || \\: P(\theta|D))$ when we don't know the posterior?! It turns out that is the reason we've chosen KL-divergence (and not a real metric such as Wasserstein distance between $Q(\theta)$ and $P(\theta|D)$). With KL-divergencewe don't have to know the posterior! Below we'll see why:
+How can we compute the KL-divergence $D\_{\text{KL}}(Q(\theta) \\: || \\: P(\theta|D))$ when we don't know the posterior?! It turns out that is the reason we've chosen KL-divergence (and not a real metric such as Wasserstein distance between $Q(\theta)$ and $P(\theta|D)$). With KL-divergence we don't have to know the posterior! Below we'll see why:
 
 
 $$ D\_{\text{KL}}(Q(\theta) \\: || \\: P(\theta|D))  = \int Q(\theta) \log \frac{Q(\theta)}{P(\theta|D)}\text{d}\theta $$
@@ -220,7 +220,24 @@ Now comes the **key insight**; The KL-divergence range is always positive. That 
 
 *In the [Expectation Maximization]({{< ref "post/expectation_maximization.md" >}}) post we see another derivation of the ELBO (the lower bound on the evidence $P(D)$. In that post we derived it using [Jensen's Inequality](https://en.wikipedia.org/wiki/Jensen%27s_inequality).*
 
-The ELBO is something we can compute as it only contains the approximation distribution $Q(\theta)$ (which we determine), and the joint probability $P(\theta, D)$, i.e. the prior times the likelihood!
+The ELBO is something we can compute as it only contains the approximation distribution $Q(\theta)$ (which we determine), and the joint probability $P(\theta, D)$, i.e. the **prior times the likelihood!**
+
+<div style="background-color: #E0E1F4; padding: 8px; border-radius: 5px" b><i>
+Update 11-09-2019<br>
+In the derivation of Variational Autoencoders, the ELBO is often written in two terms; a reconstruction error and a KL-term on the variational distribution $Q_\theta$ and the prior $P(\theta)$
+
+First we rewrite the joint probability $P(\theta, D)$ into conditional probability $P(D|\theta)P(\theta)$.
+
+$$ \text{ELBO}  = E_{\theta \sim Q}[\log \frac{P(D|\theta)P(\theta)}{Q(\theta)} ] $$
+
+Then we expand the equation and thereby isolating the reconstruction error $\log P(D|\theta)$, i.e. the log likelihood.
+
+$$ \text{ELBO}  = E_{\theta \sim Q}[\log P(D|\theta)] +  E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$$
+
+If we rewrite the $E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$ in the integral form $\int Q(\theta)\frac{P(\theta)}{Q(\theta)}d\theta$, we can observe that this is the KL-divergence between the prior $P(\theta)$ and the variational distribution $Q(\theta)$. Resulting in an ELBO defined by the reconstruction error and $D_{KL}(Q(\theta)||P(\theta)).$
+
+$$ \text{ELBO}  = E_{\theta \sim Q}[\log P(D|\theta)] + D_{KL}(Q(\theta)||P(\theta))$$
+</i></div>
 
 ### 3.3 Mean Field Approximation
 Once we've defined a model, we need to define a distribution $Q(\theta)$ that approximates the posterior. One approach is called the Mean Field Approximation. Note that the joint probability is defined by:
