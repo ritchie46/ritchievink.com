@@ -234,7 +234,7 @@ Then we expand the equation and thereby isolating the reconstruction error $\log
 
 $$ \text{ELBO}  = E_{\theta \sim Q}[\log P(D|\theta)] +  E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$$
 
-If we rewrite the $E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$ in the integral form $\int Q(\theta)\frac{P(\theta)}{Q(\theta)}d\theta$, we can observe that this is the KL-divergence between the prior $P(\theta)$ and the variational distribution $Q(\theta)$. Resulting in an ELBO defined by the reconstruction error and $D_{KL}(Q(\theta)||P(\theta)).$
+If we rewrite the $E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$ in the integral form $\int Q(\theta)\log\frac{P(\theta)}{Q(\theta)}d\theta$, we can observe that this is the KL-divergence between the prior $P(\theta)$ and the variational distribution $Q(\theta)$. Resulting in an ELBO defined by the reconstruction error and $D_{KL}(Q(\theta)||P(\theta)).$
 
 $$ \text{ELBO}  = E_{\theta \sim Q}[\log P(D|\theta)] + D_{KL}(Q(\theta)||P(\theta))$$
 </i></div>
@@ -262,7 +262,7 @@ The only thing that lasts now is finding the variational parameters of $Q\_\text
 
 ### 3.4 Variational Inference in Pyro
 There are several ways to solve this optimization problem. One solution is stochastic gradient descent. This requires computing gradients, which we don't want to do by hand. Therefore we are going to use [Pyro](Deep Universal Probabilistic Programming). This is a probabilistic programming language based on [Pytorch](https://pytorch.org/). First, we are going to define the generative model just as we did in PyMC3.
-
+  
 ```python
 import pyro
 import pyro.optim
