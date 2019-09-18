@@ -5,7 +5,7 @@ tags = ["algorithm breakdown", "machine learning", "python", "bayesian", "optimi
 draft = false
 keywords = ["algorithm breakdown", "machine learning", "python", "bayesian", "optimization"]
 author = "Ritchie Vink"
-title = "Variational inference from scratch."
+title = "Variational inference from scratch"
 og_image = "/img/post-27-vi-from-scratch/soundboard.png"
 +++
 
