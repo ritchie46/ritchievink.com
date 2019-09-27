@@ -13,7 +13,7 @@ og_image = "/img/post-27-vi-from-scratch/soundboard.png"
 
 In the posts [Expectation Maximization]({{< ref "expectation_maximization.md" >}}) and [Bayesian inference; How we are able to chase the Posterior]({{< ref "variational_inference.md" >}}), we laid the mathematical foundation of variational inference. This post we will continue on that foundation and implement variational inference in Pytorch. If you are not familiar with the basis, I'd recommend reading these posts to get you up to speed.
 
-This post we'll model a probablistic layer as output layer of a neural network. This will give us insight in the aleatoric uncertainty (the noise in the data). We will evaluate the results on a fake dataset.
+This post we'll model a probablistic layer as output layer of a neural network. This will give us insight in the aleatoric uncertainty (the noise in the data). We will evaluate the results on a fake dataset [borrowed from this post](https://medium.com/tensorflow/regression-with-probabilistic-layers-in-tensorflow-probability-e46ff5d37baf).
 
 ```python
 import numpy as np
@@ -79,7 +79,7 @@ for epoch in range(epochs):
     y_pred = m(X)
     loss = (0.5 * (y_pred - Y)**2).mean()
     loss.backward()
-    optim.step()       
+    optim.step()
 ```
 
 If we train this model, we might observe a regression line like below. We are able to predict the expectation of y, but we are not able to make a statement about the noise of our predictions. The outputs are point estimates.
@@ -89,9 +89,9 @@ If we train this model, we might observe a regression line like below. We are ab
 
 ## Variational regression
 
-Now let's consider a model where we want to  obtain the distribution $P(y|x) \propto P(x|y) P(y)$. In variational inference, we accept that we cannot obtain the true posterior $P(y|x)$, but we try to approximate this distribution with another distribution $Q(\theta)$, where $\theta$ are the variational parameters. This distribution we call a variational distribution.
+Now let's consider a model where we want to  obtain the distribution $P(y|x) \propto P(x|y) P(y)$. In variational inference, we accept that we cannot obtain the true posterior $P(y|x)$, but we try to approximate this distribution with another distribution $Q_{\theta}(y)$, where $\theta$ are the variational parameters. This distribution we call a variational distribution.
 
-If we choose a factorized (diagonal) Gaussian variational distribution, $Q(\theta)$ becomes $Q(\mu, \text{diag}(\sigma^2))$. We want this distribution to be conditioned to $x$, therefore we define a function $g\_{\theta}: x \mapsto \mu, \sigma$. The function $g\_{\theta}$ will be a neural network that predicts the variational parameters. The total model can thus be described as:
+If we choose a factorized (diagonal) Gaussian variational distribution, $Q\_{\theta}(y)$ becomes $Q\_{\theta}(\mu, \text{diag}(\sigma^2))$. *Note that we are now working with an 1D case and that this factorization doesn't mean much right now.* We want this distribution to be conditioned to $x$, therefore we define a function $g\_{\theta}: x \mapsto \mu, \sigma$. The function $g\_{\theta}$ will be a neural network that predicts the variational parameters. The total model can thus be described as:
 
 $$ P(y) = \mathcal{N}(0, 1) $$
 
@@ -100,42 +100,45 @@ $$ Q(y|x) = \mathcal{N}(g\_{\theta}(x)\_{\mu}, \text{diag}(g\_{\theta}(x)\_{\sig
 Where we set a unit Gaussian prior $P(y)$. 
 
 ## Optimization problem
+*Note: Above we've defined the posterior and the variational distribution in the variable $y|x$, from now on we will generalize to a notation that is often used. We'll extend $y|x$ to any (latent) stochastic variable $Z$.*
+
+
 Variational inference is done by maximizing the ELBO (**E**vidence **L**ower **BO**und). Which is often written in a more intuitive form:
 
-$$ \text{argmax}\_{\theta} = E\_{\theta \sim Q}[\underbrace{\log P(D|\theta)}\_{\text{likelihood}}] + D\_{KL}(Q(\theta)||\underbrace{P(\theta)}\_{\text{prior}})$$ 
+$$ \text{argmax}\_{Z} = E\_{Z \sim Q}[\underbrace{\log P(D|Z)}\_{\text{likelihood}}] + D\_{KL}(Q(Z)||\underbrace{P(Z)}\_{\text{prior}})$$ 
 
 Where we have a likelihood term (in Variational Autoencoders often called reconstruction loss) and the KL-divergence between the prior and the variational distribution. We are going to rewrite this ELBO definition so that it is more clear how we can use it to optimize the model, we've just defined. 
 
 Let's first rewrite the KL-divergence term in integral form;
 
-$$ E\_{\theta \sim Q}[\log P(D|\theta)] + \int Q(\theta) \frac{P(\theta)}{Q(\theta)}d\theta $$
+$$ E\_{Z \sim Q}[\log P(D|Z)] + \int Q(Z) \frac{P(Z)}{Q(Z)}dZ$$
 
-Now we observe that we can rewrite the integral form as an expectation $\theta$;
+Now we observe that we can rewrite the integral form as an expectation $Z$;
 
-$$ E\_{\theta \sim Q}[\log P(D|\theta)] + E\_{\theta \sim Q}[ \frac{P(\theta)}{Q(\theta)}]d\theta $$
+$$ E\_{Z \sim Q}[\log P(D|Z)] + E\_{Z \sim Q}[ \frac{P(Z)}{Q(Z)}]dZ$$
 
 And by applying the log rule $\log\frac{A}{B}=\log A - \log B$, we get;
 
-$$ E\_{\theta \sim Q}[\log P(D|\theta)] + E\_{\theta \sim Q}[\log P(\theta) - \log Q(\theta) ] $$
+$$ E\_{Z \sim Q}[\log P(D|Z)] + E\_{Z \sim Q}[\log P(Z) - \log Q(Z) ] $$
 
 ## Monte Carlo ELBO
-Deriving those expectations can be some tedious mathematics, or maybe not even possible. Luckily we can get estimates of the mean by taking samples from $Q(\theta)$ and average over those results.
+Deriving those expectations can be some tedious mathematics, or maybe not even possible. Luckily we can get estimates of the mean by taking samples from $Q(Z)$ and average over those results.
 
 ### Reparameterization trick
-If we start taking samples from a $Q(\theta)$ we leave the deterministic world, and the gradient can not flow through the model anymore. We avoid this problem by reparameterizing the samples from the distribution.
+If we start taking samples from a $Q(Z)$ we leave the deterministic world, and the gradient can not flow through the model anymore. We avoid this problem by reparameterizing the samples from the distribution.
 
 Instead of sampling directly from the variational distribution;
-$$ y \sim Q(\mu, \sigma^2) $$  
+$$ z \sim Q(\mu, \sigma^2) $$
 
 We sample from a unit gaussian and recreate samples from the variational distribution. Now the stochasticity of $\epsilon$ is external and will not prevent the flow of gradients.
-$$ y = \mu + \sigma \epsilon $$ 
+$$ z = \mu + \sigma \epsilon $$ 
 
 Where
 
 $$ \epsilon \sim \mathcal{N}(0, 1) $$ 
 
 ## Implementation
-This is all we need for implementing and optimizing this model. Below we'll define the model in Pytorch. By calling the **forward** method we retrieve samples from the variational distribution.
+This is all we need for implementing and optimizing this model. Below we'll define the model in Pytorch. By calling the `forward` method we retrieve samples from the variational distribution.
 
 
 ```python
@@ -234,9 +237,9 @@ plt.fill_between(X.flatten(), q1, q2, alpha=0.2)
 {{< figure src="/img/post-27-vi-from-scratch/fit_vi.png" title="90% credible interval of $P(y|x)$." >}}
 
 ## Analytical KL-divergence and reconstruction loss
-Above we have implemented ELBO by sampling from the variational posterior. It turns out that for the KL-divergence term, this isn't necessary as there is an analytical solution [for the Gaussian case). (Diederik P. Kingma and Max Welling. 2013.  Auto-encoding variational bayes.](https://arxiv.org/pdf/1802.05814.pdf) included it in Appendix B.
+Above we have implemented ELBO by sampling from the variational posterior. It turns out that for the KL-divergence term, this isn't necessary as there is an analytical solution. [For the Gaussian case, Diederik P. Kingma and Max Welling (2013.  Auto-encoding variational bayes)](https://arxiv.org/pdf/1802.05814.pdf) included the solution in Appendix B.
 
-$$  D\_{KL}(Q(\theta)||P(\theta)) = \frac{1}{2}\sum\_{i=1}^n(1+\log \sigma\_i^2 - \mu\_i^2 - \sigma\_i^2) $$
+$$  D\_{KL}(Q(Z)||P(Z)) = \frac{1}{2}\sum\_{i=1}^n(1+\log \sigma\_i^2 - \mu\_i^2 - \sigma\_i^2) $$
 
 For the likelihood term, we did implement Guassian log likelihood, this term can also be replaced with a similar loss functions. For Gaussian likelihood we can use squared mean error loss, for Bernoulli likelihood we could use binary cross entropy etc. If we do that for the earlier defined model, we can replace the loss function as defined below:
 
