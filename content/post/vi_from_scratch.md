@@ -131,7 +131,7 @@ Instead of sampling directly from the variational distribution;
 $$ z \sim Q(\mu, \sigma^2) $$
 
 We sample from a unit gaussian and recreate samples from the variational distribution. Now the stochasticity of $\epsilon$ is external and will not prevent the flow of gradients.
-$$ z = \mu + \sigma \epsilon $$ 
+$$ z = \mu + \sigma \odot \epsilon $$ 
 
 Where
 
@@ -251,8 +251,53 @@ def det_loss(y, y_pred, mu, log_var):
     return (reconstruction_error + kl_divergence).sum()
 ```
 
+## Aleatoric and epistemic uncertainty
+*Update September 27, 2019*
+
+In the example above we have used variational inference to infer $y$ by setting an approximating distribution $Q\_{\theta}(Y)$. Next we've defined a neural network capable of parameterizing this variational distribution $ f: \mathbb{R}^d \mapsto \mathbb{R}^n, \quad f(x) = \theta $, where $\theta = \\{ \mu, \sigma \\}$. By inherently modelling $\mu$ and $\sigma$ as a dependency on $X$, we were able the **aleatoric** uncertainty. This kind of uncertainty is called statistical uncertainty. This is the inherent variance in the data which we have to accept because the underlaying data generation process is stochastic in nature. In a pragmatic view, nature isn't deterministic and some examples of random processes that lead to aleatoric uncertainty are:
+
+* Throwing a dice.
+* Firing an arrow with exactly the same starting conditions (the vibrations, wind, air pressure all may lead to a slightly different result).
+* The cards your dealt in a poker game.
+
+Aleatory can have two flavors, beging **homoscedastic** and **heteroscedastic**.
+
+### Homoscedastic
+We often assume homoscedastic uncertainty. For example in the model definition of linear regression $y = X \beta + \epsilon$ we incorporate and $\epsilon$ for the noise in the data. In linear regression, $\epsilon$ is not dependent on $X$ and is therefore assumed to be constant.
+
+{{< figure src="/img/post-27-vi-from-scratch/homoscedastic.png" title="Example of homoscedastic uncertainty. [2]" >}}
+
+### Heteroscedastic
+If the aleatoric uncertainty is dependent on $X$, we speak of heteroscedastic uncertainty. This was the case inthe example we've used above. The figure below shows another example of heteroscedastic uncertainty.
+
+{{< figure src="/img/post-27-vi-from-scratch/heteroscedastic.png" title="Example of heteroscedastic uncertainty. [2]" >}}
+
+
+### Epistemic uncertainty
+The second flavor of uncertainty is epistemic uncertainty and is the type that is influenced by us as algorithm designers. For instance, the way of bootstrapping the data when splitting test, train, and validation sets had influence on the parameters we fit. If we bootstrap differently, we end up with different parameter values, how certain can we be that these are correct? 
+Epistemic uncertainty can be reduced by acquiring more data, designing better models, or incorporate better features. 
+
+## Bayes by backprop
+In the next part of this post we'll show an example of modelling epistemic uncertainty with variational inference. The implementation is according to [this paper [3]](https://arxiv.org/abs/1505.05424). We will now be modelling the weights $w$ of the neural network with distributions. A priori, our bayesian model consists of the following prior and likelihood.
+
+<div>
+$$ 
+\begin{eqnarray}
+w &\sim&  \mathcal{N}(0, 1) \\
+y &\sim&  P(y|x, w)
+\end{eqnarray}
+$$
+</div>
+
+Again, we cannot solve the posterior $P(w|y, x)$ as it is intractable, so we define a variational distribution $Q\_{\theta}(w)$. The theory of variational inference is actually exactly the same as we've defined in the first part of the post. For convenience reasons we'll redefine the **b*
+
 ## Final words
 This post shows how you can implement variational inference and how it can be utilized to obtain uncertainty estimates over noisy data. In this post, we've only used it to implement an observed variable $y$, but as Variational Autoencoders prove, it can also be used to infer latent variables. The fact that you can combine this with neural networks seems to make it a very powerful and modular. 
+
+&nbsp; [1] Kingma & Welling (2013, Dec 20) *Auto-Encoding Variational Bayes*. Retrieved from https://arxiv.org/abs/1312.6114 <br>
+&nbsp; [2] Gal, Y. (2016, Feb 18) *HeteroscedasticDropoutUncertainty*. Retrieved from https://github.com/yaringal/HeteroscedasticDropoutUncertainty <br>
+&nbsp; [3] Blundell, Cornebise, Kavukcioglu & Wierstra (2015, May 20) *Weight Uncertainty in Neural Networks*. Retrieved from https://arxiv.org/abs/1505.05424<br>
+
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
