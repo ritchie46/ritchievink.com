@@ -50,9 +50,11 @@ y, x = load_dataset()
 ## Maximum likelihood estimate
 First we'll model a neural network $g\_{\theta}(x)$ with maximum likelihood estimation. Where we assume a Gaussian likelihood.
 
-$$ y \sim \mathcal{N}(g\_{\theta}(x), \sigma^2) $$
+$$\begin{equation}
+y \sim \mathcal{N}(g\_{\theta}(x), \sigma^2)
+\end{equation}$$
 
-<div>$$ \hat{\theta}_{\text{MLE}} = \text{argmax}_\theta \prod_i^nP(y_i|\theta) $$</div>
+<div>$$ \begin{equation}\hat{\theta}_{\text{MLE}} = \text{argmax}_\theta \prod_i^nP(y_i|\theta) \end{equation}$$</div>
 
 ``` python
 # Go to pytorch world
@@ -93,9 +95,9 @@ Now let's consider a model where we want to  obtain the distribution $P(y|x) \pr
 
 If we choose a factorized (diagonal) Gaussian variational distribution, $Q\_{\theta}(y)$ becomes $Q\_{\theta}(\mu, \text{diag}(\sigma^2))$. *Note that we are now working with an 1D case and that this factorization doesn't mean much right now.* We want this distribution to be conditioned to $x$, therefore we define a function $g\_{\theta}: x \mapsto \mu, \sigma$. The function $g\_{\theta}$ will be a neural network that predicts the variational parameters. The total model can thus be described as:
 
-$$ P(y) = \mathcal{N}(0, 1) $$
+$$ \begin{equation}P(y) = \mathcal{N}(0, 1) \end{equation}$$
 
-$$ Q(y|x) = \mathcal{N}(g\_{\theta}(x)\_{\mu}, \text{diag}(g\_{\theta}(x)\_{\sigma^2})))$$
+$$ \begin{equation}Q(y|x) = \mathcal{N}(g\_{\theta}(x)\_{\mu}, \text{diag}(g\_{\theta}(x)\_{\sigma^2})))\end{equation}$$
 
 Where we set a unit Gaussian prior $P(y)$. 
 
@@ -105,21 +107,24 @@ Where we set a unit Gaussian prior $P(y)$.
 
 Variational inference is done by maximizing the ELBO (**E**vidence **L**ower **BO**und). Which is often written in a more intuitive form:
 
-$$ \text{argmax}\_{Z} = E\_{Z \sim Q}[\underbrace{\log P(D|Z)}\_{\text{likelihood}}] + D\_{KL}(Q(Z)||\underbrace{P(Z)}\_{\text{prior}})$$ 
+$$ \begin{equation}\text{argmax}\_{Z} = E\_{Z \sim Q}[\underbrace{\log P(D|Z)}\_{\text{likelihood}}] - D\_{KL}(Q(Z)||\underbrace{P(Z)}\_{\text{prior}}) \label{eq:elbo} \end{equation}$$ 
 
 Where we have a likelihood term (in Variational Autoencoders often called reconstruction loss) and the KL-divergence between the prior and the variational distribution. We are going to rewrite this ELBO definition so that it is more clear how we can use it to optimize the model, we've just defined. 
 
 Let's first rewrite the KL-divergence term in integral form;
 
-$$ E\_{Z \sim Q}[\log P(D|Z)] + \int Q(Z) \frac{P(Z)}{Q(Z)}dZ$$
+ \begin{equation}E\_{Z \sim Q}[\log P(D|Z)] + \int Q(Z) \frac{P(Z)}{Q(Z)}dZ \end{equation}
+
+<small>*Note that the change of sign is due to the definition of the KL-divergence $D\_{KL}(P||Q) = \int P(x) \log \frac{P(x)}{Q(x)}dx = -\int P(x) \log \frac{Q(x)}{P(x)}dx$*.</small>
+
 
 Now we observe that we can rewrite the integral form as an expectation $Z$;
 
-$$ E\_{Z \sim Q}[\log P(D|Z)] + E\_{Z \sim Q}[ \frac{P(Z)}{Q(Z)}]dZ$$
+\begin{equation} E\_{Z \sim Q}[\log P(D|Z)] + E\_{Z \sim Q}[ \frac{P(Z)}{Q(Z)}]dZ \end{equation}
 
 And by applying the log rule $\log\frac{A}{B}=\log A - \log B$, we get;
 
-$$ E\_{Z \sim Q}[\log P(D|Z)] + E\_{Z \sim Q}[\log P(Z) - \log Q(Z) ] $$
+\begin{equation} E\_{Z \sim Q}[\log P(D|Z)] + E\_{Z \sim Q}[\log P(Z) - \log Q(Z) ] \end{equation}
 
 ## Monte Carlo ELBO
 Deriving those expectations can be some tedious mathematics, or maybe not even possible. Luckily we can get estimates of the mean by taking samples from $Q(Z)$ and average over those results.
@@ -128,14 +133,16 @@ Deriving those expectations can be some tedious mathematics, or maybe not even p
 If we start taking samples from a $Q(Z)$ we leave the deterministic world, and the gradient can not flow through the model anymore. We avoid this problem by reparameterizing the samples from the distribution.
 
 Instead of sampling directly from the variational distribution;
-$$ z \sim Q(\mu, \sigma^2) $$
+
+\begin{equation} z \sim Q(\mu, \sigma^2) \end{equation}
 
 We sample from a unit gaussian and recreate samples from the variational distribution. Now the stochasticity of $\epsilon$ is external and will not prevent the flow of gradients.
-$$ z = \mu + \sigma \odot \epsilon $$ 
+
+\begin{equation} z = \mu + \sigma \odot \epsilon \end{equation}
 
 Where
 
-$$ \epsilon \sim \mathcal{N}(0, 1) $$ 
+\begin{equation} \epsilon \sim \mathcal{N}(0, 1) \end{equation}
 
 ## Implementation
 This is all we need for implementing and optimizing this model. Below we'll define the model in Pytorch. By calling the `forward` method we retrieve samples from the variational distribution.
@@ -175,7 +182,7 @@ class VI(nn.Module):
 
 The prior, the likelihood and the varitational distribution are all Gaussian, hence we only need to derive the log likelihood function for the Gaussian distribution.
 
-$$ \mathcal{L}(\mu, \sigma, x)= -\frac{n}{2}(2\pi \sigma^2) - \frac{1}{2\sigma^2}\sum\_{i=1}^n(x\_i - \mu)^2$$
+\begin{equation} \mathcal{L}(\mu, \sigma, x)= -\frac{n}{2}(2\pi \sigma^2) - \frac{1}{2\sigma^2}\sum\_{i=1}^n(x\_i - \mu)^2 \end{equation}
 
 ```python
 def ll_gaussian(y, mu, log_var):
@@ -239,7 +246,7 @@ plt.fill_between(X.flatten(), q1, q2, alpha=0.2)
 ## Analytical KL-divergence and reconstruction loss
 Above we have implemented ELBO by sampling from the variational posterior. It turns out that for the KL-divergence term, this isn't necessary as there is an analytical solution. [For the Gaussian case, Diederik P. Kingma and Max Welling (2013.  Auto-encoding variational bayes)](https://arxiv.org/pdf/1802.05814.pdf) included the solution in Appendix B.
 
-$$  D\_{KL}(Q(Z)||P(Z)) = \frac{1}{2}\sum\_{i=1}^n(1+\log \sigma\_i^2 - \mu\_i^2 - \sigma\_i^2) $$
+\begin{equation}  D\_{KL}(Q(Z)||P(Z)) = \frac{1}{2}\sum\_{i=1}^n(1+\log \sigma\_i^2 - \mu\_i^2 - \sigma\_i^2) \end{equation}
 
 For the likelihood term, we did implement Guassian log likelihood, this term can also be replaced with a similar loss functions. For Gaussian likelihood we can use squared mean error loss, for Bernoulli likelihood we could use binary cross entropy etc. If we do that for the earlier defined model, we can replace the loss function as defined below:
 
@@ -289,9 +296,85 @@ y &\sim&  P(y|x, w)
 $$
 </div>
 
-Again, we cannot solve the posterior $P(w|y, x)$ as it is intractable, so we define a variational distribution $Q\_{\theta}(w)$. The theory of variational inference is actually exactly the same as we've defined in the first part of the post. For convenience reasons we'll redefine the **b*
+Again, the posterior $P(w|y, x)$ is intractable. So we define a variational distribution $Q\_{\theta}(w)$. The theory of variational inference is actually exactly the same as we've defined in the first part of the post. For convenience reasons we redefine the ELBO as defined in (eq. $\ref{eq:elbo}$) in a form used in [3]. If we multiply the ELBO with $-1$, we obtain a cost function that is called the **variational free energy**.
 
-## Final words
+\begin{equation} \mathcal{F(D, \theta)}= D\_{KL}(Q(Z|\theta) || P(Z)) - E\_{Z \sim Q}[\log P(D|Z)] \label{eq:vfe} \end{equation}
+
+## Single layer
+Just as with the model, we have defined earlier we will approximate all the terms in (eq. $\ref{eq:vfe}$) by sampling $z \sim Q(Z)$. The KL-divergence is not dependent on $D$, and can therefore be computed at the moment of sampling $z$. We will use this insight now as we will make a Bayesian neural network layer in pytorch. 
+
+```python
+class LinearVariational(nn.Module):
+    """
+    Mean field approximation of nn.Linear
+    """
+    def __init__(self, in_features, out_features, parent, n_batches, bias=True):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.include_bias = bias        
+        self.parent = parent
+        self.n_batches = n_batches
+        
+        if getattr(parent, 'accumulated_kl_div', None) is None:
+            parent.accumulated_kl_div = 0
+            
+        # Initialize the variational parameters.
+        # 𝑄(𝑤)=N(𝜇_𝜃,𝜎2_𝜃)
+        # Do some random initialization with 𝜎=0.001
+        self.w_mu = nn.Parameter(
+            torch.FloatTensor(in_features, out_features).normal_(mean=0, std=0.001)
+        )
+        # proxy for variance
+        # log(1 + exp(ρ))◦ eps
+        self.w_p = nn.Parameter(
+            torch.FloatTensor(in_features, out_features).normal_(mean=-2.5, std=0.001)
+        )
+        if self.include_bias:
+            self.b_mu = nn.Parameter(
+                torch.zeros(out_features)
+            )
+            # proxy for variance
+            self.b_p = nn.Parameter(
+                torch.zeros(out_features)
+            )
+        
+    def reparameterize(self, mu, p):
+        sigma = torch.log(1 + torch.exp(p)) 
+        eps = torch.randn_like(sigma)
+        return mu + (eps * sigma)
+    
+    def kl_divergence(self, z, mu_theta, p_theta, prior_sd=1):
+        log_prior = dist.Normal(0, prior_sd).log_prob(z) 
+        log_p_q = dist.Normal(mu_theta, torch.log(1 + torch.exp(p_theta))).log_prob(z) 
+        return (log_p_q - log_prior).sum() / self.n_batches
+
+    def forward(self, x):
+        w = self.reparameterize(self.w_mu, self.w_p)
+        
+        if self.include_bias:
+            b = self.reparameterize(self.b_mu, self.b_p)
+        else:
+            b = 0
+            
+        z = x @ w + b
+        
+        self.parent.accumulated_kl_div += self.kl_divergence(w, 
+                                                             self.w_mu,
+                                                             self.w_p, 
+                                                             )
+        if self.include_bias:
+            self.parent.accumulated_kl_div += self.kl_divergence(b, 
+                                                                 self.b_mu, 
+                                                                 self.b_p,
+                                                                 )
+        return z
+            
+
+```
+
+The code snippet above shows the implementation of the variational linear layer. In the `__init__` method we have defined the variation parameters $\mu\_{w}$ and $p\_{w}$. In the `forward` method we sample the weights $w \sim \mathcal{N}(\mu\_{w}, \text{diag}(\log(1 + e^{p\_w}) )$ (we do the same for the biases) and further apply them as if it were a normal neural network layer: $z = xw + b$.
+
 This post shows how you can implement variational inference and how it can be utilized to obtain uncertainty estimates over noisy data. In this post, we've only used it to implement an observed variable $y$, but as Variational Autoencoders prove, it can also be used to infer latent variables. The fact that you can combine this with neural networks seems to make it a very powerful and modular. 
 
 &nbsp; [1] Kingma & Welling (2013, Dec 20) *Auto-Encoding Variational Bayes*. Retrieved from https://arxiv.org/abs/1312.6114 <br>
@@ -301,7 +384,8 @@ This post shows how you can implement variational inference and how it can be ut
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
-  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+    TeX: { equationNumbers: { autoNumber: "AMS" } }
   });
   </script>
 

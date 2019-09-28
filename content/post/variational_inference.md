@@ -234,9 +234,9 @@ Then we expand the equation and thereby isolating the reconstruction error $\log
 
 $$ \text{ELBO}  = E_{\theta \sim Q}[\log P(D|\theta)] +  E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$$
 
-If we rewrite the $E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$ in the integral form $\int Q(\theta)\log\frac{P(\theta)}{Q(\theta)}d\theta$, we can observe that this is the KL-divergence between the prior $P(\theta)$ and the variational distribution $Q(\theta)$. Resulting in an ELBO defined by the reconstruction error and $D_{KL}(Q(\theta)||P(\theta)).$
+If we rewrite the $E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$ in the integral form $\int Q(\theta)\log\frac{P(\theta)}{Q(\theta)}d\theta$, we can observe that this is the KL-divergence between the prior $P(\theta)$ and the variational distribution $Q(\theta)$. Resulting in an ELBO defined by the reconstruction error and $-D_{KL}(Q(\theta)||P(\theta)).$
 
-$$ \text{ELBO}  = E_{\theta \sim Q}[\log P(D|\theta)] + D_{KL}(Q(\theta)||P(\theta))$$
+$$ \text{ELBO}  = E_{\theta \sim Q}[\log P(D|\theta)] - D_{KL}(Q(\theta)||P(\theta))$$
 </i></div>
 
 ### 3.3 Mean Field Approximation
