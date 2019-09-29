@@ -261,27 +261,27 @@ def det_loss(y, y_pred, mu, log_var):
 ## Aleatoric and epistemic uncertainty
 *Update September 27, 2019*
 
-In the example above we have used variational inference to infer $y$ by setting an approximating distribution $Q\_{\theta}(Y)$. Next we've defined a neural network capable of parameterizing this variational distribution $ f: \mathbb{R}^d \mapsto \mathbb{R}^n, \quad f(x) = \theta $, where $\theta = \\{ \mu, \sigma \\}$. By inherently modelling $\mu$ and $\sigma$ as a dependency on $X$, we were able the **aleatoric** uncertainty. This kind of uncertainty is called statistical uncertainty. This is the inherent variance in the data which we have to accept because the underlaying data generation process is stochastic in nature. In a pragmatic view, nature isn't deterministic and some examples of random processes that lead to aleatoric uncertainty are:
+In the example above we have used variational inference to infer $y$ by setting an approximating distribution $Q\_{\theta}(Y)$. Next we've defined a neural network capable of parameterizing this variational distribution $ f: \mathbb{R}^d \mapsto \mathbb{R}^n, \quad f(x) = \theta $, where $\theta = \\{ \mu, \sigma \\}$. By inherently modelling $\mu$ and $\sigma$ as a dependency on $X$, we were able to model the **aleatoric** uncertainty. This kind of uncertainty is called statistical uncertainty. This is the inherent variance in the data which we have to accept because the underlaying data generation process is stochastic in nature. In a pragmatic view, nature isn't deterministic and some examples of random processes that lead to aleatoric uncertainty are:
 
 * Throwing a dice.
 * Firing an arrow with exactly the same starting conditions (the vibrations, wind, air pressure all may lead to a slightly different result).
-* The cards your dealt in a poker game.
+* The cards you are dealt in a poker game.
 
-Aleatory can have two flavors, beging **homoscedastic** and **heteroscedastic**.
+Aleatory can have two flavors, being **homoscedastic** and **heteroscedastic**.
 
 ### Homoscedastic
-We often assume homoscedastic uncertainty. For example in the model definition of linear regression $y = X \beta + \epsilon$ we incorporate and $\epsilon$ for the noise in the data. In linear regression, $\epsilon$ is not dependent on $X$ and is therefore assumed to be constant.
+We often assume homoscedastic uncertainty. For example in the model definition of linear regression $y = X \beta + \epsilon$ we incorporate $\epsilon$ for the noise in the data. In linear regression, $\epsilon$ is not dependent on $X$ and is therefore assumed to be constant.
 
 {{< figure src="/img/post-27-vi-from-scratch/homoscedastic.png" title="Example of homoscedastic uncertainty. [2]" >}}
 
 ### Heteroscedastic
-If the aleatoric uncertainty is dependent on $X$, we speak of heteroscedastic uncertainty. This was the case inthe example we've used above. The figure below shows another example of heteroscedastic uncertainty.
+If the aleatoric uncertainty is dependent on $X$, we speak of heteroscedastic uncertainty. This was the case in the example we've used above. The figure below shows another example of heteroscedastic uncertainty.
 
 {{< figure src="/img/post-27-vi-from-scratch/heteroscedastic.png" title="Example of heteroscedastic uncertainty. [2]" >}}
 
 
 ### Epistemic uncertainty
-The second flavor of uncertainty is epistemic uncertainty and is the type that is influenced by us as algorithm designers. For instance, the way of bootstrapping the data when splitting test, train, and validation sets had influence on the parameters we fit. If we bootstrap differently, we end up with different parameter values, how certain can we be that these are correct? 
+The second flavor of uncertainty is epistemic uncertainty. We as algorithm designers have influence on this type of uncertainty. We can actually reduce it, or make it much worse, by our decisions. For instance, the way of bootstrapping the data when splitting test, train, and validation sets had influence on the parameters we fit. If we bootstrap differently, we end up with different parameter values, how certain can we be that these are correct? 
 Epistemic uncertainty can be reduced by acquiring more data, designing better models, or incorporate better features. 
 
 ## Bayes by backprop
@@ -300,8 +300,8 @@ Again, the posterior $P(w|y, x)$ is intractable. So we define a variational dist
 
 \begin{equation} \mathcal{F(D, \theta)}= D\_{KL}(Q(Z|\theta) || P(Z)) - E\_{Z \sim Q}[\log P(D|Z)] \label{eq:vfe} \end{equation}
 
-## Single layer
-Just as with the model, we have defined earlier we will approximate all the terms in (eq. $\ref{eq:vfe}$) by sampling $z \sim Q(Z)$. The KL-divergence is not dependent on $D$, and can therefore be computed at the moment of sampling $z$. We will use this insight now as we will make a Bayesian neural network layer in pytorch. 
+## Single Bayesian layer
+Just as with the model we have defined earlier, we will approximate all the terms in (eq. $\ref{eq:vfe}$) by sampling $z \sim Q(Z)$. The KL-divergence is not dependent on $D$, and can therefore be computed at the moment of sampling $z$. We will use this insight now as we will make a Bayesian neural network layer in pytorch. 
 
 ```python
 class LinearVariational(nn.Module):
@@ -373,9 +373,83 @@ class LinearVariational(nn.Module):
 
 ```
 
-The code snippet above shows the implementation of the variational linear layer. In the `__init__` method we have defined the variation parameters $\mu\_{w}$ and $p\_{w}$. In the `forward` method we sample the weights $w \sim \mathcal{N}(\mu\_{w}, \text{diag}(\log(1 + e^{p\_w}) )$ (we do the same for the biases) and further apply them as if it were a normal neural network layer: $z = xw + b$.
+The code snippet above shows the implementation of the variational linear layer. The `__init__` method initializes the variation parameters $\mu\_{w}$ and $p\_{w}$. In the `forward` method we sample the weights $w \sim \mathcal{N}(\mu\_{w}, \text{diag}(\log(1 + e^{p\_w}) )$ and the biases $b \sim \mathcal{N}(\mu\_{b}, \text{diag}(\log(1 + e^{p\_b}) )$. With these sampled neural networks parameters we do the forward pass of that layer $z = xw + b$. As discussed, we also compute the KL-divergence in the `forward` method as we don't require any target variable to determine this quantity.
 
-This post shows how you can implement variational inference and how it can be utilized to obtain uncertainty estimates over noisy data. In this post, we've only used it to implement an observed variable $y$, but as Variational Autoencoders prove, it can also be used to infer latent variables. The fact that you can combine this with neural networks seems to make it a very powerful and modular. 
+### KL re-weighting
+When optimizing with stochastic gradient descent, the KL-divergence in term in (eq. $\ref{eq:vfe}$) needs to be weighed by $\frac{1}{M}$, where $M$ is the number of mini-batches per epoch.
+
+## Bayesian neural network
+This `LinearVariational` is the gist of a Bayesian neural network optimized with variational inference. In the code snippet below, we implement the same network as before. The only difference in the previous implementation is an auxiliary `dataclass` that will accumulate the KL-divergences of the variational layers. The code snippets below shows the final implementation, the loss function and the train loop.
+
+```python
+@dataclass
+class KL:
+    accumulated_kl_div = 0
+
+class Model(nn.Module):
+    def __init__(self, in_size, hidden_size, out_size, n_batches):
+        super().__init__()
+        self.kl_loss = KL
+        
+        self.layers = nn.Sequential(
+            LinearVariational(in_size, hidden_size, self.kl_loss, n_batches),
+            nn.ReLU(),
+            LinearVariational(hidden_size, hidden_size, self.kl_loss, n_batches),
+            nn.ReLU(),
+            LinearVariational(hidden_size, out_size, self.kl_loss, n_batches)
+        )
+    
+    @property
+    def accumulated_kl_div(self):
+        return self.kl_loss.accumulated_kl_div
+    
+    def reset_kl_div(self):
+        self.kl_loss.accumulated_kl_div = 0
+            
+    def forward(self, x):
+        return self.layers(x)
+```
+
+```python
+epochs = 2000
+
+def det_loss(y, y_pred, model):
+    batch_size = y.shape[0]
+    reconstruction_error = -dist.Normal(y_pred, .1).log_prob(y).sum()
+    kl = model.accumulated_kl_div
+    model.reset_kl_div()
+    return reconstruction_error + kl
+
+m = Model(1, 20, 1, n_batches=1)
+optim = torch.optim.Adam(m.parameters(), lr=0.01)
+
+for epoch in range(epochs):
+    optim.zero_grad()
+    y_pred = m(X)
+    loss = det_loss(y_pred, Y, m)
+    loss.backward()
+    optim.step()
+```
+
+## Epistemic uncertainty
+Below we evaluate the trained model by taking 1000 samples per data point. These samples are used to approximate quantities of the posterior predictive distribution such as the mean and the $\\{0.05, 0.95 \\}$ quantiles. Intuitively, we can think of each 1 of the 1000 samples as a different neural network with slightly different parameters.
+
+```python
+with torch.no_grad():
+    trace = np.array([m(X).flatten().numpy() for _ in range(1000)]).T
+q_25, q_95 = np.quantile(trace, [0.05, 0.95], axis=1)
+plt.figure(figsize=(16, 6))
+plt.plot(X, trace.mean(1))
+plt.scatter(X, Y)
+plt.fill_between(X.flatten(), q_25, q_95, alpha=0.2)
+```
+
+{{< figure src="/img/post-27-vi-from-scratch/epistemic.png" title="Results of the Bayesian neural network optimized w/ variation inference." >}}
+
+We see we didn't model the aleatoric uncertainty. What we've captured now is the uncertainty of the true mean value, $E[Y|X]$.
+
+## Final words
+This post we've implemented variational inference in two flavors. In one we've modelled aleatoric uncertainty and got insight in the changing variance of $y \sim P(Y|X)$. The second implementation was a fully bayesian neural network and resulted in epistemic uncertainty. In this implementation we were not interested in the uncertainty in the data, but in the uncertainty of our model. Variational inference seems to be a powerful, modular approach to enrich deep learning with uncertainty values.
 
 &nbsp; [1] Kingma & Welling (2013, Dec 20) *Auto-Encoding Variational Bayes*. Retrieved from https://arxiv.org/abs/1312.6114 <br>
 &nbsp; [2] Gal, Y. (2016, Feb 18) *HeteroscedasticDropoutUncertainty*. Retrieved from https://github.com/yaringal/HeteroscedasticDropoutUncertainty <br>
