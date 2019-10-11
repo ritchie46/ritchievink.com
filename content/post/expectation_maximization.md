@@ -65,7 +65,7 @@ The log-likelihood of the model is defined below, but as $Z$ is unobserved, the 
 
 $$\ell(\phi, \theta) = \sum_{i=1}^n \text{log} p(x_i| \theta, \phi)$$
 
-$$\ell(\phi, \theta) = \sum\_{i=1}^n \text{log} \sum\_{z\_i=1}^k p(x\_i| \theta, z\_i) p(z\_i| \phi)$$
+$$\ell(\phi, \theta) = \sum\_{i=1}^n \text{log} \sum\_{k=1}^K p(x\_i| \theta, z\_k) p(z\_k| \phi)$$
 
 Because of this, we will use an optimization algorithm called Expectation Maximization, where we guess $Z$ and iteratively try to maximize the log-likelihood.
 
@@ -189,11 +189,11 @@ As we assume a latent variable $Z$ which we haven't observed, we can rewrite it 
 
 $$  \ell(\theta) = \sum\_{i=1}^n\log\sum\_{z_i}p(x_i, z_i; \theta)$$
 
-Now we can multiply the equation above with an arbitrarily distribution over $Z$, $\frac{Q(z)}{Q(z)}=1$.
+Now we can multiply the equation above with an arbitrary distribution over $Z$, $\frac{Q(z)}{Q(z)}=1$.
 
 $$ \ell(\theta) = \sum\_{i=1}^n\log\sum\_{z_i} Q(z_i)  \frac{p(x_i, z_i; \theta)} {Q(z_i)}$$
 
-Now note that expectation of a random variable $X$ is defined as $E[X] = \sum\_{i=1}^n p_ixi$. Which means we can rewrite the log-likelihood as
+Now note that expectation of a random variable $X$ is defined as $E[X] = \sum\_{i=1}^n p(x_i)x_i$. Which means we can rewrite the log-likelihood as
 
 $$ \ell(\theta)  = \sum\_{i=1}^n\log E\_{z \sim Q}[\frac{p(x_i, z; \theta)} {Q(z)}]$$
 
