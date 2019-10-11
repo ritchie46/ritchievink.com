@@ -296,7 +296,174 @@ Here <span>$\\{ z \in \mathbb{R}^D, u \in \mathbb{R}^D, b\in \mathbb{R} \\}$</sp
 
 That's all we need! We can plug this determinant jacobian right in eq. $\eqref{vfeflow}$ and wrap it up. There are however some conditions that need to be met to guarantee invertibility. In appendix A of [1] they are explained. 
 
+## 3. Flow in practice
+Okay, let's see if we can bring what we've defined above in practice. In the snippet below we define a `PlanarFlow` class. This is the implementatition of the planar flow we've just defined. Furthermore we normalize some of the parameters of the flow conform the appendix A in [1].
 
+```python
+class PlanarFlow(nn.Module):
+    def __init__(self, size=1, init_sigma=0.01):
+        """
+        shape u = (batch_size, z_size, 1)
+        shape w = (batch_size, 1, z_size)
+        shape b = (batch_size, 1, 1)
+        shape z = (batch_size, z_size).
+        """
+        super().__init__()
+        self.u = nn.Parameter(torch.randn(size, 1).normal_(0, 0.01))
+        self.w = nn.Parameter(torch.randn(1, size).normal_(0, 0.01))
+        self.b = nn.Parameter(torch.zeros(1))
+    
+    @property
+    def normalized_u(self):
+        """
+        Needed for invertibility condition.
+        
+        See Appendix A.1
+        Rezende et al. Variational Inference with Normalizing Flows
+        https://arxiv.org/pdf/1505.05770.pdf
+        """
+        # softplus
+        def m(x):
+            return -1 + torch.log(1 + torch.exp(x))
+        wtu = self.w @ self.u
+        w_div_w2 = self.w.t() / torch.sum(self.w ** 2, dim=1, keepdim=True)
+        return self.u + (m(wtu) - wtu) * w_div_w2
+    
+    def psi(self, z):
+        """
+        ψ(z) =h′(w^tz+b)w
+        
+        See eq(11)
+        Rezende et al. Variational Inference with Normalizing Flows
+        https://arxiv.org/pdf/1505.05770.pdf
+        """
+        return self.h_prime(z @ self.w.t() + self.b) @ self.w
+    
+    def h(self, x):
+        return torch.tanh(x)
+        
+    def h_prime(self, z):
+        return 1 - torch.tanh(z)**2
+        
+    def forward(self, z):https://en.wikipedia.org/wiki/Multimodal_distribution
+        if isinstance(z, tuple):
+            z, accumulating_ldj = z
+        else:
+            z, accumulating_ldj = z, 0
+        psi = self.psi(z)
+
+        u = self.normalized_u
+
+        # determinant of jacobian
+        det = (1 + psi @ u)
+
+        # log |det Jac|
+        ldj = torch.log(torch.abs(det) + 1e-6)
+        
+        wzb = z @ self.w.t() + self.b
+ 
+        fz = z + (u.t() * self.h(wzb))
+
+        return fz, ldj + accumulating_ldj
+```
+
+### 3.1 Target distribution
+
+Next we define a gaussian mixture distribution that is bi-modal. This will be our target distribution.
+
+```python
+x1 = np.linspace(1, 5, num=50)
+x2 = np.linspace(1, 5, num=50)
+x1_s, x2_s = np.meshgrid(x1 ,x2)
+x_field = np.concatenate([x1_s[..., None], x2_s[..., None]], axis=-1)
+
+
+base_1 = stats.multivariate_normal(mean=[3, 4], cov=0.15)
+base_2 = stats.multivariate_normal(mean=[3, 2], cov=0.15)
+pdf = 0.5 * base_1.pdf(x_field) + 0.5 * base_2.pdf(x_field)
+
+# cast to pytorch
+pdf_tensor = torch.tensor(pdf, dtype=torch.float)
+plt.figure(figsize=(8, 8))
+plt.contourf(x1_s, x2_s, 
+```
+
+{{< figure src="/img/post-28-norm-flows/bimodal.png" title="Bimodal posterior we want to approximate." >}}
+
+### 3.2 Variational Free Energy 
+
+Eq. $\eqref{vfeflow}$ should be defined as loss function. Below we've defined the loss funtion. The joint probability $P(x, z_K)$ in $\eqref{vfeflow}$ is split in the likelihood (negative binary cross entropy in this case) and the prior $P(z_K)$. Note that we've define a diagonal Guassian prior in the loss function below. If we wanted another prior distribution, we should modify the `log_p_zk` variable.
+
+
+```python
+def det_loss(reconstruction_x, x, mu, log_var, z_0, z_k, ldj):
+    """
+    :param z_mu: mean of z_0
+    :param z_var: variance of z_0
+    :param z_0: first stochastic latent variable
+    :param z_k: last stochastic latent variable
+    :param ldj: log det jacobian
+    """
+
+    batch_size = x.size(0)
+
+    # - N E_q0 [ ln p(x|z_k) ]
+    likelihood = F.binary_cross_entropy(reconstruction_x, x, reduction='sum')
+
+    # ln p(z_k)  (not averaged)
+    log_p_zk = dist.Normal(0, 1).log_prob(z_k)
+    # ln q(z_0)  (not averaged)
+    log_q_z0 = dist.Normal(mu, torch.exp(0.5 * log_var)).log_prob(z_0)
+    
+    # ldj is already summed 
+    loss = likelihood + (log_q_z0 - log_p_zk).sum() - ldj 
+    return loss / batch_size
+```
+
+### 3.3 Final model
+
+The single `PlanarFlow` layer is sequentially stacked in the `Flow` class. This is the class is the final model and will be optimized in order to approximate the bi-modal Gaussian. 
+
+```python
+class Flow(nn.Module):
+    def __init__(self, n_flows=10):
+        super().__init__()
+        self.flow =  nn.Sequential(*[
+            PlanarFlow(size) for _ in range(n_flows)
+        ])
+        self.mu = nn.Parameter(torch.randn(size,).normal_(0, 0.01))
+        self.log_var = nn.Parameter(torch.randn(size,).normal_(0, 0.01))
+        
+    def forward(self):
+        std = torch.exp(0.5 * self.log_var)
+        eps = torch.randn_like(std)  # unit gaussian
+        z0 = self.mu + eps * std 
+
+        zk, ldj = self.flow(z0)
+        
+        return torch.sigmoid(z0), torch.sigmoid(zk), ldj, self.mu, self.log_var
+```
+
+### 3.4 Training and results
+Last we need is the train loop. This is just a function where we pass a model instance and apply some gradient updates.
+
+```python
+def train_flow(flow, epochs=250):
+    optim = torch.optim.Adam(flow.parameters(), lr=1e-3)
+    
+    for _ in range(epochs):
+        z0, zk, ldj, mu, log_var = flow()
+        loss = det_loss(reconstruction_x=zk,
+                       x=pdf_tensor.flatten().unsqueeze(0),
+                       mu=mu,
+                       log_var=log_var,
+                       z_0=z0,
+                       z_k=zk,
+                       ldj=ldj)
+        loss.backward()
+        optim.step()
+        optim.zero_grad()  
+```
 
 ## References
 &nbsp; [1] Rezende & Mohammed (2016, Jun 14) *Variational Inference with Normalizing Flows*. Retrieved from https://arxiv.org/pdf/1505.05770.pdf <br>
