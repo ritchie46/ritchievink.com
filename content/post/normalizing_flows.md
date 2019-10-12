@@ -1,23 +1,23 @@
 +++
 date = "2019-10-11"
 description = "How to obtain more complicated distributions by passing a simple Gaussian through normalizing flows."
-tags = ["machine learning", "python", "bayesian"]
+tags = ["machine learning", "python", "bayesian", "optimization"]
 draft = false
 author = "Ritchie Vink"
-title = "Molding Friendly Neighborhood Gaussian into an ugly asymmetrical villain with Normalizing Flows"
+title = "Sculpting distributions with Normalizing Flows"
 keywords = []
-og_image = "/img/post-28-norm-flows/flow.png"
+og_image = "/img/post-28-norm-flows/og_image.png"
 +++
 
-{{< figure src="/img/post-28-norm-flows/flow.png" height="300px" width="100%" >}}
+{{< figure src="/img/post-28-norm-flows/og_image.png" >}}
 <br>	
 
-Last posts we've investigated **Bayesian** inference through **variational inference** ([post 1]({{< ref "post/variational_inference.md" >}})/[post 2]({{< ref "post/variational_inference.md" >}})). In Bayesian inference, we often define a models with some model parameters $Z$, or latent variables $Z$. Given this model and some observed data points <span>$D = \\{ D_1, D_2, \dots, D_n \\} $</span>, we are interested in the true posterior distribution $P(Z|D)$. 
-This posterior is often intractable and the general idea was to forgo the quest to obtaining the true posterior, but to accept that we are bounded to some *easily* parameterizable approximate posteriors $^\*Q(z)$, which we called **variational distributions**.
+Last posts we've investigated **Bayesian** inference through **variational inference** ([post 1]({{< ref "post/variational_inference.md" >}})/[post 2]({{< ref "post/variational_inference.md" >}})). In Bayesian inference, we often define models with some unknown model parameters $Z$, or latent stochastic variables $Z$. Given this model and some observed data points <span>$D = \\{ D_1, D_2, \dots, D_n \\} $</span>, we are interested in the true posterior distribution $P(Z|D)$. 
+This posterior is often intractable and the general idea was to forgo the quest of obtaining the true posterior, but to accept that we are bounded to some *easily* parameterizable approximate posteriors $^\*Q(z)$, which we called **variational distributions**.
 
-Variational inference has got some very cool advantages compared to [MCMC]({{< ref "post/variational_inference.md" >}}), such as scalability and modulare usage in combination w/ deep learning, but it has also got some disadvantages. As we don't know the optimal ELBO (the loss we optimize in VI), we don't know if we are 'close' to the true posterior, and this constraint of 'easy' parameterizable distributions used as family for $Q(z)$ often leads use to use distributions that aren't expressive enough for the true non-gaussian real world.
+Variational inference has got some very cool advantages compared to [MCMC]({{< ref "post/variational_inference.md" >}}), such as scalability and modulare usage in combination with deep learning, but it has also got some disadvantages. As we don't know the optimal ELBO (the loss we optimize in VI), we don't know if we are 'close' to the true posterior, and this constraint of 'easy' parameterizable distributions used as family for $Q(z)$ often leads us to use distributions that aren't expressive enough for the true non-gaussian real world.
 
-This post we'll explore a technique called normalizing flows. With NF are able to transform an 'easy' paramaterizable base distribution in a more complex approximation for the posterior distribution. This is done by passing the base distribution through a series of transformations (the flow part). One of the definitions of a probability distribution is that the integral sums to one $\int P(x) dx = 1$. A transformation can break this requirement, therefore we need to **normalize** $P(x)$ after the transformation.
+This post we'll explore a technique called **normalizing flows**. With NF are able to transform an 'easy' paramaterizable base distribution in a more complex approximation for the posterior distribution. This is done by passing the base distribution through a series of transformations (the flow part). One of the definitions of a probability distribution is that the integral sums to one $\int P(x) dx = 1$. A transformation can break this requirement, therefore we need to **normalize** $P(x)$ after the transformation.
 
 ## 1. Change of variables
 First we are going to look at some basics. We are going to start of with basis distribution $\mathcal{N}(\mu=1, \sigma=0.1)$. In the code snippet below ([the whole jupyter notebook is on github](https://github.com/ritchie46/vanilla-machine-learning/tree/master/bayesian/normalizing_flows)) we define this distribution in python and we apply a nummerical integral with `np.trapz` to validate the integral summing to 1.
@@ -60,7 +60,7 @@ P(y) &=&P(x)\frac{dx}{dy} \label{normtransf}
 \end{eqnarray} 
 </div>
 
-To hold this constraint we need to multiply $P(x)$ with the derivative of $x$ w.r.t. $y$, $\frac{dx}{dy}$. Therefore we need to express $x$ in $y$, which can only be done of the transformation $f$ are **invertible**.
+To hold this constraint we need to multiply $P(x)$ with the derivative of $x$ w.r.t. $y$, $\frac{dx}{dy}$. Therefore we need to express $x$ in $y$, which can only be done **if the transformation $f$ is invertible**.
 
 <div>
 $$\begin{eqnarray}
@@ -102,10 +102,10 @@ print(np.trapz(transformed, y))
 
 {{< figure src="/img/post-28-norm-flows/transform2.png" title="Transformed base w/ normalization." >}}
 
-Save some small deviation due to nummerical discretization the transformation sums to 1! We can also observe this in the plot we've made. Because of the transformation, the resulting probability distribution has become wider, wich must result in a less high probability peak, if the total probability mass is preserved.
+Save some small deviation due to nummerical discretization, the transformation sums to 1! We can also observe this in the plot we've made. Because of the transformation, the resulting probability distribution has become wider, wich (in case of a Gaussian distribution) must result in a less high probability peak, if the total probability mass is preserved.
 
 ### 1.2 Conditions
-The function $f(x) = x^2$ we've used in the example above was strictly increasing. This leads to a derivative $\frac{df}{dx}$ that is always postive. If we've chosen a strictly decreasing function $g$, $\frac{dg}{dx}$ would always be negative. In that case eq. $\eqref{normtransf}$ would be defined as $P(y) = - P(x) \frac{dy}{dx}$. We could however, by taking the absolute value of the derivative, easily come up with an equation that holds true for both cases:
+The function $f(x) = x^2$ we've used in the example above was strictly increasing. This leads to a derivative $\frac{df}{dx}$ that is always postive. If we would have chosen a strictly decreasing function $g$, $\frac{dg}{dx}$ would always be negative. In that case eq. $\eqref{normtransf}$ would be defined as $P(y) = - P(x) \frac{dy}{dx}$. We could however, by taking the absolute value of the derivative, easily come up with an equation that holds true for both cases:
 
 <div>
 \begin{eqnarray}
@@ -133,7 +133,7 @@ $$ \mathbf{J} = \begin{bmatrix}
 \end{bmatrix}$$
 </div>
 
-The dimensions of the probability distributions may not change due to the transformation, thus $f: \mathbb{R}^m \mapsto \mathbb{R}^m$ leading to a square jacobian matrix $m \times m$. From a square matrix, we can determine the determinant. The determinant of a matrix $A$ tells us how much an N-dimensional volume is scaled by applying the transformation $A$. For N-dimensions, eq. $\eqref{Py}$ is written with the determinant jacobian matrix.
+The dimensions of the probability distribution may not change due to the transformation, thus $f: \mathbb{R}^m \mapsto \mathbb{R}^m$ leading to a square jacobian matrix $m \times m$. From a square matrix, we can determine the determinant. The determinant of a matrix $A$ tells us how much an N-dimensional volume is scaled by applying the transformation $A$. For N-dimensions, eq. $\eqref{Py}$ is written with the determinant jacobian matrix.
 
 <div>
 \begin{eqnarray}
@@ -143,7 +143,7 @@ P(y)&=&P(f^{-1}(y)) \cdot \left| \det \frac{\partial{ f(y)^{-1} }}{\partial{y}} 
 </div>
 
 #### 1.3.1 2D verification
-Again, let's verify this in Python. Below we'll define a two-dimensional random variable $X$ as a Gaussian distribution. We will also verify the integral condition.
+Again, let's verify this in Python. Below we'll define a two-dimensional random variable $X$ as a Gaussian distribution. We will also verify the integral condition, again by using `np.trapz`, but now over 2 dimensions.
 
 ```python
 # field of all possible events X
@@ -194,7 +194,8 @@ def create_det_jac(y_field):
             fiy = torch.cat(f_i(y_field[..., 0, None], y_field[..., 1, None]), dim=-1)
             fiy[i, j].sum().backward()
             
-            # Ouputs of the partial derivatives are independent.  I.e. f1 is dependent of y1 and not y2
+            # Ouputs of the partial derivatives are independent.  
+	    # I.e. f1 is dependent of y1 and not y2
             # and vice versa f2 is dependent of y2 and not y1
             # therefore the multiplication w/ 0 
             row1 = y_field.grad[i, j].data.numpy() * np.array([1., 0.])
@@ -221,7 +222,7 @@ print(np.trapz(np.trapz(transformed, y_field[:, 0, 1], axis=0), y_field[0, :, 0]
 
 {{< figure src="/img/post-28-norm-flows/2dtransf.png" title="Probability distribution of $Y$." >}}
 
-As we can see, we've transformed the base distribution while meeting the requirement of $\int P(y)dy=1$ by normalizing. Yeah buddy! Now we can continue applying these transformations in variational inference.
+As we can see, we've transformed the base distribution while meeting the requirement of $\int P(y)dy=1$ by normalizing. Now we can continue applying these transformations in variational inference.
 
 ## 2. Normalizing flows
 
@@ -279,13 +280,13 @@ Now we have the same definition as [1], we can update $F(x)$ with $\log Q(z_K)$ 
 </div>
 
 ### 2.4 Planar flows
-Now that we've defined $F(X)$ for any kind of normalizing flow, let's investigate one such flow called planar flows. The transformation is defined as:
+$\mathcal{F}(x)$ is now **general for any kind of normalizing flow**, let's investigate one such flow called planar flow. The planar flow transformation is defined as:
 
 \begin{equation}
 f(z) = z + u h(w^Tz + b)
 \end{equation}
 
-Here <span>$\\{ z \in \mathbb{R}^D, u \in \mathbb{R}^D, b\in \mathbb{R} \\}$</span> are parameters we need to find by optimization. The function $h(.)$ needs to be a smooth non linear function, and the writers recommend using $\tanh(z)$. Determining a determinant jacobian can be a very expensive operation, for [invertible neural networks](https://arxiv.org/abs/1302.5125) they are at least $\mathcal{O}(D^3)$. In planar flows, the complexity is reduced to $\mathcal{O}(D)$, by using the [matrix determinant lemma](https://en.wikipedia.org/wiki/Matrix_determinant_lemma) $\det(I + uv^T) = (1 + v^Tu)$.
+Here <span>$\\{ z \in \mathbb{R}^D, u \in \mathbb{R}^D, b\in \mathbb{R} \\}$</span> are parameters we need to find by optimization. The function $h(\cdot)$ needs to be a smooth non linear function (the writers recommend using $\tanh(\cdot)$). Determining a determinant jacobian can be a very expensive operation, for [invertible neural networks](https://arxiv.org/abs/1302.5125) they are at least $\mathcal{O}(D^3)$. Besides, the invertibility constraint, cheaply computed log determinant jacobians should also be taken into consideration, if you wanted to design your own flows. With planar flows it has been. The complexity is reduced to $\mathcal{O}(D)$, by using the [matrix determinant lemma](https://en.wikipedia.org/wiki/Matrix_determinant_lemma) $\det(I + uv^T) = (1 + v^Tu)$.
 
 <div>
 \begin{eqnarray}
@@ -297,10 +298,10 @@ Here <span>$\\{ z \in \mathbb{R}^D, u \in \mathbb{R}^D, b\in \mathbb{R} \\}$</sp
 That's all we need! We can plug this determinant jacobian right in eq. $\eqref{vfeflow}$ and wrap it up. There are however some conditions that need to be met to guarantee invertibility. In appendix A of [1] they are explained. 
 
 ## 3. Flow in practice
-Okay, let's see if we can bring what we've defined above in practice. In the snippet below we define a `PlanarFlow` class. This is the implementatition of the planar flow we've just defined. Furthermore we normalize some of the parameters of the flow conform the appendix A in [1].
+Okay, let's see if we can bring what we've defined above in practice. In the snippet below we define a `Planar` class, the implementation of the flow that we've just discussed. Furthermore we normalize some of the parameters of the flow conform the appendix A in [1].
 
 ```python
-class PlanarFlow(nn.Module):
+class Planar(nn.Module):
     def __init__(self, size=1, init_sigma=0.01):
         """
         shape u = (batch_size, z_size, 1)
@@ -309,43 +310,45 @@ class PlanarFlow(nn.Module):
         shape z = (batch_size, z_size).
         """
         super().__init__()
-        self.u = nn.Parameter(torch.randn(size, 1).normal_(0, 0.01))
-        self.w = nn.Parameter(torch.randn(1, size).normal_(0, 0.01))
+        self.u = nn.Parameter(torch.randn(1, size).normal_(0, init_sigma))
+        self.w = nn.Parameter(torch.randn(1, size).normal_(0, init_sigma))
         self.b = nn.Parameter(torch.zeros(1))
-    
+
     @property
     def normalized_u(self):
         """
         Needed for invertibility condition.
-        
+
         See Appendix A.1
         Rezende et al. Variational Inference with Normalizing Flows
         https://arxiv.org/pdf/1505.05770.pdf
         """
+
         # softplus
         def m(x):
             return -1 + torch.log(1 + torch.exp(x))
-        wtu = self.w @ self.u
-        w_div_w2 = self.w.t() / torch.sum(self.w ** 2, dim=1, keepdim=True)
+
+        wtu = torch.matmul(self.w, self.u.t())
+        w_div_w2 = self.w / torch.norm(self.w)
         return self.u + (m(wtu) - wtu) * w_div_w2
-    
+
     def psi(self, z):
         """
         ψ(z) =h′(w^tz+b)w
-        
+
         See eq(11)
         Rezende et al. Variational Inference with Normalizing Flows
         https://arxiv.org/pdf/1505.05770.pdf
         """
         return self.h_prime(z @ self.w.t() + self.b) @ self.w
-    
+
     def h(self, x):
         return torch.tanh(x)
-        
+
     def h_prime(self, z):
-        return 1 - torch.tanh(z)**2
-        
-    def forward(self, z):https://en.wikipedia.org/wiki/Multimodal_distribution
+        return 1 - torch.tanh(z) ** 2
+
+    def forward(self, z):
         if isinstance(z, tuple):
             z, accumulating_ldj = z
         else:
@@ -355,115 +358,105 @@ class PlanarFlow(nn.Module):
         u = self.normalized_u
 
         # determinant of jacobian
-        det = (1 + psi @ u)
+        det = (1 + psi @ u.t())
 
         # log |det Jac|
         ldj = torch.log(torch.abs(det) + 1e-6)
-        
+
         wzb = z @ self.w.t() + self.b
- 
-        fz = z + (u.t() * self.h(wzb))
+
+        fz = z + (u * self.h(wzb))
 
         return fz, ldj + accumulating_ldj
 ```
 
 ### 3.1 Target distribution
 
-Next we define a gaussian mixture distribution that is bi-modal. This will be our target distribution.
+Next we define a target distribution that is more complex than a standard Gaussian.
 
 ```python
-x1 = np.linspace(1, 5, num=50)
-x2 = np.linspace(1, 5, num=50)
-x1_s, x2_s = np.meshgrid(x1 ,x2)
-x_field = np.concatenate([x1_s[..., None], x2_s[..., None]], axis=-1)
-
-
-base_1 = stats.multivariate_normal(mean=[3, 4], cov=0.15)
-base_2 = stats.multivariate_normal(mean=[3, 2], cov=0.15)
-pdf = 0.5 * base_1.pdf(x_field) + 0.5 * base_2.pdf(x_field)
-
-# cast to pytorch
-pdf_tensor = torch.tensor(pdf, dtype=torch.float)
-plt.figure(figsize=(8, 8))
-plt.contourf(x1_s, x2_s, 
+def target_density(z):
+    z1, z2 = z[..., 0], z[..., 1]
+    norm = (z1**2 + z2**2)**0.5
+    exp1 = torch.exp(-0.2 * ((z1 - 2) / 0.8) ** 2)
+    exp2 = torch.exp(-0.2 * ((z1 + 2) / 0.8) ** 2)
+    u = 0.5 * ((norm - 4) / 0.4) ** 2 - torch.log(exp1 + exp2)
+    return torch.exp(-u)
 ```
 
-{{< figure src="/img/post-28-norm-flows/bimodal.png" title="Bimodal posterior we want to approximate." >}}
+If we plot the density of function above we obtain the following target distribution.
+
+
+{{< figure src="/img/post-28-norm-flows/target_dist.png" title="Target distribution we want to approximate." >}}
 
 ### 3.2 Variational Free Energy 
 
-Eq. $\eqref{vfeflow}$ should be defined as loss function. Below we've defined the loss funtion. The joint probability $P(x, z_K)$ in $\eqref{vfeflow}$ is split in the likelihood (negative binary cross entropy in this case) and the prior $P(z_K)$. Note that we've define a diagonal Guassian prior in the loss function below. If we wanted another prior distribution, we should modify the `log_p_zk` variable.
-
+Eq. $\eqref{vfeflow}$ is defined below in the function `det_loss`. The joint probability $P(x, z_K)$ in $\eqref{vfeflow}$ is split in the likelihood (the target density case) and the prior $P(z_K)$ (which is note used as I use a uniform prior). 
 
 ```python
-def det_loss(reconstruction_x, x, mu, log_var, z_0, z_k, ldj):
-    """
-    :param z_mu: mean of z_0
-    :param z_var: variance of z_0
-    :param z_0: first stochastic latent variable
-    :param z_k: last stochastic latent variable
-    :param ldj: log det jacobian
-    """
+def det_loss(mu, log_var, z_0, z_k, ldj, beta):
+    # Note that I assume uniform prior here.
+    # So P(z) is constant and not modelled in this loss function
+    batch_size = z_0.size(0)
 
-    batch_size = x.size(0)
-
-    # - N E_q0 [ ln p(x|z_k) ]
-    likelihood = F.binary_cross_entropy(reconstruction_x, x, reduction='sum')
-
-    # ln p(z_k)  (not averaged)
-    log_p_zk = dist.Normal(0, 1).log_prob(z_k)
-    # ln q(z_0)  (not averaged)
-    log_q_z0 = dist.Normal(mu, torch.exp(0.5 * log_var)).log_prob(z_0)
-    
-    # ldj is already summed 
-    loss = likelihood + (log_q_z0 - log_p_zk).sum() - ldj 
-    return loss / batch_size
+    # Qz0
+    log_qz0 = dist.Normal(mu, torch.exp(0.5 * log_var)).log_prob(z_0)
+    # Qzk = Qz0 + sum(log det jac)
+    log_qzk = log_qz0.sum() - ldj.sum()
+    # P(x|z)
+    nll = -torch.log(target_density(z_k) + 1e-7).sum() * beta
+    return (log_qzk + nll) / batch_size
 ```
 
 ### 3.3 Final model
 
-The single `PlanarFlow` layer is sequentially stacked in the `Flow` class. This is the class is the final model and will be optimized in order to approximate the bi-modal Gaussian. 
+The single `Planar` layer is sequentially stacked in the `Flow` class. The instance of this class is the final model and will be optimized in order to approximate the target distribution. 
 
 ```python
 class Flow(nn.Module):
-    def __init__(self, n_flows=10):
+    def __init__(self, dim=2, n_flows=10):
         super().__init__()
-        self.flow =  nn.Sequential(*[
-            PlanarFlow(size) for _ in range(n_flows)
+        self.flow = nn.Sequential(*[
+            Planar(dim) for _ in range(n_flows)
         ])
-        self.mu = nn.Parameter(torch.randn(size,).normal_(0, 0.01))
-        self.log_var = nn.Parameter(torch.randn(size,).normal_(0, 0.01))
-        
-    def forward(self):
+        self.mu = nn.Parameter(torch.randn(dim, ).normal_(0, 0.01))
+        self.log_var = nn.Parameter(torch.randn(dim, ).normal_(1, 0.01))
+
+    def forward(self, shape):
         std = torch.exp(0.5 * self.log_var)
-        eps = torch.randn_like(std)  # unit gaussian
-        z0 = self.mu + eps * std 
+        eps = torch.randn(shape)  # unit gaussian
+        z0 = self.mu + eps * std
 
         zk, ldj = self.flow(z0)
-        
-        return torch.sigmoid(z0), torch.sigmoid(zk), ldj, self.mu, self.log_var
+        return z0, zk, ldj, self.mu, self.log_var
 ```
 
 ### 3.4 Training and results
 Last we need is the train loop. This is just a function where we pass a model instance and apply some gradient updates.
 
 ```python
-def train_flow(flow, epochs=250):
-    optim = torch.optim.Adam(flow.parameters(), lr=1e-3)
-    
-    for _ in range(epochs):
-        z0, zk, ldj, mu, log_var = flow()
-        loss = det_loss(reconstruction_x=zk,
-                       x=pdf_tensor.flatten().unsqueeze(0),
-                       mu=mu,
-                       log_var=log_var,
-                       z_0=z0,
-                       z_k=zk,
-                       ldj=ldj)
+def train_flow(flow, shape, epochs=1000):
+    optim = torch.optim.Adam(flow.parameters(), lr=1e-2)
+
+    for i in range(epochs):
+        z0, zk, ldj, mu, log_var = flow(shape=shape)
+        loss = det_loss(mu=mu,
+                        log_var=log_var,
+                        z_0=z0,
+                        z_k=zk,
+                        ldj=ldj,
+                        beta=1)
         loss.backward()
         optim.step()
-        optim.zero_grad()  
+        optim.zero_grad()
 ```
+
+The figure below shows the final results. As we can see, the planar flow layer isn't quite flexible enough to approximate the target in one or two layers. We eventually seem to need ~16 layers to come full cirlce.
+
+{{< figure src="/img/post-28-norm-flows/montage.png" title="Results with different number of planar flows." >}}
+
+## Discussion
+Upgrading the variational distribution with normalizing flows addresses a core setback of variational inference, that of simplifying the posterior distribution too much. However, we remain limited to invertible functions. As we see in the example with the planar flows, we need quite some layers in order to obtain the flexible distribution. In higher dimensions this problem increases, and planar flows are often thought to be too simplistic. Luckily there are more complex transformations. Maybe I'll discuss them in another post.
 
 ## References
 &nbsp; [1] Rezende & Mohammed (2016, Jun 14) *Variational Inference with Normalizing Flows*. Retrieved from https://arxiv.org/pdf/1505.05770.pdf <br>
