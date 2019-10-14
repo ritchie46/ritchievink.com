@@ -286,7 +286,7 @@ $\mathcal{F}(x)$ is now **general for any kind of normalizing flow**, let's inve
 f(z) = z + u h(w^Tz + b)
 \end{equation}
 
-Here <span>$\\{ z \in \mathbb{R}^D, u \in \mathbb{R}^D, b\in \mathbb{R} \\}$</span> are parameters we need to find by optimization. The function $h(\cdot)$ needs to be a smooth non linear function (the writers recommend using $\tanh(\cdot)$). Determining a determinant jacobian can be a very expensive operation, for [invertible neural networks](https://arxiv.org/abs/1302.5125) they are at least $\mathcal{O}(D^3)$. Besides, the invertibility constraint, cheaply computed log determinant jacobians should also be taken into consideration, if you wanted to design your own flows. With planar flows it has been. The complexity is reduced to $\mathcal{O}(D)$, by using the [matrix determinant lemma](https://en.wikipedia.org/wiki/Matrix_determinant_lemma) $\det(I + uv^T) = (1 + v^Tu)$.
+Here <span>$\\{ z \in \mathbb{R}^D, u \in \mathbb{R}^D, b\in \mathbb{R} \\}$</span> are parameters we need to find by optimization. The function $h(\cdot)$ needs to be a smooth non linear function (the writers recommend using $\tanh(\cdot)$). Determining a determinant jacobian can be a very expensive operation, for [invertible neural networks](https://arxiv.org/abs/1302.5125) they are at least $\mathcal{O}(D^3)$. Besides the invertibility constraint, cheaply computed log determinant jacobians should also be taken into consideration, if you wanted to design your own flows. With planar flows it has been. The complexity is reduced to $\mathcal{O}(D)$, by using the [matrix determinant lemma](https://en.wikipedia.org/wiki/Matrix_determinant_lemma) $\det(I + uv^T) = (1 + v^Tu)$.
 
 <div>
 \begin{eqnarray}
@@ -303,12 +303,6 @@ Okay, let's see if we can bring what we've defined above in practice. In the sni
 ```python
 class Planar(nn.Module):
     def __init__(self, size=1, init_sigma=0.01):
-        """
-        shape u = (batch_size, z_size, 1)
-        shape w = (batch_size, 1, z_size)
-        shape b = (batch_size, 1, 1)
-        shape z = (batch_size, z_size).
-        """
         super().__init__()
         self.u = nn.Parameter(torch.randn(1, size).normal_(0, init_sigma))
         self.w = nn.Parameter(torch.randn(1, size).normal_(0, init_sigma))
@@ -461,6 +455,7 @@ Upgrading the variational distribution with normalizing flows addresses a core s
 ## References
 &nbsp; [1] Rezende & Mohammed (2016, Jun 14) *Variational Inference with Normalizing Flows*. Retrieved from https://arxiv.org/pdf/1505.05770.pdf <br>
 &nbsp; [2] Rippel & Adams (2013, Feb 20) *High-Dimensional Probability Estimation with Deep Density Models*. Retrieved from https://arxiv.org/pdf/1302.5125.pdf <br>
+&nbsp; [3] van den Berg, R (2018, Aug 11) *Sylvester normalizing flows for variational inference* Retrieved from https://github.com/riannevdberg/sylvester-flows <br>
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
