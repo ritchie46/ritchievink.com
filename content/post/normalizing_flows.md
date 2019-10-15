@@ -17,7 +17,7 @@ This posterior is often intractable and the general idea was to forgo the quest 
 
 Variational inference has got some very cool advantages compared to [MCMC]({{< ref "post/variational_inference.md" >}}), such as scalability and modulare usage in combination with deep learning, but it has also got some disadvantages. As we don't know the optimal ELBO (the loss we optimize in VI), we don't know if we are 'close' to the true posterior, and this constraint of 'easy' parameterizable distributions used as family for $Q(z)$ often leads us to use distributions that aren't expressive enough for the true non-gaussian real world.
 
-This post we'll explore a technique called **normalizing flows**. With NF are able to transform an 'easy' paramaterizable base distribution in a more complex approximation for the posterior distribution. This is done by passing the base distribution through a series of transformations (the flow part). One of the definitions of a probability distribution is that the integral sums to one $\int P(x) dx = 1$. A transformation can break this requirement, therefore we need to **normalize** $P(x)$ after the transformation.
+This post we'll explore a technique called **normalizing flows**. With NF are able to transform an 'easy' paramaterizable base distribution in a more complex approximation for the posterior distribution. This is done by passing the base distribution through a series of transformations (the flow part). One of the definitions of a probability distribution is that the integral sums to one $\int_{-\infty}^{\infty} P(x) dx = 1$. A transformation can break this requirement, therefore we need to **normalize** $P(x)$ after the transformation.
 
 ## 1. Change of variables
 First we are going to look at some basics. We are going to start of with basis distribution $\mathcal{N}(\mu=1, \sigma=0.1)$. In the code snippet below ([the whole jupyter notebook is on github](https://github.com/ritchie46/vanilla-machine-learning/tree/master/bayesian/normalizing_flows)) we define this distribution in python and we apply a nummerical integral with `np.trapz` to validate the integral summing to 1.
@@ -50,11 +50,11 @@ print(np.trapz(transformed, y))
 
 {{< figure src="/img/post-28-norm-flows/transform1.png" title="Transformed base wo/ normalization." >}}
 
-By applying this transformation we've blown up the probability space $\int P(y) dy \gg 1$. We need a to modify this tranformation such that the integral over the entire domain evaluates to 1. Let's define this a little bit more formally. We want to transform $P(x)$ to another distribution $P(y)$ with $f: \mathbb{R}^n \mapsto \mathbb{R}^n $. Because naively applying any possible $f$, would expand or shrink the probability mass of the distributions we need to constraint $f$ such that:
+By applying this transformation we've blown up the probability space $\int_{-\infty}^{\infty}  P(y) dy \gg 1$. We need a to modify this tranformation such that the integral over the entire domain evaluates to 1. Let's define this a little bit more formally. We want to transform $P(x)$ to another distribution $P(y)$ with $f: \mathbb{R}^n \mapsto \mathbb{R}^n $. Because naively applying any possible $f$, would expand or shrink the probability mass of the distributions we need to constraint $f$ such that:
 
 <div>
 \begin{eqnarray}
-\int P(x)dx &=&\int P(y)dy = 1 \\
+\int_{-\infty}^{\infty}  P(x)dx &=&\int_{-\infty}^{\infty}  P(y)dy = 1 \\
 P(x)dx &=&P(y)dy \\
 P(y) &=&P(x)\frac{dx}{dy} \label{normtransf}
 \end{eqnarray} 
@@ -105,7 +105,7 @@ print(np.trapz(transformed, y))
 Save some small deviation due to nummerical discretization, the transformation sums to 1! We can also observe this in the plot we've made. Because of the transformation, the resulting probability distribution has become wider, wich (in case of a Gaussian distribution) must result in a less high probability peak, if the total probability mass is preserved.
 
 ### 1.2 Conditions
-The function $f(x) = x^2$ we've used in the example above was strictly increasing. This leads to a derivative $\frac{df}{dx}$ that is always postive. If we would have chosen a strictly decreasing function $g$, $\frac{dg}{dx}$ would always be negative. In that case eq. $\eqref{normtransf}$ would be defined as $P(y) = - P(x) \frac{dy}{dx}$. We could however, by taking the absolute value of the derivative, easily come up with an equation that holds true for both cases:
+The function $f(x) = x^2$ we've used in the example above was **strictly increasing** (over the domain $\mathbb{R}_{>0}$). This leads to a derivative $\frac{df}{dx}$ that is always postive. If we would have chosen a strictly decreasing function $g$, $\frac{dg}{dx}$ would always be negative. In that case eq. $\eqref{normtransf}$ would be defined as $P(y) = - P(x) \frac{dy}{dx}$. We could however, by taking the absolute value of the derivative, easily come up with an equation that holds true for both cases:
 
 <div>
 \begin{eqnarray}
