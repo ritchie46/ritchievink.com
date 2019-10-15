@@ -105,7 +105,7 @@ print(np.trapz(transformed, y))
 Save some small deviation due to nummerical discretization, the transformation sums to 1! We can also observe this in the plot we've made. Because of the transformation, the resulting probability distribution has become wider, wich (in case of a Gaussian distribution) must result in a less high probability peak, if the total probability mass is preserved.
 
 ### 1.2 Conditions
-The function $f(x) = x^2$ we've used in the example above was **strictly increasing** (over the domain $\mathbb{R}_{>0}$). This leads to a derivative $\frac{df}{dx}$ that is always postive. If we would have chosen a strictly decreasing function $g$, $\frac{dg}{dx}$ would always be negative. In that case eq. $\eqref{normtransf}$ would be defined as $P(y) = - P(x) \frac{dy}{dx}$. We could however, by taking the absolute value of the derivative, easily come up with an equation that holds true for both cases:
+The function $f(x) = x^2$ we've used in the example above was **strictly increasing** (over the domain $\mathbb{R}_{>0}$). This leads to a derivative $\frac{df}{dx}$ that is always positive. If we would have chosen a strictly decreasing function $g$, $\frac{dg}{dx}$ would always be negative. In that case eq. $\eqref{normtransf}$ would be defined as $P(y) = - P(x) \frac{dy}{dx}$. We could however, by taking the absolute value of the derivative, easily come up with an equation that holds true for both cases:
 
 <div>
 \begin{eqnarray}
