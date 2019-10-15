@@ -260,7 +260,7 @@ The variation free energy is the optimization function we need to minimize. For 
 <div>
 \begin{eqnarray}
 \mathcal{F(x)} &=& D_{KL}(Q(z) || P(z)) - E_{z \sim Q}[\log P(x|z)] \label{eq:vfe} \\
-&=& \int Q(z) \log \frac{Q(z)}{P(z)} dz - E_{z \sim Q}[\log P(x|z)] &\qquad \tiny{\text{rewrite KL-divergence in integral form}} \\
+&=& \int_{z} Q(z) \log \frac{Q(z)}{P(z)} dz - E_{z \sim Q}[\log P(x|z)] &\qquad \tiny{\text{rewrite KL-divergence in integral form}} \\
 &=& E_{z \sim Q}[\log \frac{Q(z)}{P(z)}] - E_{z \sim Q}[\log P(x|z)] &\qquad \tiny{\int P(x) x = E[x]} \\
 &=& E_{z \sim Q}[\log \frac{Q(z)}{P(z)} - \log P(x|z)]  \\
 &=& E_{z \sim Q}[\log Q(z) - \log P(z)  - \log P(x|z)]  \\

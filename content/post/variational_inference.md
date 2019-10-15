@@ -21,7 +21,7 @@ $$ P(\theta|D) = \frac{P(D|\theta) P(\theta)}{P(D)}$$
 
 Let's say we've defined a model architecture and we want to find the most likely parameters $\theta$ (a large vector, containing all the parameters from the model) for that model, given a set of observed data points $D$. This is what we are interested in, and this is called the posterior: $P(\theta|D)$. We often have some prior belief about the value of our parameters. For example, in a neural network, we often initialize our weights following a Gaussian distribution with a zero mean and unit variance. We believe that the true weights should be somewhere in that distribution. We call that our prior; $p(\theta)$. Given all values of $\theta$, we can compute the probability of observing our data. This is called the likelihood $P(D|\theta)$. And finally, we have a term, often called the evidence, $P(D)$. This is where the problems begin, as this is the marginal likelihood where all the parameters are marginalized. 
 
-$$ P(D) = \int P(D| \theta) P(\theta) \text{d} \theta $$
+$$ P(D) = \int_{\theta} P(D| \theta) P(\theta) \text{d} \theta $$
 
 This integral is the problem. At even moderately high dimensions of $\theta$ the amount numerical operations explode.
 
@@ -104,7 +104,7 @@ This was easy. Because we weren't cursed by high dimensions. Increase the dimens
 One tool to tackle this intractability problem is Markov Chain Monte Carlo or **MCMC**. 
 
 In the plot showing the posterior distribution we first normalized the `unnormalized_posterior` by adding this line; 
-`posterior = unnormalized_posterior / np.nan_to_num(unnormalized_posterior).sum()`. The only thing this did was ensuring that the integral over the posterior equals 1; $\int P(\theta|D) \text{d}\theta =1$. This is necessary if we want the posterior distribution to be a probability distribution as one of the properties of a probability distribution is that the sum of all probability is 1!
+`posterior = unnormalized_posterior / np.nan_to_num(unnormalized_posterior).sum()`. The only thing this did was ensuring that the integral over the posterior equals 1; $\int_{\theta} P(\theta|D) \text{d}\theta =1$. This is necessary if we want the posterior distribution to be a probability distribution as one of the properties of a probability distribution is that the sum of all probability is 1!
 
 However, if we would plot our unnormalized posterior, we would see exactly the same plot.
 
@@ -191,25 +191,25 @@ Now your head should be filled with question marks!
 How can we compute the KL-divergence $D\_{\text{KL}}(Q(\theta) \\: || \\: P(\theta|D))$ when we don't know the posterior?! It turns out that is the reason we've chosen KL-divergence (and not a real metric such as Wasserstein distance between $Q(\theta)$ and $P(\theta|D)$). With KL-divergence we don't have to know the posterior! Below we'll see why:
 
 
-$$ D\_{\text{KL}}(Q(\theta) \\: || \\: P(\theta|D))  = \int Q(\theta) \log \frac{Q(\theta)}{P(\theta|D)}\text{d}\theta $$
+$$ D\_{\text{KL}}(Q(\theta) \\: || \\: P(\theta|D))  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)}{P(\theta|D)}\text{d}\theta $$
 
 If we rewrite the posterior as $\frac{P(\theta, D)}{P(D)}$, we obtain:
 
-$$ D\_\text{KL}  = \int Q(\theta) \log \frac{Q(\theta)P(D)}{P(\theta, D)}\text{d}\theta $$
+$$ D\_\text{KL}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)P(D)}{P(\theta, D)}\text{d}\theta $$
 
 Then we apply the logarithm rule of multiplication $\log (A \cdot B) = \log A + \log B$:
 
-$$ D\_\text{KL}  = \int Q(\theta) \log \frac{Q(\theta)P(D)}{P(\theta, D)}\text{d}\theta $$
+$$ D\_\text{KL}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)P(D)}{P(\theta, D)}\text{d}\theta $$
 
-$$ D\_\text{KL}  = \int Q(\theta) \log \frac{Q(\theta)}{P(\theta, D)}\text{d}\theta + \int Q(\theta) \log P(D) \text{d} \theta$$
+$$ D\_\text{KL}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)}{P(\theta, D)}\text{d}\theta + \int_{\theta} Q(\theta) \log P(D) \text{d} \theta$$
 
 As $P(D)$ is not parameterized by $\theta$ and $\int Q(\theta) \text{d} \theta = 1$ we can write:
 
-$$ D\_\text{KL}  = \int Q(\theta) \log \frac{Q(\theta)}{P(\theta, D)}\text{d}\theta +  \log P(D) $$
+$$ D\_\text{KL}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)}{P(\theta, D)}\text{d}\theta +  \log P(D) $$
 
 By yet applying another log rule; $\log A = -\log \frac{1}{A}$ we obtain:
 
-$$ D\_\text{KL}  = \log P(D) -\int Q(\theta) \log \frac{P(\theta, D)}{Q(\theta)}\text{d}\theta  $$
+$$ D\_\text{KL}  = \log P(D) -\int_{\theta} Q(\theta) \log \frac{P(\theta, D)}{Q(\theta)}\text{d}\theta  $$
 
 And now we can see that the second term on the *rhs* is actually the **ELBO**, which can be written in expectation (over $\theta$) form.
 
@@ -234,7 +234,7 @@ Then we expand the equation and thereby isolating the reconstruction error $\log
 
 $$ \text{ELBO}  = E_{\theta \sim Q}[\log P(D|\theta)] +  E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$$
 
-If we rewrite the $E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$ in the integral form $\int Q(\theta)\log\frac{P(\theta)}{Q(\theta)}d\theta$, we can observe that this is the KL-divergence between the prior $P(\theta)$ and the variational distribution $Q(\theta)$. Resulting in an ELBO defined by the reconstruction error and $-D_{KL}(Q(\theta)||P(\theta)).$
+If we rewrite the $E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$ in the integral form $\int_{\theta} Q(\theta)\log\frac{P(\theta)}{Q(\theta)}d\theta$, we can observe that this is the KL-divergence between the prior $P(\theta)$ and the variational distribution $Q(\theta)$. Resulting in an ELBO defined by the reconstruction error and $-D_{KL}(Q(\theta)||P(\theta)).$
 
 $$ \text{ELBO}  = E_{\theta \sim Q}[\log P(D|\theta)] - D_{KL}(Q(\theta)||P(\theta))$$
 </i></div>
