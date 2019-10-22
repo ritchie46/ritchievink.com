@@ -451,6 +451,8 @@ We see we didn't model the aleatoric uncertainty. What we've captured now is the
 ## Final words
 This post we've implemented variational inference in two flavors. In one we've modelled aleatoric uncertainty and got insight in the changing variance of $y \sim P(Y|X)$. The second implementation was a fully bayesian neural network and resulted in epistemic uncertainty. In this implementation we were not interested in the uncertainty in the data, but in the uncertainty of our model. Variational inference seems to be a powerful, modular approach to enrich deep learning with uncertainty values.
 
+I don't believe I have to stress the importance of modeling uncertainty, yet in most machine learning models uncertainty is regarded secundary. [Yu Ri Tan](https://www.yuritan.nl/posts/prediction_uncertainty/) has got a very nice blog post on this topic. He explores how we can get insight in the uncertainty of our models in a frequentistic manner. Do read!
+
 ## References
 &nbsp; [1] Kingma & Welling (2013, Dec 20) *Auto-Encoding Variational Bayes*. Retrieved from https://arxiv.org/abs/1312.6114 <br>
 &nbsp; [2] Gal, Y. (2016, Feb 18) *HeteroscedasticDropoutUncertainty*. Retrieved from https://github.com/yaringal/HeteroscedasticDropoutUncertainty <br>
