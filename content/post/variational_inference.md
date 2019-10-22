@@ -199,11 +199,10 @@ $$ D\_\text{KL}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)P(D)}{P(\theta, D
 
 Then we apply the logarithm rule of multiplication $\log (A \cdot B) = \log A + \log B$:
 
-$$ D\_\text{KL}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)P(D)}{P(\theta, D)}\text{d}\theta $$
+<div>
+$$ D_{\text{KL}}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)}{P(\theta, D)}\text{d}\theta + \int_{\theta} Q(\theta) \log P(D) \text{d} \theta $$</div>
 
-$$ D\_\text{KL}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)}{P(\theta, D)}\text{d}\theta + \int_{\theta} Q(\theta) \log P(D) \text{d} \theta$$
-
-As $P(D)$ is not parameterized by $\theta$ and $\int Q(\theta) \text{d} \theta = 1$ we can write:
+As $P(D)$ is not parameterized by $\theta$ and $\int_{\theta} Q(\theta) \text{d} \theta = 1$ we can write:
 
 $$ D\_\text{KL}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)}{P(\theta, D)}\text{d}\theta +  \log P(D) $$
 
