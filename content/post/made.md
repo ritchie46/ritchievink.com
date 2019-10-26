@@ -4,7 +4,7 @@ description = "Autoencoders can be modified such that they only are conditioned 
 tags = ["machine learning", "python", "deep-learning"] 
 draft = false
 author = "Ritchie Vink"
-title = "Density estimation with Masked Autoencoders"
+title = "Distribution estimation with Masked Autoencoders"
 keywords = []
 og_image = "/img/post-29-made/og_image.png"
 +++
@@ -35,7 +35,7 @@ By reducing the latent dimension, we enforce the autoencoder to map the input to
 
 ## 2. Distribution estimation
 
-If we bully the autoencoders just a bit more, by also blinding them partially, we can actually make them learn $P(x)$, i.e. the distribution of $x$. [Germain, Gregor & Larochelle $^{[2]}$](https://arxiv.org/abs/1502.03509), posted their findings in their paper **MADE: Masked Autoencoder for Density Estimation**.
+If we bully the autoencoders just a bit more, by also blinding them partially, we can actually make them learn $P(x)$, i.e. the distribution of $x$. [Germain, Gregor & Larochelle $^{[2]}$](https://arxiv.org/abs/1502.03509), posted their findings in the paper **MADE: Masked Autoencoder for Density Estimation**.
 In my opion, they made a really elegant observation that, by the definition of the chain rule of probability, we can learn $P(x)$ by blinding (masking) an autoencoder. Let's explore their observation.
 
 The [chain rule of probability](https://en.wikipedia.org/wiki/Chain_rule_(probability)) states:
@@ -53,15 +53,15 @@ P(x) &=& P(x_1) \cdot P(x_2| x_1) \cdot P(x_D | x_{1:D-1}) \\
 \end{eqnarray}
 </div>
 
-So by learning an autoregressive relationship, we actually model probability distribution of $x$. That's really cool, and actually quite simple to implement! This is where the bullying of the autoencoder comes into play. All we need to do is to restrict autoencoders connections in such a way that node for predicting $x\_t$, is only connected to the inputs $x_{1:t-1}$. 
+So by learning an autoregressive relationship, we actually model the probability distribution of $x$. That's really cool, and actually quite simple to implement! This is where the bullying of the autoencoder comes into play. All we need to do is to restrict autoencoders connections in such a way that node for predicting $x\_t$, is only connected to the inputs $x_{1:t-1}$. 
 
-This is shown in the figure below, for the red output $P(x_2|x_1)$. Please take a look good at it, because it took me forever to draw.
+This principle of restricted connections is shown in the figure below for the red output $P(x_2|x_1)$. Please take a look good at it and appreciate what you see, because it took me forever to draw!
 
 {{< figure src="/img/post-29-made/autoregessive-weights.png" title="Autoregressive autoencoder [3]." >}}
 
 ## 3. Masking trick
-The autoregressive properties of such a network are obvious, however the implementation doesn't seem trivial at first sight. In the figure, the autoencoder is drawn with reduced connections. This isn't how we are going to implement it however. Just as done with dropout$^{[4]}$, we nullify weight outputs by element-wise multiplying them with a binary masking matrix. Connections multiplied by one are unharmed. Connections multiplied by are effectually discarded. 
-A standard neural networks layer is defined by $g(Wx + b)$, where $W$ is the weight matrix, $b$ is a bias vector, and $g$ is a non linear function. With masked autoencoders, the layer activation will become $g((W \odot M)x + b)$, where $M \in \\{0, 1\\}$ is the masking matrix.
+The autoregressive properties of such a network are obvious, however the implementation doesn't seem trivial at first sight. In the figure, the autoencoder is drawn with reduced connections. This isn't how we are going to implement it however. Just as done with dropout$^{[4]}$, we nullify weight outputs by element-wise multiplying them with a binary masking matrix. Connections multiplied by one are unharmed. Connections multiplied by zero are effectually discarded. 
+A standard neural networks layer is defined by $g(Wx + b)$, where $W$ is a weight matrix, $b$ is a bias vector, and $g$ is a non linear function. With masked autoencoders, the layer activation will become $g((W \odot M)x + b)$, where $M \in \\{0, 1\\}$ is the masking matrix.
 
 ### 3.1 Hidden nodes
 For the creation of the masks, we use a clever trick. We assign a random variable $m' \in \\{1, 2, \dots, D-1 \\}$ to every hidden node $k$ in the network.
@@ -78,7 +78,7 @@ M_{k, k'} = 1_{m^l(k') \ge m^{l-1}(k)} \label{eq:hidden} \\
 Where $1_{m^l(k') \ge m^{l-1}(k)}$ is the indicator function, returning $1$ if the expression is true and retuning $0$ otherwise.
 
 ## 3.2 Output nodes
-For the output nodes the condition slightly changes. Let $d$ be the ouput node. The masking values are then defined by:
+For the output nodes of the neural network, the condition slightly changes. Let $d$ be the ouput node. The masking values are then defined by:
 
 <div>
 \begin{eqnarray}
@@ -215,7 +215,7 @@ def set_mask_input_layer(layer):
 ```
 
 ### 4.3 MADE
-That's all that is required for the MADE model. Shown below is the final implementation of the model. Note that we don't use ReLU activations. A $\text{ReLU} = \max(0, Wx + b)$, leading to nullified connections. This could break the autoregressive part by leaving no path from output $d$ to inputs $x_{<d}$.
+That's all that is required for the MADE model. Shown below is the final implementation of the model. Note that we don't use ReLU activations. A $\text{ReLU}(Wx + b) = \max(0, Wx + b)$, leading to nullified connections. This could break the autoregressive part by leaving no path from output $d$ to inputs $x_{<d}$.
 
 ```python
 class MADE(nn.Module):
