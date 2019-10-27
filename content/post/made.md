@@ -127,7 +127,11 @@ class LinearMasked(nn.Module):
         # Make sure that d-values are assigned to m
         # d = 1, 2, ... D-1
         d = set(range(1, num_input_features))
+	c = 0
         while True:
+	    c += 1
+	    if c > 10:
+	        break
             # m function of the paper. Every hidden node, gets a number between 1 and D-1
             self.m = torch.randint(1, num_input_features, size=(out_features,)).type(
                 torch.int32
@@ -261,10 +265,16 @@ for d in range(input_size):
     assert torch.all(x.grad[0, d:] == 0)
 ```
 
-## Last words
-Once you see it, it looks so simple. That's probably the case with most good ideas. I really like the simplicity of this architecture. We were able to create a generative model (learning $P(x)$, just by applying masks to an autoencoder. The research made for the MADE paper, formed the basis for even more generative models as PixelRNN/ CNN (creating images pixel for pixel) and even the very cool wavenet (speech synthesis).
+## Evaluation
+I've tested the model (defined in the previous section) on the Olivetti faces dataset. This dataset contains 400 64x64 images with close up faces of 40 different persons. I did not do any hyperparameter search. The hidden layer sizes were arbitrarily set on $1.5 D= 6144$.
 
-Next post we will use the autoregressive model in Inverse Autoregressive flows. But first, weekend!
+At inference time I've tried to predict $P(x|x_{1:\frac{D}{2}})$. The model should finish the remaining part of the image conditioned on the first part. The figure below shows a few of the results.
+
+{{< figure src="/img/post-29-made/montage.png" title="Results of the MADE model conditioned on the first half of the images.">}}
+
+## Last words
+Once you see it, it looks so simple. That's probably the case with most good ideas. I really like the simplicity of this architecture. We were able to create a generative model (learning $P(x)$, just by applying masks to an autoencoder. The research made for the MADE paper, formed the basis for even more generative models as PixelRNN/ CNN (creating images pixel for pixel) and even the very cool wavenet (speech synthesis). I must mention that inference with this model architecture is super slow. This is due to the autoregressive properties of the model. During training, this isn't an issue as all data points in the future $x_{t+n}$
+are already known. At inference time, we need to predict them one by one, without any parallelization. This slow inference time is the reason why next post won't be about Autoregressive flows. Instead it will be about **Inverse** Autoregressive flows and we will use the the autoregressive we have discussed today. But first, weekend!
 
 ## References
 &nbsp; [1] Brendan Fortuner (2018, Aug 11) *Machine Learning Glossary* Retrieved from https://github.com/bfortuner/ml-cheatsheet <br>
