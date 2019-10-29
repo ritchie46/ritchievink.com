@@ -266,7 +266,7 @@ for d in range(input_size):
 ```
 
 ## Evaluation
-I've tested the model (defined in the previous section) on the Olivetti faces dataset. This dataset contains 400 64x64 images with close up faces of 40 different persons. I did not do any hyperparameter search. The hidden layer sizes were arbitrarily set on $1.5 D= 6144$.
+I've tested the model (defined in the previous section) on the Olivetti faces dataset. This dataset contains 400 64x64 images with close up faces of 40 different persons. I did not do any hyperparameter search. The hidden layer sizes were arbitrarily set on 256 nodes. The model was trained on 380 images and inference was done on the remaining 20 images. 
 
 At inference time I've tried to predict $P(x|x_{1:\frac{D}{2}})$. The model should finish the remaining part of the image conditioned on the first part. The figure below shows a few of the results.
 
