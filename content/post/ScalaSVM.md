@@ -98,13 +98,13 @@ The loss function <span>\\( J \\)</span> we can minimize is the 'Hinge loss' fun
 
 ## Not linearly seperable classes
 
-When data is not linearly seperable there cannot be a 'hard margin' between the data samples and the margin that is spanned by the support vectors. A SVM trained on not linearly seperated data is called a 'soft margine' SVM. In such a case a regularization term <span>\\( \lambda ||\vec{w}||^2 \\)</span> is added.
+When data is not linearly seperable there cannot be a 'hard margin' between the data samples and the margin that is spanned by the support vectors. A SVM trained on not linearly seperated data is called a 'soft margin' SVM. In such a case a regularization term <span>\\( \lambda ||\vec{w}||^2 \\)</span> is added.
 
 The loss function then becomes:
 
 <div>$$ J = max(0, 1 - y_i(\vec{x}_i \cdot \vec{w} - b)) + \lambda ||\vec{w}||^2 $$</div>
 
-Where <span>\\( \lambda \\)</span> is a regularization parameter that controls the trade off between a hard margin and soft margine. In other words, a trade of between following noise in the data or generalizing (with a chance of underfitting).
+Where <span>\\( \lambda \\)</span> is a regularization parameter that controls the trade off between a hard margin and soft margine. In other words, a trade off between following noise in the data or generalizing (with a chance of underfitting).
 
 
 ## Partial derivatives

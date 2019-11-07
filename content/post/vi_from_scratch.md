@@ -281,8 +281,8 @@ If the aleatoric uncertainty is dependent on $X$, we speak of heteroscedastic un
 
 
 ### Epistemic uncertainty
-The second flavor of uncertainty is epistemic uncertainty. We as algorithm designers have influence on this type of uncertainty. We can actually reduce it, or make it much worse, by our decisions. For instance, the way of bootstrapping the data when splitting test, train, and validation sets had influence on the parameters we fit. If we bootstrap differently, we end up with different parameter values, how certain can we be that these are correct? 
-Epistemic uncertainty can be reduced by acquiring more data, designing better models, or incorporate better features. 
+The second flavor of uncertainty is epistemic uncertainty. We as algorithm designers have influence on this type of uncertainty. We can actually reduce it, or make it much worse by our decisions. For instance, the way of bootstrapping the data when splitting test, train, and validation sets had influence on the parameters we fit. If we bootstrap differently, we end up with different parameter values, how certain can we be that these are correct? 
+Epistemic uncertainty can be reduced by acquiring more data, designing better models, or by incorporating better features. 
 
 ## Bayes by backprop
 In the next part of this post we'll show an example of modelling epistemic uncertainty with variational inference. The implementation is according to [this paper [3]](https://arxiv.org/abs/1505.05424). We will now be modelling the weights $w$ of the neural network with distributions. A priori, our bayesian model consists of the following prior and likelihood.

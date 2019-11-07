@@ -17,7 +17,7 @@ The first part of this post will focus on Gaussian Mixture Models, as expectatio
 
 
 ## Gaussian Mixture Model
-The schoolbook example of Expectation Maximization starts with a Gaussian Mixture model. Below we will go through the definition of a GMM in 1D, but note that this will generalize to ND. Gaussian Mixtures help with the following cluster problem. Assume a generative process where $X$ is an observed random variable.
+The schoolbook example of Expectation Maximization starts with a Gaussian Mixture model. Below we will go through the definition of a GMM in 1D, but note that this will generalize to ND. Gaussian Mixtures help with the following clustering problem. Assume a generative process where $X$ is an observed random variable.
 
 $$ z_i \sim Multionomial(\phi) $$
 $$ x_i|z_i \sim N(\mu_k, \sigma_k^2) $$
@@ -215,7 +215,7 @@ Which means that
 
 $$ p(x_i, z_i; \theta) \propto Q(z_i) $$
 
-And because $Q(z)$ is a probability distribution, it must integrate to one; $\sum\_{z_i}Q(z_i) = 1$. So ideally we want to take joint distribution $p(x_i, z_i ; \theta)$ and transform it so that it is proportional to itself, but also sums to 1 over all values of $z_i$. It turns out we can find that by normalizing the joint distribution.
+And because $Q(z)$ is a probability distribution, it must integrate to one; $\sum\_{z_i}Q(z_i) = 1$. So ideally we want to take the joint distribution $p(x_i, z_i ; \theta)$ and transform it so that it is proportional to itself, but also sums to 1 over all values of $z_i$. It turns out we can find that by normalizing the joint distribution.
 
 $$ \sum\_{z_i} \frac{p(x\_i, z\_i; \theta)}{\sum\_{z\_i} p(x\_i, z\_i; \theta)} = 1 $$
 
