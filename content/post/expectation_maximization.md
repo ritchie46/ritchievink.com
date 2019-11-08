@@ -48,7 +48,7 @@ plt.vlines(x_i, 0, 0.01, color=np.array(['C0', 'C1'])[z_i])
 
 {{< figure src="/img/post-24-em/gmm-example.png" title="Generative process Gaussian Mixture Models." >}}
 
-The picture above clearly depicts the generative process of a Gaussian Mixture model. The dashed line shows $p(x_i|\theta)$. The blue Gaussian shows $p(x_i|z_i=1, \theta)$, and the orange Gaussian shows $p(x_i|z_i=2, \theta)$. Note that $\theta$ are the parameters of the Gaussians, $\mu$ and $\sigma$.
+The picture above clearly depicts the generative process of a Gaussian Mixture model. The dashed line shows $p(x_i; \theta)$. The blue Gaussian shows $p(x_i|z_i=1; \theta)$, and the orange Gaussian shows $p(x_i|z_i=2; \theta)$. Note that $\theta$ are the distribution parameters, $\mu$, $\sigma$ and $\phi$.
 
 If $Z$ was an observed variable we would know that all data points would come from two Gaussians and for each single data point we could tell from which Gaussian it has originated.
 
@@ -63,16 +63,16 @@ With observing only $X$, it has become a lot harder to determine $p(x_i, z_i)$, 
 # Expectation Maximization in GMM
 The log-likelihood of the model is defined below, but as $Z$ is unobserved, the log-likelihood function has no closed form for the maximum likelihood. 
 
-$$\ell(\phi, \theta) = \sum_{i=1}^n \text{log} p(x_i| \theta, \phi)$$
+$$\ell(\theta) = \sum_{i=1}^n \text{log} p(x_i; \theta)$$
 
-$$\ell(\phi, \theta) = \sum\_{i=1}^n \text{log} \sum\_{k=1}^K p(x\_i| \theta, z\_k) p(z\_k| \phi)$$
+$$\ell(\theta) = \sum\_{i=1}^n \text{log} \sum\_{k=1}^K p(x\_i| z\_k; \theta) p(z\_k; \theta)$$
 
 Because of this, we will use an optimization algorithm called Expectation Maximization, where we guess $Z$ and iteratively try to maximize the log-likelihood.
 
 ## E-step
 Given a set of initialized chosen (or updated) parameters we determine $w_{ij}$ for each data point. 
 
-$$ w_{ij} := p(z_i = j|x_i; \theta, \phi)$$
+$$ w_{ij} := p(z_i = j|x_i; \theta)$$
 
 Asking the questions, what is the likelihood of data point $x_i$, being assigned to Gaussian $j$.
 
