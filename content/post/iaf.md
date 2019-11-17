@@ -1,10 +1,10 @@
 +++
 date = "2019-11-12"
-description = "Improve variation posterior with Inverse Autoregressive Flows."
+description = "Improve variational inference with Inverse Autoregressive Flows."
 tags = ["machine learning", "python", "deep-learning", "bayesian", "pytorch"] 
 draft = false
 author = "Ritchie Vink"
-title = "Inverse Autoregressive Flows"
+title = "Another normalizing flow: Inverse Autoregressive Flows"
 keywords = []
 og_image = "/img/post-30-iaf/og_image.png"
 +++
