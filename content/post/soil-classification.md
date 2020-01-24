@@ -56,7 +56,7 @@ CPT is taken. And when a CPT, for instance, is taken at sea, they can tell by th
 If we want a model to be able to take the same decision factors into account as a human does, it needs to be able to make decision based on the same information. 
 
 ## Model architecture
-For this reason, I've chosen a Neural Network architecture with **convolutional layers** that can apply feature extraction on the input signal. Secondly, the model was enhanced with **location-based embeddings**. This way the model could learn it's own location embeddings and could learn the probabilities of soil conditional on a certain location. Finally, most of the bore-hole data show that layers concise of multiple volumic parts of soil types. Therefore we should
+For this reason, I've chosen a Neural Network architecture with **convolutional layers** that can apply feature extraction on the input signal. Secondly, the model was enhanced with **location-based embeddings**. This way the model could learn it's own location embeddings and could learn the probabilities of soil conditional on a certain location. Finally, most of the bore-hole data show that layers concist of multiple volumic parts of soil types. Therefore we should
 predict the total soil distribution per layer. These adaptations have led to better results than the approaches based on only the **qc** and **Fr** values.
 
 Below is shown a result of the model. The model predicts the soil distribution over the depth. Qualitatively the predictions of the model seem very reasonable and align with a geotechnical mapping. Later in the post, we will make a quantitative evaluation.
