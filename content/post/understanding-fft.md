@@ -51,7 +51,7 @@ Where:
 
  * N = number of samples
  * n = current sample
- * x<sub>n</sub> = value of the sinal at time n
+ * x<sub>n</sub> = value of the signal at time n
  * k = current frequency (0 Hz to N-1 Hz)
  * X<sub>k</sub> = Result of the DFT (amplitude and phase)
 
