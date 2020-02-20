@@ -6,10 +6,10 @@ draft = false
 author = "Ritchie Vink"
 title = "Another normalizing flow: Inverse Autoregressive Flows"
 keywords = []
-og_image = "/img/post-30-iaf/og_image.png"
+og_image = "/img/post-30-iaf/og_image.jpg"
 +++
 
-{{< figure src="/img/post-30-iaf/og_image.png" >}}
+{{< figure src="/img/post-30-iaf/og_image.jpg" >}}
 
 <br>
 This post we will explore a type of normalizing flow called **Inverse Autoregressive Flow**. A composition (flow) of transformations, while preserving the constraints of a probability distribution (normalizing), can help us obtain highly correlated variational distributions. 

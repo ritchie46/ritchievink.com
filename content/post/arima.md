@@ -6,10 +6,10 @@ draft = false
 keywords =["machine learning", "python", "numpy", "arima", "time series", "moving average", "random walk", "partial", "autocorrelation"]
 author = "Ritchie Vink"
 title = "Algorithm Breakdown: AR, MA and ARIMA models"
-og_image = "/img/post-18-arima/random-walk.png"
+og_image = "/img/post-18-arima/random-walk.jpg"
 +++
 
-{{< figure src="/img/post-18-arima/random-walk.png" >}}
+{{< figure src="/img/post-18-arima/random-walk.jpg" >}}
 
 Time series are a quite unique topic within machine learning. In a lot of problems the dependent variable $y$, i.e. the thing we want to predict is dependent on very clear inputs, such as pixels of an image, words in a sentence, the properties of a persons buying behavior, etc. In time series these indepent variables are often not known. For instance, in stock markets, we don't have a clear independent
 set of variables where we can fit a model on. Are stock markets dependent on the properties of a company, or the properties of a country, or are they dependent on the sentiment in the news? Surely we can try to find a relation between those independent variables and stock market results, and maybe we are able to find some good models that map those relations. Point is that those relations are not very clear, nor is the independent data easily obtainable.

@@ -10,7 +10,7 @@ tags:
 - machine learning
 - algorithm breakdown
 title: Implementing a Support Vector Machine in Scala
-og_image: "/img/post-11-svm/optimal_margin.png"
+og_image: "/img/post-11-svm/optimal_margin.jpg"
 ---
 
 This post describes the implementation of a linear support vector machine classifier (SVM) in Scala. Scala is a functional programming language that supports functional programming to a far extend. Because I am exploring Scala at the moment and I like the challenge of functional programming, the SVM will be implemented in a functional manner. We are going to test the SVM on two classes from the Iris dataset.

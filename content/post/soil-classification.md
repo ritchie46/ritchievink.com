@@ -6,10 +6,10 @@ draft = false
 keywords =["web", "python"]
 author = "Ritchie Vink"
 title = "Fully automated soil classification with a Convolutional Neural Network and Location embeddings"
-og_image = "/img/soil-classification/header2.png"
+og_image = "/img/soil-classification/header2.jpg"
 +++
 
-{{< figure src="/img/soil-classification/header2.png" >}}
+{{< figure src="/img/soil-classification/header2.jpg" >}}
 
 <br>
 

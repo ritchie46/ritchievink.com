@@ -6,10 +6,10 @@ draft = false
 keywords = ["machine learning", "python", "gaussian processes", "bayesian"]
 author = "Ritchie Vink"
 title = "An intuitive introduction to Gaussian processes"
-og_image = "/img/post-21-gp/waves-banner.png"
+og_image = "/img/post-21-gp/waves-banner.jpg"
 +++
 
-{{< figure src="/img/post-21-gp/waves-banner.png" >}}
+{{< figure src="/img/post-21-gp/waves-banner.jpg" >}}
 
 Christopher Fonnesbeck did a talk about [Bayesian Non-parametric Models for Data Science using PyMC3 on PyCon 2018](https://youtu.be/-sIOMs4MSuA). In this talk, he glanced over Bayes' modeling, the neat properties of Gaussian distributions and then quickly turned to the application of Gaussian Processes, a distribution over infinite functions. Wait, but what?! How does a Gaussian represent a function? I did not understand how, but the promise of what these **Gaussian Processes representing a distribution over nonlinear and nonparametric
 functions** really intrigued me and therefore turned into a new subject for a post. This post we'll go, a bit slower than Christopher did, through what Gaussian Processes are.

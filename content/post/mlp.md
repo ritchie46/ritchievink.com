@@ -13,7 +13,7 @@ tags:
 - machine learning
 - algorithm breakdown
 - deep learning
-og_image: "/img/post-9-mlp/nn_diagram_1.png"
+og_image: "/img/post-9-mlp/nn_diagram_1.jpg"
 title: Programming a neural network from scratch
 type: post
 ---

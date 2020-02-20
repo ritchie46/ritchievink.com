@@ -6,10 +6,10 @@ draft = false
 keywords = ["algorithm breakdown", "machine learning", "python", "gaussian processes", "bayesian", "optimization"]
 author = "Ritchie Vink"
 title = "Algorithm Breakdown: Bayesian Optimization"
-og_image = "/img/post-26/explore-forest.png"
+og_image = "/img/post-26/explore-forest.jpg"
 +++
 
-{{< figure src="/img/post-26/explore-forest.png" >}}
+{{< figure src="/img/post-26/explore-forest.jpg" >}}
 
 Not that long ago I wrote an introduction post on [Gaussian Processes]({{< ref "gaussian-process.md" >}}) (GP's), a regression technique where we condition a Gaussian prior distribution over functions on observed data. GP's can model any function that is possible within a given prior distribution. And we don't get a function $f$, we get a whole posterior distribution of functions $P(f|X)$.
 

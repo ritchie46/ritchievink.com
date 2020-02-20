@@ -5,10 +5,10 @@ tags = ["machine learning", "cloud"]
 draft = false
 author = "Ritchie Vink"
 title = "Deploy any machine learning model serverless in AWS"
-og_image = "/img/post-17-serverless_model/serverless-architecture.png"
+og_image = "/img/post-17-serverless_model/serverless-architecture.jpg"
 +++
 
-{{< figure src="/img/post-17-serverless_model/serverless-architecture.png" >}}
+{{< figure src="/img/post-17-serverless_model/serverless-architecture.jpg" >}}
 
 When a machine learning model goes into production, it is very likely to be idle most of the time. There are a lot of use cases, where a model only needs to run inference when new data is available. If we do have such a use case and we deploy a model on a server, it will eagerly be checking for new data, only to be disappointed for most of its lifetime and meanwhile you pay for the live time of the server. 
 

@@ -6,10 +6,10 @@ draft = false
 author = "Ritchie Vink"
 title = "Bayesian inference; How we are able to chase the Posterior"
 keywords = []
-og_image = "/img/post-25-vi/variational_inference.png"
+og_image = "/img/post-25-vi/variational_inference.jpg"
 +++
 
-{{< figure src="/img/post-25-vi/variational_inference.png" >}}
+{{< figure src="/img/post-25-vi/variational_inference.jpg" >}}
 <br>	
 
 Bayesian modeling! Every introduction on that topic starts with a quick conclusion that finding the posterior distribution often is computationally intractable. Last post I looked at [Expectation Maximization]({{< ref "post/expectation_maximization.md" >}}), which is a solution of this computational intractability for a set of models. However, for most models, it isn't. This post I will take a formal definition of the problem (As I've skipped that in the Expectation Maximization post) and we'll look at two solutions that help us tackle this problem; Markov Chain Monte Carlo and Variational Inference.

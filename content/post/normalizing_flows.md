@@ -6,10 +6,10 @@ draft = false
 author = "Ritchie Vink"
 title = "Sculpting distributions with Normalizing Flows"
 keywords = []
-og_image = "/img/post-28-norm-flows/og_image.png"
+og_image = "/img/post-28-norm-flows/og_image.jpg"
 +++
 
-{{< figure src="/img/post-28-norm-flows/og_image.png" >}}
+{{< figure src="/img/post-28-norm-flows/og_image.jpg" >}}
 <br>	
 
 Last posts we've investigated **Bayesian** inference through **variational inference** ([post 1]({{< ref "post/variational_inference.md" >}})/[post 2]({{< ref "post/variational_inference.md" >}})). In Bayesian inference, we often define models with some unknown model parameters $Z$, or latent stochastic variables $Z$. Given this model and some observed data points <span>$D = \\{ D_1, D_2, \dots, D_n \\} $</span>, we are interested in the true posterior distribution $P(Z|D)$. 

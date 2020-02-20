@@ -6,10 +6,10 @@ draft = false
 author = "Ritchie Vink"
 title = "Distribution estimation with Masked Autoencoders"
 keywords = []
-og_image = "/img/post-29-made/og_image.png"
+og_image = "/img/post-29-made/og_image.jpg"
 +++
 
-{{< figure src="/img/post-29-made/og_image.png" >}}
+{{< figure src="/img/post-29-made/og_image.jpg" >}}
 
 Four of my last five blog posts were more or less related to Baysian inference with variational methods. I had some momentum, and I wanted to use the traction I gained to do another post (which will come!) on enhancing variational methods with Inverse Autoregressive Flows (IAF), but first I have to get something different out of the way. 
 

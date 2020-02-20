@@ -6,10 +6,10 @@ draft = false
 keywords = ["algorithm breakdown", "machine learning", "python", "bayesian", "optimization"]
 author = "Ritchie Vink"
 title = "Variational inference from scratch"
-og_image = "/img/post-27-vi-from-scratch/soundboard.png"
+og_image = "/img/post-27-vi-from-scratch/soundboard.jpg"
 +++
 
-{{< figure src="/img/post-27-vi-from-scratch/soundboard.png" >}}
+{{< figure src="/img/post-27-vi-from-scratch/soundboard.jpg" >}}
 
 In the posts [Expectation Maximization]({{< ref "expectation_maximization.md" >}}) and [Bayesian inference; How we are able to chase the Posterior]({{< ref "variational_inference.md" >}}), we laid the mathematical foundation of variational inference. This post we will continue on that foundation and implement variational inference in Pytorch. If you are not familiar with the basis, I'd recommend reading these posts to get you up to speed.
 

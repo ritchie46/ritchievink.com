@@ -6,10 +6,10 @@ draft = false
 keywords =["machine learning", "python", "numpy", "gradient", "boosting"]
 author = "Ritchie Vink"
 title = "Algorithm breakdown: Why do we call it Gradient Boosting?"
-og_image = "/img/post-20-gbm/stacking.png"
+og_image = "/img/post-20-gbm/stacking.jpg"
 +++
 
-{{< figure src="/img/post-20-gbm/stacking.png" >}}
+{{< figure src="/img/post-20-gbm/stacking.jpg" >}}
 <br>
 We were making a training at work about ensemble models. When we were discussing different techniques like bagging, boosting, and stacking, we also came on the subject of gradient boosting. Intuitively, gradient boosting, by training on the residuals made sense. However, the name gradient boosting did not right away. This post we are exploring the name of gradient boosting and of course also the model itself!
 

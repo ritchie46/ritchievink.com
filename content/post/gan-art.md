@@ -5,10 +5,10 @@ tags = ["python", "machine learning", "pytorch", "deep learning"]
 draft = false
 author = "Ritchie Vink"
 title = "Generative Adversarial Networks in Pytorch: The distribution of Art"
-og_image = "/img/post-16-gan_art/result.png"
+og_image = "/img/post-16-gan_art/result.jpg"
 +++
 
-{{< figure src="/img/post-16-gan_art/result.png">}}
+{{< figure src="/img/post-16-gan_art/result.jpg">}}
 
 Generative adversarial networks seem to be able to generate amazing stuff. I wanted to do a small project with GANs and in the process create something fancy for on the wall. Therefore I tried to train a GAN on a dataset of art paintings. This post I'll explore if I'll succeed in getting a full hd new Picasso on the wall. The pictures above give you a glimplse of some of the results from the model.
 
