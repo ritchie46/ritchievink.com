@@ -244,7 +244,7 @@ plt.fill_between(X.flatten(), q1, q2, alpha=0.2)
 {{< figure src="/img/post-27-vi-from-scratch/fit_vi.png" title="90% credible interval of $P(y|x)$." >}}
 
 ## Analytical KL-divergence and reconstruction loss
-Above we have implemented ELBO by sampling from the variational posterior. It turns out that for the KL-divergence term, this isn't necessary as there is an analytical solution. [For the Gaussian case, Diederik P. Kingma and Max Welling (2013.  Auto-encoding variational bayes)](https://arxiv.org/pdf/1802.05814.pdf) included the solution in Appendix B.
+Above we have implemented ELBO by sampling from the variational posterior. It turns out that for the KL-divergence term, this isn't necessary as there is an analytical solution. [For the Gaussian case, Diederik P. Kingma and Max Welling (2013.  Auto-encoding variational bayes)](https://arxiv.org/pdf/1312.6114.pdf) included the solution in Appendix B.
 
 \begin{equation}  D\_{KL}(Q(Z)||P(Z)) = \frac{1}{2}\sum\_{i=1}^n(1+\log \sigma\_i^2 - \mu\_i^2 - \sigma\_i^2) \end{equation}
 
