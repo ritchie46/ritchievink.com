@@ -29,11 +29,6 @@ sharingicons = true
 keywords = ["keyword 1", "keyword 2", "keyword 3"]
 profilePicture = "/profile.jpg"
 
-[params.highlight]
-style = "github"
-languages = ["scala", "python"]
-
-
 [[params.social]]
 url = "https://github.com/ritchie46"
 fa_icon = "fa-github"
