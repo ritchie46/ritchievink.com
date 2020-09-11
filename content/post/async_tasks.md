@@ -2,7 +2,7 @@
 date = "2020-09-10"
 description = "Asynchronous task handling in Rust"
 tags = ["save some time", "rust"]
-draft = false
+draft = true
 author = "Ritchie Vink"
 title = "Asynchronous task handling in Rust"
 keywords = []
