@@ -171,7 +171,7 @@ The figure below shows the steps involved in a forward pass. We only show one la
 For these candidates the neuron ouput is computed as $a_i = f(w_i x_i + bi)$. The activated neurons serve as input for the next query to the LSH tables of the next layer. Note that in the next query, the non-activated neuron outputs are zero, resulting in $q = [a_2^1, 0, 0, a_2^4]$.
 
 
-{{< figure src="/img/post-32-lsh-nn/lsh-tables.png" title="Layers that sample activations from the LSH tables.">}}
+{{< figure src="/img/post-32-lsh-nn/lsh-tables.jpg" title="Layers that sample activations from the LSH tables.">}}
 
 ### 3.2 Backward pass
 The backward pass is a bit different than one would implement it in any tensor library. The activated neurons were stored in a buffer and per neuron the gradient was determined by classical message passing, therefore more dealing with objects instead of tensors. It is the same concept as with standard neural networks, it only feels a bit more like bookkeeping when you program it.
