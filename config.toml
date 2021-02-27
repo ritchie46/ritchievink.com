@@ -29,6 +29,9 @@ sharingicons = true
 keywords = ["keyword 1", "keyword 2", "keyword 3"]
 profilePicture = "/profile.jpg"
 
+[markup.goldmark.renderer]
+unsafe= true  # allows html in markdown
+
 [[params.social]]
 url = "https://github.com/ritchie46"
 fa_icon = "fa-github"
