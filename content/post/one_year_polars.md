@@ -41,7 +41,8 @@ Oversimplifying, RAM comes in two flavors, large and slow or fast and small. For
 * CPU register - 1 cycle
 * L1 cache - ~1-3 cycles
 * L2 cache - ~10 cycles
-* Main memory - ~250 cycles
+* L3 cache - ~40 cycles
+* Main memory - ~100-300 cycles
 
 When accessing data sequentially we want to make sure that data is in cache as much as possible, or we could easily have a ~100x performance penalty. Caches are loaded and deleted in cache lines. When we load a single data point, we get a whole cache line, but we also remove a whole cache line. They are typically 64, or 128 bytes long and aligned on 64-byte memory adresses.
 
