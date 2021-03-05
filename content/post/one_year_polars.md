@@ -144,7 +144,7 @@ This post only highlighted a few of the performance related designs in the Polar
 * Using table statistics to choose fast paths
 * And much more..
 
-Now the "hello world" is officially out there, I may highlight those other subjecst in later posts. Check out [polars on github](https://github.com/), and if you have any remarks, feature requests, etc. let me know!
+Now the "hello world" is officially out there, I may highlight those other subjecst in later posts. Check out [polars on github](https://github.com/ritchie46/polars), and if you have any remarks, feature requests, etc. let me know!
 
 
 ## References
