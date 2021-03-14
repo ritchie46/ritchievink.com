@@ -23,6 +23,8 @@ I know it is quite a bold claim to make, and I would not make it lightly. There 
 
 Below are shown the summaries of the 5GB dataset test, and you can see the whole [benchmark here](https://h2oai.github.io/db-benchmark/).
 
+_update 2021-03-14: Benchmarks age poorly, Polars now has the fastest join algorithm in the benchmark_
+
 <div style="max-width: 60%">
 {{< figure src="/img/post-34-polars/db-benchmark-join-5GB.png" title="Join benchmark summary" >}}
 {{< figure src="/img/post-34-polars/db-benchmark-gb-simple-5GB.png" title="Groupby benchmark summary (basic questions)" >}}
