@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="A nonlinear water accumulation analysis in Python - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2017/08/23/a-nonlinear-water-accumulation-analysis-in-python/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-10-water/frame.PNG" />
+
+
+<title>A nonlinear water accumulation analysis in Python | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">A nonlinear water accumulation analysis in Python</h1>
+    <h2 class="subtitle is-5">August 23, 2017 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/engineering">engineering</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/fem">fem</a>
+    
+</div>
+
+    
+    <div class="content">
+      <h2 id="frames">Frames</h2>
+<p>One of my first packages in Python is a program for analysing 2D Frames called <a href="https://github.com/ritchie46/anaStruct">anaStruct</a>. I wrote this in the summer of 2016 and learned a lot by doing so. When it was &lsquo;finished&rsquo; I was really enthusiastic and eager to give it some purpose in the &lsquo;real&rsquo; engineering world.</p>
+<p>My enthusiasm wasn&rsquo;t for long though. I wrote a fem package that can compute linear force lines. The real world however isn&rsquo;t so linear. The engineering problems in which linear fem packages are sufficient, most of the times aren&rsquo;t the problems I am really interested in. Thus my first Python library was untouched for almost a year.</p>
+<h2 id="problem">Problem</h2>
+<p>When I came across a water accumulation problem at work, my enthusisasm was reignited.</p>
+<p>The frame shown in the figure below has got properties that aren&rsquo;t easily modelled in standard frames software,
+or the software doesn&rsquo;t support water accumulation analysis. The problem motivated me to update my old work and make anaStruct usable in the real world.</p>
+<figure><img src="../../../../../img/post-10-water/frame.PNG"/><figcaption>
+            <h4>Frame.</h4>
+        </figcaption>
+</figure>
+
+<p>The figure above shows a frame that is situated every 5 m. It has two IPE450 girders that span 21.9 m and a smaller IPE240 girder which spans 8.9 m.
+At axes 2 and 3 the beams are supported on two beams spanning in the perpendicular direction. This effect is modelled with two translational supported springs.
+Every steel member connection needs to be modelled with a rotational spring as the connections aren&rsquo;t fully moment resisting, except for the connection of the steel member and the column on axis 4. The spring stiffnesses are shown in the figure.
+The bending moment capacity of the connections per axes are shown below.</p>
+<ul>
+<li>Moment axis 1: 70 kNm</li>
+<li>Moment axis 2: 240 kNm</li>
+<li>Moment axis 3: 25 kNm</li>
+<li>Moment axis 4: equal to the capacity of the HE180A column</li>
+</ul>
+<p>The yield stress of the steel is equal to 235 MPa.</p>
+<br>
+## Ponding rainwater
+Ok, now we've dealt with the specifications of the frame, we can discuss the problem at hand. The frame is part of a one layered structure. The IPE members of the frame are therefore part of the roof structure. If we look at the figure, we can see that there is a little bit of a slope in the beams. This must ensure that the water will run-off to the gutter, which are situated near the supports at axes 2 and 3. 
+The essence of ponding (water accumulation) is the following. If we neglect the strength of the structure, the roof has a water storage capacity that is dependent of the shape of the roof and the height of the roofs edges. If we fill the roof with water until the maximum storage capacity is reached, the water level will be equal to height of the roof edge. However due to the weight of the water, the roof structure will deflect and by doing so increases the maximum storage capacity. If the water level remains constant, this effect can be thought of as an iterative process with two possible outcomes. 
+<ul>
+<li>The additional deflection due to the extra storage capacity will eventualy be neglectible, with amount of storaged water reaching an asymptote.</li>
+<li>The additional deflection increases every iteration, leading to more water weight untill the structure fails. The failure however isn&rsquo;t because it is a strength problem, but because it is inevitable as the weight keeps increasing.</li>
+</ul>
+<figure><img src="../../../../../img/post-10-water/ponding-1.png"/><figcaption>
+            <h4>Accumulating water on a simple supported beam.</h4>
+        </figcaption>
+</figure>
+
+<p>The first outcome is a bit like <a href="https://en.wikipedia.org/wiki/Zeno%27s_paradoxes">Zeno&rsquo;s paradoxes</a>. Every iteration the deflection will increase slightly, but it will eventually be such an infinitesimal small increase that failure will never occur. In the second outcome the deflection eventually increases every iteration, somewhat like Achilles actually overtaking the tortoise.</p>
+<p>Just like buckling problems, water accumulation problems are stiffness problems. Failure due to too less strength capacity is just one of the possible outcomes due to a stiffness shortage.</p>
+<br>
+## Upgrades
+In this post we are going to determine the maximum water storage capacity of this structure with nothing more than Python. Before being able to do so, anaStruct needed a few more functionalities. In order to be able to analyse this structure in Python I needed to meet up to the following requirements:
+<ul>
+<li>force analysis</li>
+<li>displacement analysis</li>
+<li>supports with different degrees of freedom</li>
+<li>spring supports</li>
+<li>rotational spring elements</li>
+<li>nonlinear nodes</li>
+<li>q-loads in the global y-axis direction</li>
+<li>point-loads in global y-axis direction</li>
+</ul>
+<p>How this was implemented could be a subject of another post, but after a few days and some shower epiphanies most the stated requirements were met and I can happily say that anaStruct is much more applicable in &lsquo;real&rsquo; world problems than it was.</p>
+<br>
+## Modelling the structure
+In the following section we are going to setup the code needed for a water accumulation analysis. The instalation instructions can be found at [Github](https://github.com/ritchie46/anaStruct). You can install the package using git. If you are on a windows machine, you'll need a git batch environment, which can be [downloaded here](https://git-scm.com/download/win).
+<p>In the code snippet below, we&rsquo;ll import the required modules, functions and classes.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># import dependencies</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt 
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> anastruct.basic <span style="color:#f92672">import</span> converge
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> anastruct.material.profile <span style="color:#f92672">import</span> HEA, IPE
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> anastruct.fem.system <span style="color:#f92672">import</span> SystemElements, Vertex
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> anastruct.material.units <span style="color:#f92672">import</span> to_kNm2, to_kN
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># constants</span>
+</span></span><span style="display:flex;"><span>E <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.1e5</span>  <span style="color:#75715e"># Construction steels Young&#39;s modulus</span>
+</span></span><span style="display:flex;"><span>b <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>  <span style="color:#75715e"># c.t.c distance portals</span>
+</span></span><span style="display:flex;"><span>q_water <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span> 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># axes height levels</span>
+</span></span><span style="display:flex;"><span>h_1 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>h_2 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.258</span>
+</span></span><span style="display:flex;"><span>h_3 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.046</span>
+</span></span><span style="display:flex;"><span>h_4 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.274</span>
+</span></span><span style="display:flex;"><span>h_5 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.032</span>
+</span></span><span style="display:flex;"><span>h_6 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.15</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># beam spans</span>
+</span></span><span style="display:flex;"><span>span_1 <span style="color:#f92672">=</span> span_2 <span style="color:#f92672">=</span> <span style="color:#ae81ff">21.9</span>
+</span></span><span style="display:flex;"><span>span_3 <span style="color:#f92672">=</span> <span style="color:#ae81ff">8.9</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Vertices at the axes</span>
+</span></span><span style="display:flex;"><span>p1 <span style="color:#f92672">=</span> Vertex(<span style="color:#ae81ff">0</span>, h_1)
+</span></span><span style="display:flex;"><span>p2 <span style="color:#f92672">=</span> Vertex(span_1 <span style="color:#f92672">*</span> <span style="color:#ae81ff">0.5</span>, h_2)
+</span></span><span style="display:flex;"><span>p3 <span style="color:#f92672">=</span> Vertex(span_1, h_3)
+</span></span><span style="display:flex;"><span>p4 <span style="color:#f92672">=</span> Vertex(span_1 <span style="color:#f92672">+</span> span_2 <span style="color:#f92672">*</span> <span style="color:#ae81ff">0.5</span>, h_4)
+</span></span><span style="display:flex;"><span>p5 <span style="color:#f92672">=</span> Vertex(span_1 <span style="color:#f92672">+</span> span_2, h_5)
+</span></span><span style="display:flex;"><span>p6 <span style="color:#f92672">=</span> Vertex(span_1 <span style="color:#f92672">+</span> span_2 <span style="color:#f92672">+</span> span_3, h_6)
+</span></span></code></pre></div><p>We import some helper functions and the <code>SystemElements</code> class. With this class&rsquo; objects we&rsquo;re going to model the structure. The <code>Vertex</code> class produces objects that are, well, vertices.</p>
+<p>After we&rsquo;ve imported the dependencies, we&rsquo;re defining some constants like the Young&rsquo;s modules of the steel and the Vertices of the member joints at the axes 1 - 4. The vertices refer to the following locations:</p>
+<ul>
+<li><code>p1</code>: axis 1</li>
+<li><code>p2</code>: between axis 1 and 2</li>
+<li><code>p3</code>: axis 2</li>
+<li><code>p4</code>: between axis 2 and 3</li>
+<li><code>p5</code>: axis 3</li>
+<li><code>p6</code>: axis 6</li>
+</ul>
+<p>Next we&rsquo;ll define a function <code>structure()</code> that we can call to model the portal. Later on we&rsquo;ll see why we need to call the <code>structure()</code> function multiple times. The definition of the function is shown below.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">structure</span>():
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Build the structure from left to right, starting at axis 1.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    variables:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    EA = Young&#39;s modulus * Area
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    EI = Young&#39;s modulus * moment of Inertia
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    g = Weight [kN/ m]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    elements = reference of the element id&#39;s that were created
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    dl = c.t.c distance different nodes.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    dl <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.2</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">## SPAN 1 AND 2</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># The elements between axis 1 and 3 are an IPE 450 member.</span>
+</span></span><span style="display:flex;"><span>    EA <span style="color:#f92672">=</span> to_kN(E <span style="color:#f92672">*</span> IPE[<span style="color:#ae81ff">450</span>][<span style="color:#e6db74">&#39;A&#39;</span>])  <span style="color:#75715e"># Y</span>
+</span></span><span style="display:flex;"><span>    EI <span style="color:#f92672">=</span> to_kNm2(E <span style="color:#f92672">*</span> IPE[<span style="color:#ae81ff">450</span>][<span style="color:#e6db74">&#34;Iy&#34;</span>])
+</span></span><span style="display:flex;"><span>    g <span style="color:#f92672">=</span> IPE[<span style="color:#ae81ff">450</span>][<span style="color:#e6db74">&#39;G&#39;</span>] <span style="color:#f92672">/</span> <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># New system.</span>
+</span></span><span style="display:flex;"><span>    ss <span style="color:#f92672">=</span> SystemElements(mesh<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>, plot_backend<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;mpl&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># span 1</span>
+</span></span><span style="display:flex;"><span>    first <span style="color:#f92672">=</span> dict(
+</span></span><span style="display:flex;"><span>        spring<span style="color:#f92672">=</span>{<span style="color:#ae81ff">1</span>: <span style="color:#ae81ff">9e3</span>}, 
+</span></span><span style="display:flex;"><span>        mp<span style="color:#f92672">=</span>{<span style="color:#ae81ff">1</span>: <span style="color:#ae81ff">70</span>},
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    elements <span style="color:#f92672">=</span> ss<span style="color:#f92672">.</span>add_multiple_elements(location<span style="color:#f92672">=</span>[p1, p2], dl<span style="color:#f92672">=</span>dl, first<span style="color:#f92672">=</span>first, EA<span style="color:#f92672">=</span>EA, EI<span style="color:#f92672">=</span>EI, g<span style="color:#f92672">=</span>g)
+</span></span><span style="display:flex;"><span>    elements <span style="color:#f92672">+=</span> ss<span style="color:#f92672">.</span>add_multiple_elements(location<span style="color:#f92672">=</span>p3, dl<span style="color:#f92672">=</span>dl, EA<span style="color:#f92672">=</span>EA, EI<span style="color:#f92672">=</span>EI, g<span style="color:#f92672">=</span>g)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># span 2</span>
+</span></span><span style="display:flex;"><span>    first <span style="color:#f92672">=</span> dict(
+</span></span><span style="display:flex;"><span>        spring<span style="color:#f92672">=</span>{<span style="color:#ae81ff">1</span>: <span style="color:#ae81ff">40e3</span>},
+</span></span><span style="display:flex;"><span>        mp<span style="color:#f92672">=</span>{<span style="color:#ae81ff">1</span>: <span style="color:#ae81ff">240</span>}
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    elements <span style="color:#f92672">+=</span> ss<span style="color:#f92672">.</span>add_multiple_elements(location<span style="color:#f92672">=</span>p4, dl<span style="color:#f92672">=</span>dl, first<span style="color:#f92672">=</span>first, EA<span style="color:#f92672">=</span>EA, EI<span style="color:#f92672">=</span>EI, g<span style="color:#f92672">=</span>g)
+</span></span><span style="display:flex;"><span>    elements <span style="color:#f92672">+=</span> ss<span style="color:#f92672">.</span>add_multiple_elements(location<span style="color:#f92672">=</span>p5, dl<span style="color:#f92672">=</span>dl, EA<span style="color:#f92672">=</span>EA, EI<span style="color:#f92672">=</span>EI, g<span style="color:#f92672">=</span>g)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">## SPAN 3</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># span 3</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># different IPE</span>
+</span></span><span style="display:flex;"><span>    g <span style="color:#f92672">=</span> IPE[<span style="color:#ae81ff">240</span>][<span style="color:#e6db74">&#39;G&#39;</span>] <span style="color:#f92672">/</span> <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span>    EA <span style="color:#f92672">=</span> to_kN(E <span style="color:#f92672">*</span> IPE[<span style="color:#ae81ff">240</span>][<span style="color:#e6db74">&#39;A&#39;</span>])
+</span></span><span style="display:flex;"><span>    EI <span style="color:#f92672">=</span> to_kNm2(E <span style="color:#f92672">*</span> IPE[<span style="color:#ae81ff">240</span>][<span style="color:#e6db74">&#34;Iy&#34;</span>])
+</span></span><span style="display:flex;"><span>    first <span style="color:#f92672">=</span> dict(
+</span></span><span style="display:flex;"><span>        spring<span style="color:#f92672">=</span>{<span style="color:#ae81ff">1</span>: <span style="color:#ae81ff">15e3</span>}, 
+</span></span><span style="display:flex;"><span>        mp<span style="color:#f92672">=</span>{<span style="color:#ae81ff">1</span>: <span style="color:#ae81ff">25</span>},
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    elements <span style="color:#f92672">+=</span> ss<span style="color:#f92672">.</span>add_multiple_elements(location<span style="color:#f92672">=</span>p6, first<span style="color:#f92672">=</span>first, dl<span style="color:#f92672">=</span>dl, EA<span style="color:#f92672">=</span>EA, EI<span style="color:#f92672">=</span>EI, g<span style="color:#f92672">=</span>g)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Add a dead load of -2 kN/m to all elements.</span>
+</span></span><span style="display:flex;"><span>    ss<span style="color:#f92672">.</span>q_load(<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>, elements, direction<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;y&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">## COLUMNS</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># column height</span>
+</span></span><span style="display:flex;"><span>    h <span style="color:#f92672">=</span> <span style="color:#ae81ff">7.2</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># left column</span>
+</span></span><span style="display:flex;"><span>    EA <span style="color:#f92672">=</span> to_kN(E <span style="color:#f92672">*</span> IPE[<span style="color:#ae81ff">220</span>][<span style="color:#e6db74">&#39;A&#39;</span>])
+</span></span><span style="display:flex;"><span>    EI <span style="color:#f92672">=</span> to_kNm2(E <span style="color:#f92672">*</span> HEA[<span style="color:#ae81ff">220</span>][<span style="color:#e6db74">&#34;Iy&#34;</span>])
+</span></span><span style="display:flex;"><span>    left <span style="color:#f92672">=</span> ss<span style="color:#f92672">.</span>add_element([[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>], [<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span>h]], EA<span style="color:#f92672">=</span>EA, EI<span style="color:#f92672">=</span>EI)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># right column</span>
+</span></span><span style="display:flex;"><span>    EA <span style="color:#f92672">=</span> to_kN(E <span style="color:#f92672">*</span> IPE[<span style="color:#ae81ff">180</span>][<span style="color:#e6db74">&#39;A&#39;</span>])
+</span></span><span style="display:flex;"><span>    EI <span style="color:#f92672">=</span> to_kNm2(E <span style="color:#f92672">*</span> HEA[<span style="color:#ae81ff">180</span>][<span style="color:#e6db74">&#34;Iy&#34;</span>])
+</span></span><span style="display:flex;"><span>    right <span style="color:#f92672">=</span> ss<span style="color:#f92672">.</span>add_element([p6, Vertex(p6<span style="color:#f92672">.</span>x, <span style="color:#f92672">-</span>h)], EA<span style="color:#f92672">=</span>EA, EI<span style="color:#f92672">=</span>EI)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">## SUPPORTS</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># node ids for the support</span>
+</span></span><span style="display:flex;"><span>    id_left <span style="color:#f92672">=</span> max(ss<span style="color:#f92672">.</span>element_map[left]<span style="color:#f92672">.</span>node_map<span style="color:#f92672">.</span>keys())
+</span></span><span style="display:flex;"><span>    id_top_right <span style="color:#f92672">=</span> min(ss<span style="color:#f92672">.</span>element_map[right]<span style="color:#f92672">.</span>node_map<span style="color:#f92672">.</span>keys())
+</span></span><span style="display:flex;"><span>    id_btm_right <span style="color:#f92672">=</span> max(ss<span style="color:#f92672">.</span>element_map[right]<span style="color:#f92672">.</span>node_map<span style="color:#f92672">.</span>keys())
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Add supports. The location of the supports is defined with the nodes id.</span>
+</span></span><span style="display:flex;"><span>    ss<span style="color:#f92672">.</span>add_support_hinged((id_left, id_btm_right))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Retrieve the node ids at axis 2 and 3</span>
+</span></span><span style="display:flex;"><span>    id_p3 <span style="color:#f92672">=</span> ss<span style="color:#f92672">.</span>find_node_id(p3)
+</span></span><span style="display:flex;"><span>    id_p5 <span style="color:#f92672">=</span> ss<span style="color:#f92672">.</span>find_node_id(p5)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ss<span style="color:#f92672">.</span>add_support_roll(id_top_right, direction<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Add translational spring supports at axes 2 and 3</span>
+</span></span><span style="display:flex;"><span>    ss<span style="color:#f92672">.</span>add_support_spring(id_p3, translation<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>, k<span style="color:#f92672">=</span><span style="color:#ae81ff">2e3</span>, roll<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    ss<span style="color:#f92672">.</span>add_support_spring(id_p5, translation<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>, k<span style="color:#f92672">=</span><span style="color:#ae81ff">3e3</span>, roll<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> ss
+</span></span></code></pre></div><h3 id="span-1-and-span-2">Span 1 and span 2</h3>
+<p>First we define the properties of the IPE 450 girders between axes 1 and 3. Here we use to helper functions <code>to_kN()</code> and <code>to_kNm()</code> to ensure the right units. I haven&rsquo;t mentioned it yet, but the units we are using are metrics:</p>
+<ul>
+<li>length: <strong>m</strong></li>
+<li>force: <strong>kN</strong></li>
+</ul>
+<p>As the software is just nummerical, the imperical units should work just the same. We instantiate a variable called <code>ss</code> from the <code>SystemElements</code> class. Note that the <code>mesh</code> argument has no influence on the numerical result, but only on the plotters accuracy.</p>
+<p>Next we use the <code>.add_multiple_elements()</code> method to add, ehh.. you&rsquo;ll get the point. The iterator we pass as first arguments describes the two outer vertices. The <code>dl</code> arguments defines the distance the generated nodes. The total amount of generated nodes <span>\( n \)</span> is equal to:</p>
+<div>$$ n = \left \lfloor{ \frac{|p_{1} - p_{2}|}{dl} } \right \rfloor + 1$$</div>
+<p>Note that we also pass a dictionary <code>first</code> as argument. The method <code>.add_multiple_elements()</code> accepts a <code>first</code> and a <code>last</code> keyword argument describing deviating properties of the first or last elements.</p>
+<p>The properties passed through this method are assigned to all elements, except if they differ in the <code>first</code> or <code>last</code> keyword argument. In our case we want to assign a rotational spring and a limited bending moment capacity to the first node (axis 1). Note that the keys of the dictionaries assigned to <code>spring</code> and <code>mp</code> refer to the elements nodes.</p>
+<ul>
+<li><code>spring</code>: Adds a rotational spring at the end of the element.</li>
+<li><code>mp</code>: Adds a maximum bending moment capacity at the end of the element.</li>
+</ul>
+<p>We assign the result of <code>.add_multiple_elements()</code> to a list variable we call <code>elements</code>. This list contains the IDs of the elements we just added. Every modelled element and node will have an unique ID. We need these IDs if we want to model load or support conditions.</p>
+<h3 id="span-3">Span 3</h3>
+<p>For span 3, between axes 3 and 4, the same principle as stated above is repeated. The properties of the beams were changed because the girder now is an IPE240 instead of an IPE450.</p>
+<p>Now that all the girders are modelled we can apply a distributed load representing the weight of the roofing. This is done with the <code>.q_load()</code> method. As second argument we pass the <code>elements</code> list. Now we&rsquo;ve applied a distributed load of 2 kN/m on all the elements.</p>
+<h3 id="columns">columns</h3>
+<p>Then we add columns to the model. Both columns differ, so we change the properties <code>EA</code> and <code>EI</code> for both columns. Because we don&rsquo;t need any intermediate node we can add the columns with the <code>ss.add_element()</code> method, which just adds one single element.</p>
+<h3 id="supports">supports</h3>
+<p>In the last part of the function we define the supporting conditions of the model. We query the node IDs of the columns and assign those to <code>id_left</code>, <code>id_top_right</code> and <code>id_btm_right</code>. Those node IDS are passed to the self-explanatory called methods <code>.add_support_roll()</code> and <code>.add_support_spring()</code>. Which wraps up our structure function!</p>
+<p>We can now take a look at the result of our model by calling the <code>structure()</code> function, retrieving a new <code>SystemElement</code> object and call the <code>.show_structure()</code> method!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>ss <span style="color:#f92672">=</span> structure()
+</span></span><span style="display:flex;"><span>ss<span style="color:#f92672">.</span>show_structure(verbosity<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, scale<span style="color:#f92672">=</span><span style="color:#ae81ff">0.6</span>)
+</span></span></code></pre></div><p>This will plot the figure shown below. It is the same mechanical scheme we saw a the top of this post. The red patches show the support conditions and the green rectangles are the dead load applied on the structure.</p>
+<figure><img src="../../../../../img/post-10-water/show_struct.png"/><figcaption>
+            <h4>The model with a q-load of 2 kN/m</h4>
+        </figcaption>
+</figure>
+
+<br>
+## Water loads
+The function we've just created will return the same model with the same q-load every time we call it. This is okay, as we don't want that the q-load changes during the iteration. What does change, when we talk about the concept of accumulating water is of course the water load. Therefore we need another function that will apply water loads on the structure. The water loads that are acting on the structure will depend on two factors, namely the water level and the amount of deflection the structure has that iteration.
+<p>We are going to model the water loads as point loads acting on the structure. This is the reason we&rsquo;ve added so many nodes in the <code>structure()</code> function! The more nodes we model, the more accurate our analysis becomes.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">water_load</span>(ss, water_height, deflection<span style="color:#f92672">=</span><span style="color:#66d9ef">None</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param ss: (SystemElements) object.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param water_height: (flt) Water level.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param deflection: (array) Computed deflection.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :return (flt) The cubic meters of water on the structure
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># The horizontal distance between the nodes.</span>
+</span></span><span style="display:flex;"><span>    dl <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>diff(ss<span style="color:#f92672">.</span>nodes_range(<span style="color:#e6db74">&#39;x&#39;</span>))
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> deflection <span style="color:#f92672">is</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>        deflection <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros(len(ss<span style="color:#f92672">.</span>node_map))
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Height of the nodes</span>
+</span></span><span style="display:flex;"><span>    y <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array(ss<span style="color:#f92672">.</span>nodes_range(<span style="color:#e6db74">&#39;y&#39;</span>))
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># An array with point loads. </span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># cubic meters * weight water</span>
+</span></span><span style="display:flex;"><span>    force_water <span style="color:#f92672">=</span> (water_height <span style="color:#f92672">-</span> y[:<span style="color:#f92672">-</span><span style="color:#ae81ff">3</span>] <span style="color:#f92672">-</span> deflection[:<span style="color:#f92672">-</span><span style="color:#ae81ff">3</span>]) <span style="color:#f92672">*</span> q_water <span style="color:#f92672">*</span> b <span style="color:#f92672">*</span> dl[:<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    cubics <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>    n <span style="color:#f92672">=</span> force_water<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>] 
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> k <span style="color:#f92672">in</span> ss<span style="color:#f92672">.</span>node_map:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> k <span style="color:#f92672">&gt;</span> n:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>        point_load <span style="color:#f92672">=</span> force_water[k <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> point_load <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>            ss<span style="color:#f92672">.</span>point_load(k, Fx<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>, Fz<span style="color:#f92672">=-</span>point_load)
+</span></span><span style="display:flex;"><span>            cubics <span style="color:#f92672">+=</span> point_load <span style="color:#f92672">/</span> q_water
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> cubics
+</span></span></code></pre></div><p>In the function above we compute the point loads resulting from a water level and an occurring deflection. We index with <code>-3</code> because we are not interested in the last 4 nodes, as those are from the modelled columns. The <code>-2</code> index is because we loose one value by differentiating an array. In the loop we do a final sanity check and only apply the positive point loads on the structure.</p>
+<p>If we call this function and show the structure again, we can see that it mimics a water pressure with discrete point loads. The figure below really shows the influence of the roofs slope. It isn&rsquo;t hard to imagine that the deflection may also have such an impact on the water load.</p>
+<figure><img src="../../../../../img/post-10-water/show_struct2.png"/><figcaption>
+            <h4>The model with a q-load of 2 kN/m and a water load of 150 mm.</h4>
+        </figcaption>
+</figure>
+
+<br>
+## Iteration
+Now the model is ready and we can apply various water loads on this model, we can almost start with the iterative water accumulation analysis. Before doing so we must think about how we can do this iteration.
+<p>I think we&rsquo;ve got two valid options to find the maximum water storage capacity:</p>
+<ol>
+<li>Apply a constant water level and keep iterating until the amount water stored in the roof converges to a constant level. Or it doesn&rsquo;t and we should break the iteration and try another water level.</li>
+<li>Apply a constant water volume. This means that with every iteration we need to redistribute the water on the roof. You can think of this as a pool of water flowing to the lowest point. With this option the deflection will converge to a constant level.</li>
+</ol>
+<p>In this post we are looking to the latter option, as this is gives a better view of the capacity of the structure. Because the deflection of the structure converges (resulting in a value of the water level) we can plot the volume of storaged water against the maximum water level. With such a diagram you&rsquo;re able to find out if the drainage network of such a roof is capable processing these water volumes.</p>
+<p>So if we implement the second option, we need a function that redistributes the water. The function below takes a volume <code>c</code> and an array of deflection values <code>deflection</code>. It will setup a new model of the structure with the proper water load applied. This model <code>ss</code> and the water level <code>wh</code> (for logging purposes) are returned.</p>
+<p>The <code>converge</code> function takes a left hand side and a right hand side and returns a factor by which the left hand side should be multiplied if it wants to come a little bit closer to the right hand side. We don&rsquo;t want to apply this factor to the left hand side, but we do want to apply it to the variable that directly influences the left hand side, namely the water height <code>wh</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">det_water_height</span>(c, deflection<span style="color:#f92672">=</span><span style="color:#66d9ef">None</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param c: (flt) Cubic meters.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param deflection: (array) Node deflection values.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :return (SystemElement, flt) The structure and the redistributed water level is returned.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    wh <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.1</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">while</span> <span style="color:#66d9ef">True</span>:
+</span></span><span style="display:flex;"><span>        ss <span style="color:#f92672">=</span> structure()
+</span></span><span style="display:flex;"><span>        cubics <span style="color:#f92672">=</span> water_load(ss, wh, deflection)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        factor <span style="color:#f92672">=</span> converge(cubics, c)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#ae81ff">0.9999</span> <span style="color:#f92672">&lt;=</span> factor <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">1.0001</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> ss, wh
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        wh <span style="color:#f92672">*=</span> factor
+</span></span></code></pre></div><p>Now that all is set, we can finally start the analysis by iterating:</p>
+<ol>
+<li>over the water volumes</li>
+<li>over the water levels (redistributed water)</li>
+</ol>
+<p>The outer loop starts an analysis for a certain value of the cubic meters. The inner loop redistributes the water until the water level is converged. We can do this non linear calculation just by calling the <code>.solve()</code> method. Remember that we added a dictionary to the elements, giving maximum <code>mp</code> (plastic moment) properties? This state will ensure that the calculation will be run non linear. If you want a linear analysis, you can do so by passing the <code>force_linear</code> keyword argument.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>cubics <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>water_heights <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>deflection <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>max_water_level <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Iterate from 8 m3 to 15 m3 of water.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> cubic <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">80</span>, <span style="color:#ae81ff">150</span>, <span style="color:#ae81ff">5</span>):  <span style="color:#75715e"># This loop computes the results per m3 of storaged water.</span>
+</span></span><span style="display:flex;"><span>    wh <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.05</span>
+</span></span><span style="display:flex;"><span>    lastwh <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.2</span>
+</span></span><span style="display:flex;"><span>    cubic <span style="color:#f92672">/=</span> <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Starting analysis of </span><span style="color:#e6db74">{</span>cubic<span style="color:#e6db74">}</span><span style="color:#e6db74"> m3&#34;</span>)
+</span></span><span style="display:flex;"><span>                        
+</span></span><span style="display:flex;"><span>    c <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> _ <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">100</span>):  <span style="color:#75715e"># This loop redistributes the water until the water level converges.</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># redistribute the water </span>
+</span></span><span style="display:flex;"><span>        ss, wh <span style="color:#f92672">=</span> det_water_height(cubic, deflection)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Do a non linear calculation!!</span>
+</span></span><span style="display:flex;"><span>        ss<span style="color:#f92672">.</span>solve(max_iter<span style="color:#f92672">=</span><span style="color:#ae81ff">100</span>, verbosity<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        deflection <span style="color:#f92672">=</span> ss<span style="color:#f92672">.</span>get_node_result_range(<span style="color:#e6db74">&#34;uy&#34;</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Some breaking conditions</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> min(deflection) <span style="color:#f92672">&lt;</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>:
+</span></span><span style="display:flex;"><span>            print(min(deflection), <span style="color:#e6db74">&#34;Breaking due to exceeding max deflection&#34;</span>)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#ae81ff">0.9999</span> <span style="color:#f92672">&lt;</span> lastwh <span style="color:#f92672">/</span> wh <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">1.001</span>:
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Convergence in </span><span style="color:#e6db74">{</span>c<span style="color:#e6db74">}</span><span style="color:#e6db74"> iterations.&#34;</span>)
+</span></span><span style="display:flex;"><span>            cubics<span style="color:#f92672">.</span>append(cubic)
+</span></span><span style="display:flex;"><span>            water_heights<span style="color:#f92672">.</span>append(wh)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        lastwh <span style="color:#f92672">=</span> wh
+</span></span><span style="display:flex;"><span>        c <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> wh <span style="color:#f92672">&gt;</span> max_water_level:
+</span></span><span style="display:flex;"><span>        max_water_level <span style="color:#f92672">=</span> wh
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>        a <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> a <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">2</span>:
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">&#34;Breaking. Water level isn&#39;t rising.&#34;</span>)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>
+</span></span></code></pre></div><p>If we run this loop, your machine will number crunch a few minutes. Which I think isn&rsquo;t that bad as the same model scripted in DIANA FEA (a finite element analyser like Abaqus and Ansys) took almost a day! Of course this is comparing apples to peaches, but the sheer magnitude of speed difference does make me very happy!</p>
+<figure><img src="../../../../../img/post-10-water/volume_height_diagram.png"/><figcaption>
+            <h4>Result of the ponding analysis.</h4>
+        </figcaption>
+</figure>
+
+<p>The analysis results in the diagram above. We can see the maximum water level capacity of this structure in one diagram! At a stored water volume of 9.5 m<sup>3</sup> the maximum water level is reached. When the roof stores more water it starts to accumulate eventually resulting in failure.</p>
+<p>If we want to examine the results visually at the moment of accumulating water we can call for a plot:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>ss<span style="color:#f92672">.</span>show_bending_moment(verbosity<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-10-water/moment_1.png"/><figcaption>
+            <h4>Bending moment when the roof starts accumulating.</h4>
+        </figcaption>
+</figure>
+
+<p>This is gives us a proper indication of the way the bending moments are divided across the structure. We can clearly see that the node on axis 3 exceeds its yielding capacity, as there is almost none hogging bending moment visible. However before stating that such an analysis is correct, we should do some checks.</p>
+<br>
+## Sanity check
+As a validation we'll only check the occurring bending moments and the capacity they should have.
+<p>In the diagram below we can see that both axis 2 and axis 3 have yielding nodes exactly on the maximum moment we assigned to those nodes. The bending moment at axis 1 isn&rsquo;t that large due to the relatively low rotational spring of 9.000 kNm/rad. The bending moments don&rsquo;t seem to exceed our given boundaries, so we can conclude that the non linear behavior is computed as expected.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(ss<span style="color:#f92672">.</span>nodes_range(<span style="color:#e6db74">&#39;x&#39;</span>)[:<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>], [el<span style="color:#f92672">.</span>bending_moment[<span style="color:#ae81ff">0</span>] <span style="color:#66d9ef">for</span> el <span style="color:#f92672">in</span> list(ss<span style="color:#f92672">.</span>element_map<span style="color:#f92672">.</span>values())[:<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]])
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot([<span style="color:#ae81ff">0</span>, p6<span style="color:#f92672">.</span>x], [a, a], color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>c <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;red&#34;</span>
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> <span style="color:#ae81ff">240</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot([p3<span style="color:#f92672">.</span>x <span style="color:#f92672">-</span> <span style="color:#ae81ff">5</span>, p3<span style="color:#f92672">.</span>x <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span>], [a, a], color<span style="color:#f92672">=</span>c)
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> <span style="color:#ae81ff">25</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot([p5<span style="color:#f92672">.</span>x <span style="color:#f92672">-</span> <span style="color:#ae81ff">5</span>, p5<span style="color:#f92672">.</span>x <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span>], [a, a], color<span style="color:#f92672">=</span>c)
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> <span style="color:#ae81ff">70</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot([p1<span style="color:#f92672">.</span>x <span style="color:#f92672">-</span> <span style="color:#ae81ff">5</span>, p1<span style="color:#f92672">.</span>x <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span>], [a, a], color<span style="color:#f92672">=</span>c)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Bending moment [kNm]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Span [m]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-10-water/moment_2.png"/><figcaption>
+            <h4>Bending moment when the roof starts accumulating.</h4>
+        </figcaption>
+</figure>
+
+<h2 id="accumulating-span">Accumulating span</h2>
+<p>If we substract the deflection from the structures height, we&rsquo;ll see the final state of the structure (during accumulating of the water). The figure below shows that the span between axis 2 and axis 3 is accumulating water. These are just fun plots, and if you save these every iteration it can give a nice animation of how the structure is failing.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(ss<span style="color:#f92672">.</span>nodes_range(<span style="color:#e6db74">&#39;x&#39;</span>)[:<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>], ss<span style="color:#f92672">.</span>nodes_range(<span style="color:#e6db74">&#39;y&#39;</span>)[:<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(ss<span style="color:#f92672">.</span>nodes_range(<span style="color:#e6db74">&#39;x&#39;</span>)[:<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>], [a <span style="color:#f92672">+</span> b <span style="color:#66d9ef">for</span> a, b <span style="color:#f92672">in</span> zip(ss<span style="color:#f92672">.</span>nodes_range(<span style="color:#e6db74">&#39;y&#39;</span>)[:<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>], ss<span style="color:#f92672">.</span>get_node_result_range(<span style="color:#e6db74">&#34;uy&#34;</span>)[:<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>])])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Height level roof when accumulating [m]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Span [m]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-10-water/deflection.png"/><figcaption>
+            <h4>Final state of the structure at the moment of accumulating</h4>
+        </figcaption>
+</figure>
+
+<br>
+<h2 id="conclusion">Conclusion</h2>
+<p>In this post we&rsquo;ve done a water accumulation analysis in <a href="https://github.com/ritchie46/anaStruct">anaStruct</a>. I&rsquo;ve done the analysis for this post in a notebook, which can be <a href="https://github.com/ritchie46/anaStruct/blob/master/anastruct/fem/examples/water_acc.ipynb">downloaded here</a>.</p>
+<p>We&rsquo;ve setup a calculation that is comparable with &lsquo;real&rsquo; world engineering problems. We&rsquo;ve computed the maximum water storage capacity of this structure. The fact that we can do such an analysis in just a few minutes, makes it possible to compute more combinations of stiffness properties and bending moment capacities and gain more insights in valid ways to make it more endurable to ponding.</p>
+<p>Water accumulation problems are complex problems that require nummerical approaches in most cases. The fact that you need to do this analysis with springs, non-linear nodes, iteratively, non linear and maybe even geometrical non linear, makes it a problem that is not easily solved and makes you most of the times dependent of expensive software.</p>
+<p>And now we can do it in Python :)</p>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

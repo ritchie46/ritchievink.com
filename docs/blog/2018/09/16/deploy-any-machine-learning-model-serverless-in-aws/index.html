@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Deploy any machine learning model serverless in AWS - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2018/09/16/deploy-any-machine-learning-model-serverless-in-aws/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-17-serverless_model/serverless-architecture.jpg" />
+
+
+<title>Deploy any machine learning model serverless in AWS | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Deploy any machine learning model serverless in AWS</h1>
+    <h2 class="subtitle is-5">September 16, 2018 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/cloud">cloud</a>
+    
+</div>
+
+    
+    <div class="content">
+      <figure><img src="../../../../../img/post-17-serverless_model/serverless-architecture.jpg"/>
+</figure>
+
+<p>When a machine learning model goes into production, it is very likely to be idle most of the time. There are a lot of use cases, where a model only needs to run inference when new data is available. If we do have such a use case and we deploy a model on a server, it will eagerly be checking for new data, only to be disappointed for most of its lifetime and meanwhile you pay for the live time of the server.</p>
+<p>Now the cloud era has arrived, we can deploy a model serverless. Meaning we only pay for the compute we need, and spinning up the resources when we need them. In this post we&rsquo;ll define a serverless infrastructure for a machine learning model. This infrastructure will be hosted on AWS.</p>
+<h2 id="tldr">TL;DR</h2>
+<p>Deploy a serverless model. Take a look at:</p>
+<p><a href="https://github.com/ritchie46/serverless-model-aws">https://github.com/ritchie46/serverless-model-aws</a></p>
+<p>For the code used in this blog post:</p>
+<p><a href="https://github.com/ritchie46/serverless-model-aws/tree/blog">https://github.com/ritchie46/serverless-model-aws/tree/blog</a></p>
+<h2 id="architecture">Architecture</h2>
+<p>The image below shows an overview of the serverless architecture we&rsquo;re deploying. For our infrastructure we&rsquo;ll use at least the following AWS services:</p>
+<ul>
+<li>AWS S3: Used for blob storage.</li>
+<li>AWS Lambda: Executing functions without any servers. These functions are triggered by various events.</li>
+<li>AWS SQS: Message queues for interaction between microservices and serverless applications.</li>
+<li>AWS ECS: Run docker containers on AWS EC2 or AWS Fargate.</li>
+</ul>
+<br>
+<figure><img src="../../../../../img/post-17-serverless_model/architecture.svg"/><figcaption>
+            <h4>The serverless architecture</h4>
+        </figcaption>
+</figure>
+
+<p>The serverless application works as follows. Every time new data is posted on a S3 bucket, it will trigger a Lambda function. This Lambda function will push some meta data (data location, output location etc.) to the SQS Queue and will check if there is already an ECS task running. If there is not, the Lambda will start a new container. The container, once started, will fetch messages from the SQS Queue and process them. Once there are no messages left, the container will shut down and the
+Batch Transform Job is finished!</p>
+<h2 id="docker-image">Docker image</h2>
+<p>Before we&rsquo;ll start with the resources in the cloud, we will prepare a Docker image, in which our model will reside.</p>
+<h3 id="requirements">Requirements</h3>
+<p>You&rsquo;ll need make sure you&rsquo;ve got the following setup. You need to have access to an AWS account and install and configure the <a href="https://aws.amazon.com/cli/">aws cli</a>, and <a href="https://docs.docker.com/install/">Docker</a>. The aws cli enables us to interact with the AWS Cloud from the command line and Docker will help us containerize our model.</p>
+<p>To make sure we don&rsquo;t walk into permission errors in AWS, make sure you&rsquo;ve created admin access keys and add them to <em>~/.aws/credentials</em>.</p>
+<pre tabindex="0"><code>[default]
+aws_access_key_id = &lt;key-id&gt; 
+aws_secret_access_key = &lt;secret-key&gt;
+</code></pre><h3 id="file-structure">File structure</h3>
+<p>For creating the Docker image we will create the following file structure. On the root of our project we have a <em>Dockerfile</em> and the Python dependencies in <em>requirements.txt</em>.</p>
+<pre tabindex="0"><code>project
+|   Dockerfile
+|   requirements.txt
+|   build_and_push.sh
+|
+|---src
+|   |   batch_transform.py
+|   |
+|   |---cloudhelper
+|   |   |   __init__.py
+|   |   
+|   |---model
+|   |   |   __init__.py
+|   |   |   transform.py
+</code></pre><p>Let&rsquo;s go through the files one by one!</p>
+<h3 id="dockerfile">Dockerfile</h3>
+<p>In the Dockerfile we start from the Python 3.6 base image. If you depend on pickled files, make sure you use the same Python and library dependencies in the Dockerfile as the one you&rsquo;ve used to train your model!</p>
+<p>The Dockerfile is fairly straightforward. We copy our project files in the image</p>
+<pre tabindex="0"><code>FROM python:3.6
+
+# first layers should be dependency installs so changes
+# in code won&#39;t cause the build to start from scratch.
+COPY requirements.txt /opt/program/requirements.txt
+
+RUN pip3 install --no-cache-dir -r /opt/program/requirements.txt
+
+# Set some environment variables
+ENV PYTHONUNBUFFERED=TRUE
+ENV PYTHONDONTWRITEBYTECODE=TRUE
+ENV PATH=&#34;/opt/program:${PATH}&#34;
+
+# Set up the program in the image
+COPY src /opt/program
+COPY serverless/batch-transform/serverless.yml /opt/program/serverless.yml
+WORKDIR /opt/program
+
+CMD python batch_transform.py
+</code></pre><h3 id="requirementstxt">requirements.txt</h3>
+<p>The <em>requirements.txt</em> has got some fixed requirements for accessing AWS and reading YAML files. The other dependencies can be adjusted for any specific needs for running inference with your model.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span># always required
+</span></span><span style="display:flex;"><span>boto3
+</span></span><span style="display:flex;"><span>pyyaml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span># dependencies for the custom model
+</span></span><span style="display:flex;"><span>numpy
+</span></span><span style="display:flex;"><span>scipy
+</span></span><span style="display:flex;"><span>scikit-learn
+</span></span><span style="display:flex;"><span>pandas
+</span></span><span style="display:flex;"><span>pyarrow
+</span></span></code></pre></div><h3 id="cloudhelper__init__py">cloudhelper/__init__.py</h3>
+<p>These are just some helper functions for retrieving and writing data from and to S3.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> io
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> boto3
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">open_s3_file</span>(bucket, key):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Open a file from s3 and return it as a file handler.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param bucket: (str)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param key: (str)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :return: (BytesIO buffer)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    f <span style="color:#f92672">=</span> io<span style="color:#f92672">.</span>BytesIO()
+</span></span><span style="display:flex;"><span>    bucket <span style="color:#f92672">=</span> boto3<span style="color:#f92672">.</span>resource(<span style="color:#e6db74">&#39;s3&#39;</span>)<span style="color:#f92672">.</span>Bucket(bucket)
+</span></span><span style="display:flex;"><span>    bucket<span style="color:#f92672">.</span>Object(key)<span style="color:#f92672">.</span>download_fileobj(f)
+</span></span><span style="display:flex;"><span>    f<span style="color:#f92672">.</span>seek(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> f
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">write_s3_file</span>(bucket, key, f):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Write a file buffer to the given S3 location.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param bucket: (str)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param key: (str)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param f: (BytesIO buffer)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    f<span style="color:#f92672">.</span>seek(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>    bucket <span style="color:#f92672">=</span> boto3<span style="color:#f92672">.</span>resource(<span style="color:#e6db74">&#39;s3&#39;</span>)<span style="color:#f92672">.</span>Bucket(bucket)
+</span></span><span style="display:flex;"><span>    bucket<span style="color:#f92672">.</span>Object(key)<span style="color:#f92672">.</span>upload_fileobj(f)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">write_s3_string</span>(bucket, key, f):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Write a StringIO file buffer to S3.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param bucket: (str)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param key: (str)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param f: (StringIO buffer)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>        f<span style="color:#f92672">.</span>seek(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>        bf <span style="color:#f92672">=</span> io<span style="color:#f92672">.</span>BytesIO()
+</span></span><span style="display:flex;"><span>        bf<span style="color:#f92672">.</span>write(f<span style="color:#f92672">.</span>read()<span style="color:#f92672">.</span>encode(<span style="color:#e6db74">&#39;utf-8&#39;</span>))
+</span></span><span style="display:flex;"><span>        bf<span style="color:#f92672">.</span>seek(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>        bucket <span style="color:#f92672">=</span> boto3<span style="color:#f92672">.</span>resource(<span style="color:#e6db74">&#39;s3&#39;</span>)<span style="color:#f92672">.</span>Bucket(bucket)
+</span></span><span style="display:flex;"><span>        bucket<span style="color:#f92672">.</span>Object(key)<span style="color:#f92672">.</span>upload_fileobj(bf)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">except</span> <span style="color:#a6e22e">Exception</span> <span style="color:#66d9ef">as</span> e:
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">&#39;Exception: &#39;</span>, e)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">True</span>
+</span></span></code></pre></div><h3 id="model__init__py">model/__init__.py</h3>
+<p>In this file we will load the settings from a YAML settings file that doesn&rsquo;t exist yet. Don&rsquo;t worry, we&rsquo;ll get to that in a bit.</p>
+<p>In the <em>ModelWrap</em> class we&rsquo;ve got a getter method (with @property) above. With this we can access the model from S3 or from memory. And a <em>predict</em> method. This method will be called when running inference.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> cloudhelper <span style="color:#f92672">import</span> open_s3_file
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> os
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> yaml
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> pickle
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ModelWrap</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> os<span style="color:#f92672">.</span>path<span style="color:#f92672">.</span>exists(<span style="color:#e6db74">&#39;../serverless/batch-transform/serverless.yml&#39;</span>):
+</span></span><span style="display:flex;"><span>            p <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;../serverless/batch-transform/serverless.yml&#39;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>            p <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;serverless.yml&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">with</span> open(p) <span style="color:#66d9ef">as</span> f:
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>config <span style="color:#f92672">=</span> yaml<span style="color:#f92672">.</span>load(f)[<span style="color:#e6db74">&#39;custom&#39;</span>][<span style="color:#e6db74">&#39;dockerAvailable&#39;</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>_model <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@property</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">model</span>(self):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;Get the model object for this instance, loading it if it&#39;s not already loaded.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>_model <span style="color:#f92672">is</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>            f <span style="color:#f92672">=</span> open_s3_file(self<span style="color:#f92672">.</span>config[<span style="color:#e6db74">&#39;BUCKET&#39;</span>], self<span style="color:#f92672">.</span>config[<span style="color:#e6db74">&#39;MODEL_PKL&#39;</span>])
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>_model <span style="color:#f92672">=</span> pickle<span style="color:#f92672">.</span>load(f)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>_model
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">predict</span>(self, x):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;For the input, do the predictions and return them.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            input (a pandas dataframe): The data on which to do the predictions. There will be
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                one prediction per row in the dataframe&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        id <span style="color:#f92672">=</span> x<span style="color:#f92672">.</span>iloc[:, <span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> x<span style="color:#f92672">.</span>iloc[:, <span style="color:#ae81ff">1</span>:]
+</span></span><span style="display:flex;"><span>        p <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>model<span style="color:#f92672">.</span>predict_proba(x)[:, <span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> pd<span style="color:#f92672">.</span>DataFrame({<span style="color:#e6db74">&#39;id&#39;</span>: id, <span style="color:#e6db74">&#39;activation&#39;</span>: p})
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>modelwrapper <span style="color:#f92672">=</span> ModelWrap()
+</span></span></code></pre></div><h3 id="modeltransformpy">model/transform.py</h3>
+<p>This is the file in which the application comes together. Here we fetch messages from the SQS queue. It is assumed that the messages are in JSON format with the following key-value information:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{   <span style="color:#960050;background-color:#1e0010">bucket:</span> <span style="color:#960050;background-color:#1e0010">&lt;input-data-bucket&gt;,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">key:</span> <span style="color:#960050;background-color:#1e0010">&lt;input-data-key&gt;,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">output_bucket:</span> <span style="color:#960050;background-color:#1e0010">&lt;storage-bucket&gt;,</span>  <span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#960050;background-color:#1e0010">Location</span> <span style="color:#960050;background-color:#1e0010">to</span> <span style="color:#960050;background-color:#1e0010">write</span> <span style="color:#960050;background-color:#1e0010">the</span> <span style="color:#960050;background-color:#1e0010">data</span> <span style="color:#960050;background-color:#1e0010">to</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">output_key:</span> <span style="color:#960050;background-color:#1e0010">&lt;storage-key&gt;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In the <em>BatchTransformJob.process_q</em> method we process the messages that are currently available. Finally, in the <em>run_batch_transform_job</em> function we call this method until there are no messages left.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> json
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> os
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> io
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> time
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> datetime <span style="color:#f92672">import</span> datetime
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> boto3
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> model <span style="color:#f92672">import</span> modelwrapper
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> cloudhelper <span style="color:#f92672">import</span> open_s3_file, write_s3_string
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>sqs <span style="color:#f92672">=</span> boto3<span style="color:#f92672">.</span>resource(<span style="color:#e6db74">&#39;sqs&#39;</span>, region_name<span style="color:#f92672">=</span>modelwrapper<span style="color:#f92672">.</span>config[<span style="color:#e6db74">&#39;AWS_REGION&#39;</span>])
+</span></span><span style="display:flex;"><span>s3 <span style="color:#f92672">=</span> boto3<span style="color:#f92672">.</span>resource(<span style="color:#e6db74">&#39;s3&#39;</span>, region_name<span style="color:#f92672">=</span>modelwrapper<span style="color:#f92672">.</span>config[<span style="color:#e6db74">&#39;AWS_REGION&#39;</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">BatchTransformJob</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, q_name):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>q_name <span style="color:#f92672">=</span> q_name
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>q <span style="color:#f92672">=</span> sqs<span style="color:#f92672">.</span>get_queue_by_name(
+</span></span><span style="display:flex;"><span>            QueueName<span style="color:#f92672">=</span>q_name
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>messages <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fetch_messages</span>(self):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>messages <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>q<span style="color:#f92672">.</span>receive_messages()
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>messages
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">process_q</span>(self):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> message <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>messages:
+</span></span><span style="display:flex;"><span>            m <span style="color:#f92672">=</span> json<span style="color:#f92672">.</span>loads(message<span style="color:#f92672">.</span>body)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Downloading key: </span><span style="color:#e6db74">{</span>m[<span style="color:#e6db74">&#39;key&#39;</span>]<span style="color:#e6db74">}</span><span style="color:#e6db74"> from bucket: </span><span style="color:#e6db74">{</span>m[<span style="color:#e6db74">&#39;bucket&#39;</span>]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            f <span style="color:#f92672">=</span> open_s3_file(m[<span style="color:#e6db74">&#39;bucket&#39;</span>], m[<span style="color:#e6db74">&#39;key&#39;</span>])
+</span></span><span style="display:flex;"><span>            x <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>read_csv(f)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">&#39;Invoked with </span><span style="color:#e6db74">{}</span><span style="color:#e6db74"> records&#39;</span><span style="color:#f92672">.</span>format(x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]))
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># Do the prediction</span>
+</span></span><span style="display:flex;"><span>            predictions <span style="color:#f92672">=</span> modelwrapper<span style="color:#f92672">.</span>predict(x)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            f <span style="color:#f92672">=</span> io<span style="color:#f92672">.</span>StringIO()
+</span></span><span style="display:flex;"><span>            predictions<span style="color:#f92672">.</span>to_csv(f, index<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> write_s3_string(bucket<span style="color:#f92672">=</span>m[<span style="color:#e6db74">&#39;output_bucket&#39;</span>],
+</span></span><span style="display:flex;"><span>                               key<span style="color:#f92672">=</span>os<span style="color:#f92672">.</span>path<span style="color:#f92672">.</span>join(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{</span>m[<span style="color:#e6db74">&#39;output_key&#39;</span>]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>,
+</span></span><span style="display:flex;"><span>                                                datetime<span style="color:#f92672">.</span>now()<span style="color:#f92672">.</span>strftime(<span style="color:#e6db74">&#39;</span><span style="color:#e6db74">%d</span><span style="color:#e6db74">-%m-%Y&#39;</span>), <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{</span>int(time<span style="color:#f92672">.</span>time())<span style="color:#e6db74">}</span><span style="color:#e6db74">.csv&#34;</span>),
+</span></span><span style="display:flex;"><span>                               f<span style="color:#f92672">=</span>f):
+</span></span><span style="display:flex;"><span>                print(<span style="color:#e6db74">&#39;Success, delete message.&#39;</span>)
+</span></span><span style="display:flex;"><span>                message<span style="color:#f92672">.</span>delete()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">run_batch_transform_job</span>():
+</span></span><span style="display:flex;"><span>    btj <span style="color:#f92672">=</span> BatchTransformJob(os<span style="color:#f92672">.</span>environ[<span style="color:#e6db74">&#39;SQS_QUEUE&#39;</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    t0 <span style="color:#f92672">=</span> time<span style="color:#f92672">.</span>time()
+</span></span><span style="display:flex;"><span>    btj<span style="color:#f92672">.</span>fetch_messages()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    c <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">while</span> len(btj<span style="color:#f92672">.</span>messages) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>        c <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>        back_off <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">**</span> c
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;No messages ready, back off for </span><span style="color:#e6db74">{</span>back_off<span style="color:#e6db74">}</span><span style="color:#e6db74"> seconds.&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        time<span style="color:#f92672">.</span>sleep(back_off)  <span style="color:#75715e"># back off</span>
+</span></span><span style="display:flex;"><span>        btj<span style="color:#f92672">.</span>fetch_messages()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (time<span style="color:#f92672">.</span>time() <span style="color:#f92672">-</span> t0) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">900</span>:
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">&#39;Maximum time exceeded, close the container&#39;</span>)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">False</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">&#39;Found messages, process the queue&#39;</span>)
+</span></span><span style="display:flex;"><span>    btj<span style="color:#f92672">.</span>process_q()
+</span></span></code></pre></div><h3 id="build_and_pushsh">build_and_push.sh</h3>
+<p>This is just a convenience file for building the docker image and pushing it to AWS ECR (Elastic Container Registry).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># The argument to this script is the image name. This will be used as the image on the local</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># machine and combined with the account and region to form the repository name for ECR.</span>
+</span></span><span style="display:flex;"><span>image<span style="color:#f92672">=</span>$1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">&#34;</span>$image<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span> <span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Usage: </span>$0<span style="color:#e6db74"> &lt;image-name&gt;&#34;</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Get the account number associated with the current IAM credentials</span>
+</span></span><span style="display:flex;"><span>account<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>aws sts get-caller-identity --query Account --output text<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> $? -ne <span style="color:#ae81ff">0</span> <span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">255</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Get the region defined in the current configuration (default to us-west-2 if none defined)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># us-west-1 == ireland</span>
+</span></span><span style="display:flex;"><span>region<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>aws configure get region<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>region<span style="color:#66d9ef">:-</span>us-west-1<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fullname<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>account<span style="color:#e6db74">}</span><span style="color:#e6db74">.dkr.ecr.</span><span style="color:#e6db74">${</span>region<span style="color:#e6db74">}</span><span style="color:#e6db74">.amazonaws.com/</span><span style="color:#e6db74">${</span>image<span style="color:#e6db74">}</span><span style="color:#e6db74">:latest&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># If the repository doesn&#39;t exist in ECR, create it.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>aws ecr describe-repositories --repository-names <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>image<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> &gt; /dev/null 2&gt;&amp;<span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> $? -ne <span style="color:#ae81ff">0</span> <span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    aws ecr create-repository --repository-name <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>image<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> &gt; /dev/null
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Get the login command from ECR and execute it directly</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">$(</span>aws ecr get-login --region <span style="color:#e6db74">${</span>region<span style="color:#e6db74">}</span> --no-include-email<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Build the docker image locally with the image name and then push it to ECR</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># with the full name.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>docker build  -t <span style="color:#e6db74">${</span>image<span style="color:#e6db74">}</span> .
+</span></span><span style="display:flex;"><span>docker tag <span style="color:#e6db74">${</span>image<span style="color:#e6db74">}</span> <span style="color:#e6db74">${</span>fullname<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>docker push <span style="color:#e6db74">${</span>fullname<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><h2 id="serverless-framework">Serverless framework</h2>
+<p>We are not going to build and push our Docker image just jet, as a lot of the code in the image requires some secret YAML file we have not defined.</p>
+<p>This YAML file is actually the template for the <a href="https://serverless.com/">serverless platform</a>. Because it is easy to have all the settings in one file, we also add the settings for our Docker image in this template.</p>
+<p>The serverless framework lets us define a whole serverless AWS Cloudformation stack. This means we can define our infrastructure as code. This of course has a lot of benefits like source control, parameterized deployment etc.</p>
+<h3 id="requirements-1">Requirements</h3>
+<p>First install <a href="https://serverless.com/framework/docs/getting-started/">serverless</a>. You&rsquo;ll need <a href="https://www.npmjs.com/get-npm">NPM and Node.js</a> for this.</p>
+<p><code>$ npm install -g serverless</code></p>
+<p>For this to work I&rsquo;ve also assumed that 3 things are already defined in AWS. These things are:</p>
+<ul>
+<li>An AWS IAM Role called <em>ecsTaskExecutionRole</em> with Full SQS, S3 and ECS access.</li>
+<li>An AWS subnet</li>
+<li>An AWS security group</li>
+</ul>
+<p>You can create these in the AWS Cloud console or with the aws cli. For the <em>ecsTaskExecutionRole</em> the ARN <a href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html">(Amazone Resource Name)</a> should be added to the template. For the subnet and the security group, the name you have given to the resources.</p>
+<p>These 3 resources can also be defined in the serverless template. I&rsquo;ve chosen for this solution as I wanted to deploy multiple models and share the VPC (Virtual Private Cloud) settings.</p>
+<h3 id="model">Model</h3>
+<p>This whole architecture is of course useless without a machine learning model. I have gone through a huge effort to develop a tremendous model for a very hard challenge. The fruits of my labor can be downloaded by clicking the following links:</p>
+<ul>
+<li>
+<p><a href="../../../../../download/iris.csv">iris-dataset.csv</a></p>
+</li>
+<li>
+<p><a href="../../../../../download/model.pkl">model.pkl</a></p>
+</li>
+</ul>
+<p>The model file needs to be uploaded to a S3 location by your liking.
+For now I assume they are located at:</p>
+<p><code>s3://my-bucket/model.pkl</code></p>
+<h3 id="file-structure-1">File structure</h3>
+<p>The file structure we have defined earlier will be updated to include the code for the serverless infrastructure and the actual AWS Lambda function.</p>
+<pre tabindex="0"><code>project
+|   Dockerfile
+|   requirements.txt
+|   build_and_push.sh
+|
+|---src
+|   |   ...
+|   
+|---serverless
+|   |  
+|   |---batch-transform
+|   |   |   serverless.yml
+|   |   |   handler.py   
+</code></pre><h3 id="serverlessbatch-transformhandlerpy">serverless/batch-transform/handler.py</h3>
+<p>This file contains the actual AWS Lambda function we are deploying.
+This Lambda is triggered by a &rsquo;new data&rsquo; trigger. In the <em>lambda_handler</em> function we push the bucket and key information of this new data to an SQS queue. Next we check if there are any ECS tasks running. If there aren&rsquo;t we start our container to process the messages on the SQS queue.</p>
+<p>Note that there are a lot of environment variables used (os.environ). Those environment variables are set in the serverless template.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> json
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> os
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> datetime <span style="color:#f92672">import</span> date, datetime
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> boto3
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># SETTINGS</span>
+</span></span><span style="display:flex;"><span>DESIRED_COUNT <span style="color:#f92672">=</span> int(os<span style="color:#f92672">.</span>environ[<span style="color:#e6db74">&#39;DESIRED_COUNT&#39;</span>])
+</span></span><span style="display:flex;"><span>OUTPUT_BUCKET <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>environ[<span style="color:#e6db74">&#39;OUTPUT_BUCKET&#39;</span>]
+</span></span><span style="display:flex;"><span>OUTPUT_KEY <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>environ[<span style="color:#e6db74">&#39;OUTPUT_KEY&#39;</span>]
+</span></span><span style="display:flex;"><span>SQS_NAME <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>environ[<span style="color:#e6db74">&#39;RESOURCE_NAME&#39;</span>]
+</span></span><span style="display:flex;"><span>ECS_CLUSTER <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>environ[<span style="color:#e6db74">&#39;RESOURCE_NAME&#39;</span>]
+</span></span><span style="display:flex;"><span>TASK_DEFINITION <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>environ[<span style="color:#e6db74">&#39;RESOURCE_NAME&#39;</span>]
+</span></span><span style="display:flex;"><span>SUBNET <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>environ[<span style="color:#e6db74">&#39;SUBNET&#39;</span>]
+</span></span><span style="display:flex;"><span>SECURITY_GROUP <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>environ[<span style="color:#e6db74">&#39;SECURITY_GROUP&#39;</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>s3 <span style="color:#f92672">=</span> boto3<span style="color:#f92672">.</span>resource(<span style="color:#e6db74">&#39;s3&#39;</span>)
+</span></span><span style="display:flex;"><span>sqs <span style="color:#f92672">=</span> boto3<span style="color:#f92672">.</span>resource(<span style="color:#e6db74">&#39;sqs&#39;</span>)
+</span></span><span style="display:flex;"><span>ecs_client <span style="color:#f92672">=</span> boto3<span style="color:#f92672">.</span>client(<span style="color:#e6db74">&#39;ecs&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">json_serial</span>(obj):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;JSON serializer for objects not serializable by default json code&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> isinstance(obj, (datetime, date)):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> obj<span style="color:#f92672">.</span>isoformat()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">TypeError</span>(<span style="color:#e6db74">&#34;Type </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> not serializable&#34;</span> <span style="color:#f92672">%</span> type(obj))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">lambda_handler</span>(event, context):
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    event_info <span style="color:#f92672">=</span> event[<span style="color:#e6db74">&#39;Records&#39;</span>][<span style="color:#ae81ff">0</span>][<span style="color:#e6db74">&#39;s3&#39;</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    q <span style="color:#f92672">=</span> sqs<span style="color:#f92672">.</span>get_queue_by_name(QueueName<span style="color:#f92672">=</span>SQS_NAME)
+</span></span><span style="display:flex;"><span>    message <span style="color:#f92672">=</span> json<span style="color:#f92672">.</span>dumps(dict(
+</span></span><span style="display:flex;"><span>        bucket<span style="color:#f92672">=</span>event_info[<span style="color:#e6db74">&#39;bucket&#39;</span>][<span style="color:#e6db74">&#39;name&#39;</span>],
+</span></span><span style="display:flex;"><span>        key<span style="color:#f92672">=</span>event_info[<span style="color:#e6db74">&#39;object&#39;</span>][<span style="color:#e6db74">&#39;key&#39;</span>],
+</span></span><span style="display:flex;"><span>        output_bucket<span style="color:#f92672">=</span>OUTPUT_BUCKET,
+</span></span><span style="display:flex;"><span>        output_key<span style="color:#f92672">=</span>OUTPUT_KEY))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Add </span><span style="color:#e6db74">{</span>message<span style="color:#e6db74">}</span><span style="color:#e6db74"> to queue&#39;</span>)
+</span></span><span style="display:flex;"><span>    response <span style="color:#f92672">=</span> q<span style="color:#f92672">.</span>send_message(
+</span></span><span style="display:flex;"><span>        MessageBody<span style="color:#f92672">=</span>message
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(ecs_client<span style="color:#f92672">.</span>list_services(cluster<span style="color:#f92672">=</span>ECS_CLUSTER)[<span style="color:#e6db74">&#39;serviceArns&#39;</span>]) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">&#39;RUN ECS task&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        response <span style="color:#f92672">=</span> ecs_client<span style="color:#f92672">.</span>run_task(
+</span></span><span style="display:flex;"><span>            cluster<span style="color:#f92672">=</span>ECS_CLUSTER,
+</span></span><span style="display:flex;"><span>            taskDefinition<span style="color:#f92672">=</span>TASK_DEFINITION,
+</span></span><span style="display:flex;"><span>            count<span style="color:#f92672">=</span>DESIRED_COUNT,
+</span></span><span style="display:flex;"><span>            launchType<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;FARGATE&#39;</span>,
+</span></span><span style="display:flex;"><span>            networkConfiguration<span style="color:#f92672">=</span>dict(
+</span></span><span style="display:flex;"><span>                awsvpcConfiguration<span style="color:#f92672">=</span>dict(subnets<span style="color:#f92672">=</span>[SUBNET],
+</span></span><span style="display:flex;"><span>                                         securityGroups<span style="color:#f92672">=</span>[SECURITY_GROUP],
+</span></span><span style="display:flex;"><span>                                         assignPublicIp<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;ENABLED&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">&#39;ECS cluster already running, lay back&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;statusCode&#34;</span>: <span style="color:#ae81ff">200</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;body&#34;</span>: json<span style="color:#f92672">.</span>dumps(response, default<span style="color:#f92672">=</span>json_serial)
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><h3 id="serverlessbatch-transformserverlessyml">serverless/batch-transform/serverless.yml</h3>
+<p>This file is where all the settings for both the Docker image and the serverless infrastructure are defined. I won&rsquo;t explain the serverless syntax here, but I do encourage you to take a look at the serverless documentation to get a grasp of what is going on. The <a href="https://serverless.com/framework/docs/providers/aws/guide/quick-start/">quick start</a> is a good place to begin.</p>
+<p>Below the whole file is shown. Everything defined under the <em>custom</em> keyword, are the settings that need to be changed for your specific model. The other keywords are the specification of the serverless architecture. Everything enclosed in <code>${self:&lt;some-variable&gt;}</code> are variables.</p>
+<p>A quick overview of what is defined in this file:</p>
+<ul>
+<li><code>fillSQS</code>: Here the AWS Lamba is defined.</li>
+<li><code>ContainerLogs</code>: So we are able to view the logs in the container once deployed.</li>
+<li><code>NewDataQueue</code>: Defines the SQS queue that is needed.</li>
+<li><code>ECSCluster</code>: The container task will run in an ECS Cluster.</li>
+<li><code>BatchTransformTask</code>: The task definition for the container.</li>
+</ul>
+<p>The serverless YAML file also requires an URI (under <em>custom.image</em>) to the Docker image. To get this, we need to push the Docker image to ECR and retrieve the URI.</p>
+<p><code>$ ./build_and_push.sh &lt;image-tag&gt;</code></p>
+<p><code>$ aws ecr describe-repositories | grep repositoryUri</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">service</span>: <span style="color:#ae81ff">${self:custom.prefix}-${self:custom.usecase}-${self:custom.model}</span> <span style="color:#75715e"># NOTE: update this with your service name</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Custom are the variables for this template.</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">custom</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">dockerAvailable</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># These setting will be exposed for the model in the docker image</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">BUCKET</span>: <span style="color:#ae81ff">my-bucket</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">MODEL_PKL</span>: <span style="color:#ae81ff">model.pkl</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">AWS_REGION</span>: <span style="color:#ae81ff">eu-west-1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Docker image that will be deployed</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">image</span>: <span style="color:#ae81ff">&lt;repository url&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">desiredTaskCount</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Settings for the naming of new AWS resources</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">prefix</span>: <span style="color:#ae81ff">&lt;str&gt; Resources made in AWS will have this prefix</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">usecase</span>: <span style="color:#ae81ff">&lt;str&gt; Resoures made in AWS will have this name</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">model</span>: <span style="color:#ae81ff">&lt;str&gt; Name of the model. Name will be given to the Resources in AWS</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Bucket &amp; key to where the results are written</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">outputBucket</span>: <span style="color:#ae81ff">&lt;bucket&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">outputKey</span>: <span style="color:#ae81ff">&lt;key&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Bucket that will be generated for this stack. New data should be deployed here.</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">bucket</span>: <span style="color:#ae81ff">${self:custom.prefix}-${self:custom.usecase}-${self:custom.model}-new-data</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># File type that should trigger the Lambda</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">triggerExtension</span>: <span style="color:#ae81ff">.csv</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Subnet and security group names in which the AWS Task should run.</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">subnet</span>:  <span style="color:#ae81ff">&lt;subnet name&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">securityGroup</span>: <span style="color:#ae81ff">&lt;security group name&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># ARN of the Role that will be assigned to the Task. It needs SQS, S3 and ECS access</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ecsTaskExecutionRole</span>: <span style="color:#ae81ff">&lt;arn of role with the needed permissions&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## Setting can be changed, but this is not required.</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">provider</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">aws</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">runtime</span>: <span style="color:#ae81ff">python3.6</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">stage</span>: <span style="color:#ae81ff">dev</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">region</span>: <span style="color:#ae81ff">${self:custom.flask.AWS_REGION}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">iamRoleStatements</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">Effect</span>: <span style="color:#ae81ff">Allow</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">Action</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">s3:*</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">sqs:*</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">ecs:*</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">iam:PassRole</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">Resource</span>: <span style="color:#e6db74">&#34;*&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">RESOURCE_NAME</span>: <span style="color:#ae81ff">${self:custom.prefix}-${self:custom.usecase}-${self:custom.model}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">OUTPUT_BUCKET</span>: <span style="color:#ae81ff">${self:custom.outputBucket}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">OUTPUT_KEY</span>: <span style="color:#ae81ff">${self:custom.outputKey}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">SUBNET</span>: <span style="color:#ae81ff">${self:custom.subnet}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">SECURITY_GROUP</span>: <span style="color:#ae81ff">${self:custom.securityGroup}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">DESIRED_COUNT</span>: <span style="color:#ae81ff">${self:custom.desiredTaskCount}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">functions</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">fillSQS</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">handler</span>: <span style="color:#ae81ff">handler.lambda_handler</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">${self:custom.prefix}-${self:custom.usecase}-${self:custom.model}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">events</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">s3</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">bucket</span>: <span style="color:#ae81ff">${self:custom.bucket}</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">event</span>: <span style="color:#ae81ff">s3:ObjectCreated:*</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>            - <span style="color:#f92672">suffix</span>: <span style="color:#ae81ff">${self:custom.triggerExtension}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Resources</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Needed for the container logs</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ContainerLogs</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">Type</span>: <span style="color:#ae81ff">AWS::Logs::LogGroup</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">Properties</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">LogGroupName</span>: <span style="color:#ae81ff">/ecs/${self:custom.prefix}-${self:custom.usecase}-${self:custom.model}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">NewDataQueue</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">Type</span>: <span style="color:#ae81ff">AWS::SQS::Queue</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">Properties</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">QueueName</span>: <span style="color:#ae81ff">${self:custom.prefix}-${self:custom.usecase}-${self:custom.model}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ECSCluster</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">Type</span>: <span style="color:#ae81ff">AWS::ECS::Cluster</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">Properties</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">ClusterName</span>: <span style="color:#ae81ff">${self:custom.prefix}-${self:custom.usecase}-${self:custom.model}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">BatchTransformTask</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">Type</span>: <span style="color:#ae81ff">AWS::ECS::TaskDefinition</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">Properties</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">TaskRoleArn</span>: <span style="color:#ae81ff">${self:custom.ecsTaskExecutionRole}</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">ExecutionRoleArn</span>: <span style="color:#ae81ff">${self:custom.ecsTaskExecutionRole}</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Cpu</span>: <span style="color:#ae81ff">2048</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Memory</span>: <span style="color:#ae81ff">16384</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Family</span>: <span style="color:#ae81ff">${self:custom.prefix}-${self:custom.usecase}-${self:custom.model}</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">NetworkMode</span>: <span style="color:#ae81ff">awsvpc</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">RequiresCompatibilities</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#ae81ff">FARGATE</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">ContainerDefinitions</span>:
+</span></span><span style="display:flex;"><span>          -
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">Name</span>: <span style="color:#ae81ff">${self:custom.prefix}-${self:custom.usecase}-${self:custom.model}</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">Image</span>: <span style="color:#ae81ff">${self:custom.image}</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">Environment</span>:
+</span></span><span style="display:flex;"><span>              -
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">Name</span>: <span style="color:#ae81ff">SQS_QUEUE</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">Value</span>: <span style="color:#ae81ff">${self:custom.prefix}-${self:custom.usecase}-${self:custom.model}</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">Command</span>:
+</span></span><span style="display:flex;"><span>              - <span style="color:#ae81ff">python</span>
+</span></span><span style="display:flex;"><span>              - <span style="color:#ae81ff">batch_transform.py</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">LogConfiguration</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">LogDriver</span>: <span style="color:#ae81ff">awslogs</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">Options</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">awslogs-region</span>: <span style="color:#ae81ff">${self:provider.region}</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">awslogs-group</span>: <span style="color:#ae81ff">${self:resources.Resources.ContainerLogs.Properties.LogGroupName}</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">awslogs-stream-prefix</span>: <span style="color:#ae81ff">ecs</span>
+</span></span></code></pre></div><h2 id="deployment">Deployment</h2>
+<p>Now the Docker image and the code for the serverless infrastructure is defined, deployment with the serverless cli is easy!</p>
+<p><code>$ cd serverless/batch-transform &amp;&amp; serverless deploy</code></p>
+<p>This command deploys our complete infrastructure as a Cloudformation stack. Take a look at the Cloudformation page in the AWS Cloud Console to see which AWS Resources are created.</p>
+<p>To see the magic in action, drop the iris.csv file in the input-bucket you have defined!</p>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  });
+  </script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

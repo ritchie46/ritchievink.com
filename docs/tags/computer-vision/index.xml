@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>computer vision on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/computer-vision/</link>
+    <description>Recent content in computer vision on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Thu, 12 Apr 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/computer-vision/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Transfer learning with Pytorch: Assessing road safety with computer vision</title>
+      <link>https://www.ritchievink.com/blog/2018/04/12/transfer-learning-with-pytorch-assessing-road-safety-with-computer-vision/</link>
+      <pubDate>Thu, 12 Apr 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/04/12/transfer-learning-with-pytorch-assessing-road-safety-with-computer-vision/</guid>
+      <description>For a project at Xomnia, I had the oppertunity to do a cool computer vision assignment. We tried to predict the input of a road safety model. Eurorap is such a model. In short, it works something like this. You take some cars, mount them with cameras and drive around the road you&amp;rsquo;re interested in. The &amp;lsquo;Google Streetview&amp;rsquo; like material you&amp;rsquo;ve collected is sent to a crowdsourced workforce (at Amazon they are called Mechanical Turks) to manually label the footage.</description>
+    </item>
+    
+    <item>
+      <title>Deep learning music classifier part 2. Computer says no!</title>
+      <link>https://www.ritchievink.com/blog/2017/06/04/deep-learning-music-classifier-part-2.-computer-says-no/</link>
+      <pubDate>Sun, 04 Jun 2017 14:08:34 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/06/04/deep-learning-music-classifier-part-2.-computer-says-no/</guid>
+      <description>Recap Last post I described what my motivations were to start building a music classifier, or at least attempt to build one. The post also described how I collected a dataset, extracted important features and clustered the data based on their variance. You can read the previous post here.
+This post describes how I got my feet wet with classifying music. Spotify kind of sorted the data I&amp;rsquo;ve downloaded by genre.</description>
+    </item>
+    
+    <item>
+      <title>Deep learning music classifier part 1. 30 seconds disco!</title>
+      <link>https://www.ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/</link>
+      <pubDate>Fri, 12 May 2017 16:34:27 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/</guid>
+      <description>Introduction As a nerd I am fascinated by the deep learning hype. Out of interest I have been following some courses, reading blogs and watched youtube video&amp;rsquo;s about the topic. Before diving into the content, I really thought this was something solely for the great internet companies and that it was not a subject us mortals could understand.
+While reading and learning more about it I&amp;rsquo;ve come to the insight that making use of deep learning techniques is not only something the internet giants and scientists can do.</description>
+    </item>
+    
+  </channel>
+</rss>

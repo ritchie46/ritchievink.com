@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>clustering on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/clustering/</link>
+    <description>Recent content in clustering on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Fri, 24 May 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/clustering/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Algorithm Breakdown: Expectation Maximization</title>
+      <link>https://www.ritchievink.com/blog/2019/05/24/algorithm-breakdown-expectation-maximization/</link>
+      <pubDate>Fri, 24 May 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/05/24/algorithm-breakdown-expectation-maximization/</guid>
+      <description>I wanted to learn something about variational inference, a technique used to approximate the posterior distribution in Bayesian modeling. However, during my research, I bounced on quite some mathematics that led me to another optimization technique called Expectation Maximization. I believe the theory behind this algorithm is a stepping stone to the mathematics behind variational inference. So we tackle the problems one problem at a time!
+The first part of this post will focus on Gaussian Mixture Models, as expectation maximization is the standard optimization algorithm for these models.</description>
+    </item>
+    
+    <item>
+      <title>Clustering data with Dirichlet Mixtures in Edward and Pymc3</title>
+      <link>https://www.ritchievink.com/blog/2018/06/05/clustering-data-with-dirichlet-mixtures-in-edward-and-pymc3/</link>
+      <pubDate>Tue, 05 Jun 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/06/05/clustering-data-with-dirichlet-mixtures-in-edward-and-pymc3/</guid>
+      <description>Last post I&amp;rsquo;ve described the Affinity Propagation algorithm. The reason why I wrote about this algorithm was because I was interested in clustering data points without specifying k, i.e. the number of clusters present in the data.
+This post continues with the same fascination, however now we take a generative approach. In other words, we are going to examine which models could have generated the observed data. Through bayesian inference we hope to find the hidden (latent) distributions that most likely generated the data points.</description>
+    </item>
+    
+  </channel>
+</rss>

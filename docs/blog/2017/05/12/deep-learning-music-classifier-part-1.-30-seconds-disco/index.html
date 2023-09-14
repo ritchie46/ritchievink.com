@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Deep learning music classifier part 1. 30 seconds disco! - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-7-dl-music/ms_classical.png" />
+
+
+<title>Deep learning music classifier part 1. 30 seconds disco! | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Deep learning music classifier part 1. 30 seconds disco!</h1>
+    <h2 class="subtitle is-5">May 12, 2017 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/music">music</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/computer-vision">computer vision</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/deep-learning">deep learning</a>
+    
+</div>
+
+    
+    <div class="content">
+      <h2 id="introduction">Introduction</h2>
+<p>As a nerd I am fascinated by the deep learning hype. Out of interest I have been following some courses, reading blogs and watched youtube video&rsquo;s about the topic. Before diving into the content, I really thought this was something solely for the great internet companies and that it was not a subject us mortals could understand.</p>
+<p>While reading and learning more about it I&rsquo;ve come to the insight that making use of deep learning techniques is not only something the internet giants and scientists can do. Thanks to the open source development of the machine learning community and technological advancement, open source deep learning libraries are now available for everybody with a reasonable computer to play and tinker with.</p>
+<p>Just for fun and learning purposes, I am trying to make a music classifier with different deep learning algorithms. In multiple posts I will share my insights, choices, failures, results, and if I am really hyped maybe even my emotions. But the latter I won&rsquo;t promise.</p>
+<p>This first post focusses on the data retrieval and feature extraction. Before training any neural net on the data I will examine the data distribution.</p>
+<br/>
+## Data
+<p>As learning is all about experience, we need to let a machine experience. This is done in the form of data. I want to make use of supervised learning techniques. That means the data also needs to be labeled. Labeled means that a jazz song is labeled as, well, a jazz song. I don&rsquo;t feel like hitting the record button on my soundblaster stereo every time a jazz song may be played. Therefore I have used the Spotify web api. I found they have got playlistst that are (somewhat) ordered by genre.</p>
+<p>Before you can use the Spotify web api, you need to create a developers account. After doing so they will provide you with a client id and a secret token. <a href="https://developer.spotify.com/my-applications/#!/applications">You can create an account here.</a></p>
+<p>I&rsquo;ve made a notebook that will download the music for you. Of course there are some legal limitations to downloading music, thereore you only get a preview of the song from Spotify. The preview songs have a duration of 30 seconds. Most of the time we can classify a song by genre in less than 5 seconds so the 30 seconds duration is probably long enough for a neural net to classify our songs.</p>
+<p><a href="https://github.com/ritchie46/music-classification/blob/master/get_data.ipynb">Run this notebook to start your 30 seconds disco!</a></p>
+<br/>
+<h2 id="images">Images</h2>
+<p>After some research I learned that most people who also played with music and neural nets did not feed raw audio into the networks. Most of the neural nets excel in recognizing images. To utilize this property I&rsquo;ve used techniques in speech recognition and sound processing to downgrade the dimensionality and extract important features from the raw music data. The results are saved as images. In the text below I describe which features were extracted from the raw audio.</p>
+<br/>
+<h3 id="mel-spectogram">Mel spectogram</h3>
+<p>We can get frequency information of a song by taking the Fourier transform (FFT)  of the signal. <a href="https://www.ritchievink.com/blog/2017/04/23/understanding-the-fourier-transform-by-example/">Read more about Fourier in my earlier post.</a> However by doing so we trade all time information into frequency information, which is a huge loss of information.</p>
+<p>The solution to this problem is quite simple however. Instead of doing a FFT over the whole time signal, it is done in discrete time steps. At every time step dt you will get frequency information.</p>
+<p>Normally when doing an FFT, the frequency is plotted on the x-axis. Now the frequencies will be plotted on the y-axis. The result is called a spectogram, which is time <strong>and</strong> frequency information of an audio signal. The y-axis isn&rsquo;t plotted in linear scale, but in Mel scale. A Mel scale is defined by the way we humans hear. Every increment on the Mel scale sounds equally apart to us humans. What we are actually doing is extracting features that are important to us humans. As we are also the species that define which music belongs to which genre. So I don&rsquo;t know yet if this works, but this seems like a rational thing to do.</p>
+<p>Below are some of the spectograms shown. The x-axis shows the duration of the song in seconds. The y-scale is the Mel scale and shows the frequencies as we hear them as humans. The color intensity shows the magnitude of the frequency. Where yellow/orange is intense and black is the absence of te frequency. I like these images as we could really tell something about the songs tunes. Furthermore you can notice that even in an image form EDM is way too intense.</p>
+<p><a href="https://github.com/ritchie46/music-classification/blob/master/modify_data.ipynb">The notebook used to convert the mp3 files to images can be found here</a></p>
+<figure><img src="../../../../../img/post-7-dl-music/ms_classical.png"/><figcaption>
+            <h4>Mel spectogram classical music</h4>
+        </figcaption>
+</figure>
+
+<figure><img src="../../../../../img/post-7-dl-music/ms_edm.png"/><figcaption>
+            <h4>Mel spectogram electronic dance</h4>
+        </figcaption>
+</figure>
+
+<figure><img src="../../../../../img/post-7-dl-music/ms_reggae.png"/><figcaption>
+            <h4>Mel spectogram reggae</h4>
+        </figcaption>
+</figure>
+
+<figure><img src="../../../../../img/post-7-dl-music/ms_hiphop.png"/><figcaption>
+            <h4>Mel spectogram hiphop</h4>
+        </figcaption>
+</figure>
+
+<br/>
+<h3 id="mfcc">MFCC</h3>
+<p>To further reduce dimensionality of the music, I have also made Mel frequency cepstral coefficients(MFCC) images from the data. It is a processing technique commonly used for algorithms used for speech recognition. Just like the Mel spectograms this is feature extraction. Oversimplifying an MFCC could be seen as a spectrum of volume coefficients inspired by the way we humans hear, such as in the case with the Mel spectogram. This <a href="https://dsp.stackexchange.com/questions/6499/help-calculating-understanding-the-mfccs-mel-frequency-cepstrum-coefficients">stackexchange answer</a> gives a clear description of what MFCC&rsquo;s are.</p>
+<p>The image below shows an MFCC of a jazz song. It seems to me that this isn&rsquo;t something that is meant to be readible by humans. To be sure that a machine is able to recognize something in this data I&rsquo;ve done a principal component analysis on the MFCC images. This is described in the text below.</p>
+<figure><img src="../../../../../img/post-7-dl-music/mfcc_jazz.png"/><figcaption>
+            <h4>MFCC jazz</h4>
+        </figcaption>
+</figure>
+
+<br/>
+<h2 id="principal-components">Principal components</h2>
+<p>Before doing any machine learning with the data I want to know how these images would be clustered if we reduce the dimensions. For this purpose I utilize the Principal Component Analysis. PCA is a statiscal procedure that returns principal components of parameters with the highest variance. Think of a principal component as an axis vector on which you can project the data. The first principal component will follow the axis on which the data shows the highest variance. The second principal component is perpendical on that axis and shows the second highest variance.</p>
+<p>If there are N dimensions in your data there are also N principal components. The last principal components show the least variance and are least significant. In other words they give you little information about how to classify the data.</p>
+<p>The figure below shows the two pincipal components of a distribution.</p>
+<figure><img src="../../../../../img/post-7-dl-music/GaussianScatterPCA.png"/><figcaption>
+            <h4>Two principal components of a distribution</h4>
+        </figcaption>
+</figure>
+
+<br/>
+<h3 id="clustering">Clustering</h3>
+<p>Note that I dropped some genres. After downloading I concluded that most of the genres data was really ambiguous. The rock dataset had a lot of numbers that could be regarded hiphop or soul and vice versa. Therefore I&rsquo;ve chosen to continue with the genres that in my opinion were most distinctive or had the most data. The winning genres are:</p>
+<ul>
+<li>hiphop</li>
+<li>EDM</li>
+<li>classical</li>
+<li>metal</li>
+<li>jazz</li>
+</ul>
+<p>The winning genres were rewarded with a principal component analyis. Below is the result plot shown of the principal component analysis. The analysis is done on the MFCC images. The different genres are already somewhat clustered, even before applying any machine learning algorithm on the data. Metal and classical music seem to be pretty distinctive music. EDM seems to have some overlap with jazz and hiphop. Based on this plot I would say it would be hardest for the learning algorithm to distinguish between jazz, hiphop and EDM.</p>
+<figure><img src="../../../../../img/post-7-dl-music/pca_mfcc.png"/><figcaption>
+            <h4>Principal component plot Mel spectogram images</h4>
+        </figcaption>
+</figure>
+
+<p>I really think the image above is amazing. I could not believe that we get such a nice clustering in two dimensions from something so complicated and high dimensional as music. It is really interesting that it pretty much seems to coincide with my definition of the music genres.</p>
+<p>This post described how I got the music data and how extracted important features (for us humans) from it. <a href="https://www.ritchievink.com/blog/2017/06/04/deep-learning-music-classifier-part-2.-computer-says-no/">Next post I am going to feed this data to some different neural nets. Stay tuned.</a></p>
+<br/>
+<h2 id="tldr">TL;DR</h2>
+<p>I am trying to build a music classifier with deep learning models. I&rsquo;ve downloaded some labeled music from spotify and converted it into images. I was really surprised by the way the data clustered afer doing a principal component analysis.</p>
+<p>Next post I am going to try to predict some genres with different multi layer perceptron models.</p>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

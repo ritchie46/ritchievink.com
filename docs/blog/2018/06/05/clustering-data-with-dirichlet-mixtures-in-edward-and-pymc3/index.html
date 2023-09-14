@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Clustering data with Dirichlet Mixtures in Edward and Pymc3 - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2018/06/05/clustering-data-with-dirichlet-mixtures-in-edward-and-pymc3/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-15-mixture_models/gmount1.jpg" />
+
+
+<title>Clustering data with Dirichlet Mixtures in Edward and Pymc3 | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Clustering data with Dirichlet Mixtures in Edward and Pymc3</h1>
+    <h2 class="subtitle is-5">June 5, 2018 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/pymc3">pymc3</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/edward">edward</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/bayesian">bayesian</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/clustering">clustering</a>
+    
+</div>
+
+    
+    <div class="content">
+      <figure><img src="../../../../../img/post-15-mixture_models/gmount1.jpg"/>
+</figure>
+
+<p>Last post I&rsquo;ve described the <a href="https://www.ritchievink.com/blog/2018/05/18/algorithm-breakdown-affinity-propagation/">Affinity Propagation</a> algorithm. The reason why I wrote about this algorithm was because I was interested in clustering data points without specifying <strong>k</strong>, i.e. the number of clusters present in the data.</p>
+<p>This post continues with the same fascination, however now we take a generative approach. In other words, we are going to examine which models could have generated the observed data. Through bayesian inference we hope to find the hidden (latent) distributions that most likely generated the data points. When there is more than one latent distribution we can speak of a mixture of distributions. If we assume that the latent distribrutions are Gaussians than we call this model a Gaussian Mixture model.</p>
+<p>First we are going to define a bayesian model in <a href="http://edwardlib.org">Edward</a> to determine a multivariate gaussian mixture model where we predifine <strong>k</strong>. Just as in k-means clustering we will have a hyperparameter <strong>k</strong> that will dictate the amount of clusters. In the second part of the post we will reduce the dimensionality of our problem to one dimension and look at a model that is completely nonparametric and will determine <strong>k</strong> for us.</p>
+<h2 id="dirichlet-distribution">Dirichlet Distribution</h2>
+<p>Before we start with the generative model, we take a look at the Dirichlet distribution. This is a distribution of distributions and can be a little bit hard to get your head around. If we sample from a Dirichlet we&rsquo;ll retrieve a vector of probabilities that sum to 1. These discrete probabilites can be seen as seperate events. A Dirichlet distribution can be compared to a bag of badly produced dice, where each dice has a totally different probability of throwing 6. Each time you sample a die from the bag you sample another probabilty of throwing 6. However you still need to sample from the die. Actually throwing the die will lead to sampling the event.</p>
+<p>The Dirichlet distribution is defined by:</p>
+<div class="formula-wrap">
+$$\theta \sim Dir(\alpha) \tag{1.0}$$
+</div>
+<div class="formula-wrap">
+$$P(x) = \frac{1}{B(\alpha)}\prod_{i=1}^{k}{x_i^{\alpha_i-1}} \tag{1.1}$$
+</div>
+<p>where</p>
+<div class="formula-wrap">
+$$B(\alpha) = \frac{\prod_{i=1}^{k}{\Gamma(\alpha_i)}}{\Gamma(\sum_{i=1}^{n}{\alpha_i})} \tag{1.2}$$
+</div>
+<br>
+This distribution has one parameter $\alpha$ that influences the probability vector that is sampled. Let's take a look at the influence of $\alpha$ on the samples. We can best investigate the Dirichlet distribution in three dimensions; $\theta = [\theta_1, \theta_2, \theta_3]$. We can plot every probability sample $\theta$ as a point in three dimensions. By sampling a lot of distribution points $\theta$, we will get an idea of the Dirichlet distribution $Dir(\alpha)$. 
+<p>If we want to create a Dirichlet distribution in three dimensions we need to initialize it with $\alpha = [\alpha_1, \alpha_2, \alpha_3]$. The expected value of $\theta$ becomes:</p>
+<div class="formula-wrap">
+$$\mathbb{E} \theta_i = \frac{\alpha_i}{\sum_{j=1}^{k}{\alpha_j}} \tag{1.3}$$
+</div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> stats
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> mpl_toolkits.mplot3d <span style="color:#f92672">import</span> Axes3D
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> alpha <span style="color:#f92672">in</span> [[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">4</span>], [<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>], [<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">0.2</span>, <span style="color:#ae81ff">0.2</span>], [<span style="color:#ae81ff">0.1</span>, <span style="color:#ae81ff">0.1</span>, <span style="color:#ae81ff">0.1</span>]]:
+</span></span><span style="display:flex;"><span>    theta <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>dirichlet(alpha)<span style="color:#f92672">.</span>rvs(<span style="color:#ae81ff">500</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    fig <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">8</span>, <span style="color:#ae81ff">8</span>), dpi<span style="color:#f92672">=</span><span style="color:#ae81ff">150</span>)
+</span></span><span style="display:flex;"><span>    ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>gca(projection<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;3d&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\alpha$ = </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#39;</span><span style="color:#f92672">.</span>format(alpha))
+</span></span><span style="display:flex;"><span>    ax<span style="color:#f92672">.</span>scatter(theta[:, <span style="color:#ae81ff">0</span>], theta[:, <span style="color:#ae81ff">1</span>], theta[:, <span style="color:#ae81ff">2</span>])
+</span></span><span style="display:flex;"><span>    ax<span style="color:#f92672">.</span>view_init(azim<span style="color:#f92672">=</span><span style="color:#ae81ff">30</span>)
+</span></span><span style="display:flex;"><span>    ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\theta_1$&#39;</span>)
+</span></span><span style="display:flex;"><span>    ax<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\theta_2$&#39;</span>)
+</span></span><span style="display:flex;"><span>    ax<span style="color:#f92672">.</span>set_zlabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\theta_3$&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><p><figure><img src="../../../../../img/post-15-mixture_models/134.png" width="500px"/>
+</figure>
+
+<figure><img src="../../../../../img/post-15-mixture_models/111.png" width="500px"/>
+</figure>
+
+<figure><img src="../../../../../img/post-15-mixture_models/100202.png" width="500px"/>
+</figure>
+
+<figure><img src="../../../../../img/post-15-mixture_models/010101.png" width="500px"/>
+</figure>
+</p>
+<p>Above the underlying distribution of $Dir(\alpha)$ is shown by sampling from it. Note that $\alpha = [10, 0.2, 0.2]$ leads to high probability of <span>$P(\alpha_1)$ close to 1 and that $\alpha = [1, 1, 1]$ can be seen as uniform Dirichlet distribution, i.e. that there is an equal probability for all distributions that suffices $\sum_{i=1}^{k}{\theta_i} = 1$.</p>
+<h2 id="clustering-with-generative-models">Clustering with generative models</h2>
+<p>Now, we have had a nice intermezzo of Dirichlet distributions, we&rsquo;re going to apply this distribution in a Gaussian Mixture model. We will try to cluster the Iris dataset. This is a dataset containing 4 columns of data gathered from 3 different types of flowers.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> sklearn.datasets <span style="color:#f92672">import</span> load_iris
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> seaborn <span style="color:#66d9ef">as</span> sns
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> stats
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> tensorflow <span style="color:#66d9ef">as</span> tf
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> edward <span style="color:#66d9ef">as</span> ed
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>df <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>DataFrame(load_iris()[<span style="color:#e6db74">&#39;data&#39;</span>])
+</span></span><span style="display:flex;"><span>y <span style="color:#f92672">=</span> df<span style="color:#f92672">.</span>values
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Standardize the data</span>
+</span></span><span style="display:flex;"><span>y <span style="color:#f92672">=</span> (y <span style="color:#f92672">-</span> y<span style="color:#f92672">.</span>mean(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)) <span style="color:#f92672">/</span> y<span style="color:#f92672">.</span>std(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># A 2D pairplot between variables</span>
+</span></span><span style="display:flex;"><span>df[<span style="color:#e6db74">&#39;target&#39;</span>] <span style="color:#f92672">=</span> load_iris()[<span style="color:#e6db74">&#39;target&#39;</span>]
+</span></span><span style="display:flex;"><span>sns<span style="color:#f92672">.</span>pairplot(df, hue<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;target&#39;</span>, vars<span style="color:#f92672">=</span>[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">3</span>])
+</span></span></code></pre></div><figure><img src="../../../../../img/post-15-mixture_models/iris.png" width="700px"/>
+</figure>
+
+<h3 id="gaussian-mixture">Gaussian Mixture</h3>
+<p>A Gaussian Mixture model is the Mother Of All Gaussians. For column <strong>0</strong> in our dataframe it is the cumulative of the histograms of the data labels.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>b <span style="color:#f92672">=</span> <span style="color:#ae81ff">8</span>
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;MOAS&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$X$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;bin count&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>annotate(<span style="color:#e6db74">&#39;Cummulative distribution&#39;</span>, (<span style="color:#ae81ff">6.8</span>, <span style="color:#ae81ff">17</span>), (<span style="color:#ae81ff">7</span>, <span style="color:#ae81ff">20</span>), arrowprops<span style="color:#f92672">=</span>dict(facecolor<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>, shrink<span style="color:#f92672">=</span><span style="color:#ae81ff">0.05</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>hist(df[<span style="color:#ae81ff">0</span>], color<span style="color:#f92672">=</span>sns<span style="color:#f92672">.</span>color_palette()[<span style="color:#ae81ff">3</span>], rwidth<span style="color:#f92672">=</span>a)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>hist(df[<span style="color:#ae81ff">0</span>][df[<span style="color:#e6db74">&#39;target&#39;</span>] <span style="color:#f92672">==</span> <span style="color:#ae81ff">2</span>], color<span style="color:#f92672">=</span>sns<span style="color:#f92672">.</span>color_palette()[<span style="color:#ae81ff">2</span>], rwidth<span style="color:#f92672">=</span>a)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>hist(df[<span style="color:#ae81ff">0</span>][df[<span style="color:#e6db74">&#39;target&#39;</span>] <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>], color<span style="color:#f92672">=</span>sns<span style="color:#f92672">.</span>color_palette()[<span style="color:#ae81ff">1</span>], rwidth<span style="color:#f92672">=</span>a)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>hist(df[<span style="color:#ae81ff">0</span>][df[<span style="color:#e6db74">&#39;target&#39;</span>] <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>], color<span style="color:#f92672">=</span>sns<span style="color:#f92672">.</span>color_palette()[<span style="color:#ae81ff">0</span>], rwidth<span style="color:#f92672">=</span>a)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-15-mixture_models/MOAS.png" width="700px"/>
+</figure>
+
+<p>Of we obtain a dataset without labels. What we would observe from the world is the single red distribution. However we know now that the data actually is produced by the 3 latent distributions, namely three different kind of flowers. The red observed distribution is a mixture of the hidden distributions. We could model this by choosing a mixture of 3 Gaussian distributions</p>
+<p>However the integral of a Gaussian distribution is equal to 1 (as a probability function should be). If we combine various Gaussians we need to weigh them so the integral will meet the conditon of being equal to 1.</p>
+<div class="formula-wrap">
+$$\sum_{i=1}^{k} { \int_{-\infty}^{\infty}{ Normal(\mu_i, \sigma_i^2) }} = k \tag{2.0}$$
+</div>
+<p>We could of course scale the mixture of Gaussian by weights summing to 1. Here comes the Dirichlet distribution in place. Every sample from a Dirichlet sums to one and could be used as weights to scale down the mixture of Gaussian distributions.</p>
+<p>The final generative model can thus be defined by:</p>
+<div class="formula-wrap">
+$$ x_j | \pi, \mu, \sigma \sim \sum_{i=1}^{k} \pi_i Normal(x_j | \mu_i, \sigma_i^2) \tag{2.1}$$
+</div>
+<p>where $\pi$ are the weights drawn from $Dir(\alpha)$. One such mixture model for the histogram above for instance could look like:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>seed(<span style="color:#ae81ff">13</span>)
+</span></span><span style="display:flex;"><span>x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">6</span>, <span style="color:#ae81ff">500</span>)
+</span></span><span style="display:flex;"><span>pi <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>dirichlet([<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>])<span style="color:#f92672">.</span>rvs()[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>mu <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>rvs(<span style="color:#ae81ff">3</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>y <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm(mu, np<span style="color:#f92672">.</span>ones(<span style="color:#ae81ff">3</span>))<span style="color:#f92672">.</span>pdf(x[:, <span style="color:#66d9ef">None</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;Gaussian Mixture model&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$P(x)$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$X$&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, y[:, <span style="color:#ae81ff">1</span>] <span style="color:#f92672">*</span> pi[<span style="color:#ae81ff">1</span>], ls<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;--&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, y[:, <span style="color:#ae81ff">2</span>] <span style="color:#f92672">*</span> pi[<span style="color:#ae81ff">2</span>], ls<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;--&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, y[:, <span style="color:#ae81ff">0</span>] <span style="color:#f92672">*</span> pi[<span style="color:#ae81ff">0</span>], ls<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;--&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">3</span>):
+</span></span><span style="display:flex;"><span>    xi <span style="color:#f92672">=</span> x[np<span style="color:#f92672">.</span>argmax(y[:, i])]
+</span></span><span style="display:flex;"><span>    yi <span style="color:#f92672">=</span> (y[:, i] <span style="color:#f92672">*</span> pi[i])<span style="color:#f92672">.</span>max()
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>vlines(xi, <span style="color:#ae81ff">0</span>, yi)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>text(xi <span style="color:#f92672">+</span> <span style="color:#ae81ff">0.05</span>, yi <span style="color:#f92672">+</span> <span style="color:#ae81ff">0.01</span>, <span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\pi_</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">$&#39;</span><span style="color:#f92672">.</span>format(i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, (y <span style="color:#f92672">*</span> pi)<span style="color:#f92672">.</span>sum(<span style="color:#ae81ff">1</span>))
+</span></span></code></pre></div><figure><img src="../../../../../img/post-15-mixture_models/gmm.png" width="700px"/>
+</figure>
+
+<h3 id="generative-model-in-edward">Generative model in Edward</h3>
+<p>The model defined in <strong>eq. (2.1)</strong> is conditional on $\pi$, $\mu$ and $\sigma$. We don&rsquo;t know the values of these variables, but as we are going to use bayesian inference we can set a prior
+probability on them. The priors we choose:</p>
+<div class="formula-wrap">
+$$ \pi \sim Dir(\vec{1}) \tag{3.0} $$
+</div>
+<div class="formula-wrap">
+$$ \mu \sim Normal(0, 1) \tag{3.1} $$
+</div>
+<div class="formula-wrap">
+$$ \sigma^2 \sim InverseGamma(1, 1) \tag{3.2} $$
+</div>
+<p>We can define this generative model in Edward. First we define the priors and finally we combine them in a mixture of Multivariate Normal distributions.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>k <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>  <span style="color:#75715e"># number of clusters</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>d <span style="color:#f92672">=</span> df<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>n <span style="color:#f92672">=</span> df<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>pi <span style="color:#f92672">=</span> ed<span style="color:#f92672">.</span>models<span style="color:#f92672">.</span>Dirichlet(tf<span style="color:#f92672">.</span>ones(k))
+</span></span><span style="display:flex;"><span>mu <span style="color:#f92672">=</span> ed<span style="color:#f92672">.</span>models<span style="color:#f92672">.</span>Normal(tf<span style="color:#f92672">.</span>zeros(d), tf<span style="color:#f92672">.</span>ones(d), sample_shape<span style="color:#f92672">=</span>k)  <span style="color:#75715e"># shape (3, 4) 3 gaussians, 4 variates</span>
+</span></span><span style="display:flex;"><span>sigmasq <span style="color:#f92672">=</span> ed<span style="color:#f92672">.</span>models<span style="color:#f92672">.</span>InverseGamma(tf<span style="color:#f92672">.</span>ones(d), tf<span style="color:#f92672">.</span>ones(d), sample_shape<span style="color:#f92672">=</span>k)
+</span></span><span style="display:flex;"><span>x <span style="color:#f92672">=</span> ed<span style="color:#f92672">.</span>models<span style="color:#f92672">.</span>ParamMixture(pi, {<span style="color:#e6db74">&#39;loc&#39;</span>: mu, <span style="color:#e6db74">&#39;scale_diag&#39;</span>: tf<span style="color:#f92672">.</span>sqrt(sigmasq)},
+</span></span><span style="display:flex;"><span>                 ed<span style="color:#f92672">.</span>models<span style="color:#f92672">.</span>MultivariateNormalDiag,
+</span></span><span style="display:flex;"><span>                 sample_shape<span style="color:#f92672">=</span>n)
+</span></span><span style="display:flex;"><span>z <span style="color:#f92672">=</span> x<span style="color:#f92672">.</span>cat
+</span></span></code></pre></div><p>Now this model is defined we can start inferring from the observed data. To be able to do Gibbs sampling in Edward we need to define Empricial distributions for our priors.</p>
+<pre tabindex="0"><code>t = 500  # number of samples
+
+qpi = ed.models.Empirical(tf.get_variable(&#39;qpi&#39;, shape=[t, k], initializer=tf.constant_initializer(1 / k)))
+qmu = ed.models.Empirical(tf.get_variable(&#39;qmu&#39;, shape=[t, k, d], initializer=tf.zeros_initializer()))
+qsigmasq = ed.models.Empirical(tf.get_variable(&#39;qsigmasq&#39;, shape=[t, k, d], initializer=tf.ones_initializer()))
+qz = ed.models.Empirical(tf.get_variable(&#39;qz&#39;, shape=[t, n], initializer=tf.zeros_initializer(), dtype=tf.int32)) 
+</code></pre><p>And hit the magic infer button (this one actually belongs to Pymc3)!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>inference <span style="color:#f92672">=</span> ed<span style="color:#f92672">.</span>Gibbs({pi: qpi, mu: qmu, sigmasq: qsigmasq, z: qz}, 
+</span></span><span style="display:flex;"><span>                    data<span style="color:#f92672">=</span>{x: y})
+</span></span><span style="display:flex;"><span>inference<span style="color:#f92672">.</span>run()
+</span></span></code></pre></div><p><strong>Out:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#ae81ff">500</span><span style="color:#f92672">/</span><span style="color:#ae81ff">500</span> [<span style="color:#ae81ff">100</span><span style="color:#f92672">%</span>] <span style="color:#960050;background-color:#1e0010">██████████████████████████████</span> Elapsed: <span style="color:#ae81ff">2</span>s <span style="color:#f92672">|</span> Acceptance Rate: <span style="color:#ae81ff">1.000</span>
+</span></span></code></pre></div><p>Conditioned on our priors, Edward has now inferred the most likely posterior distribution given the data. The cool thing is that we can now sample from this posterior distribution and analize:</p>
+<ul>
+<li>The cluster assignment of the data points.</li>
+<li>The uncertainty of our inferred variables.</li>
+<li>Generate new data similar to our original dataset.</li>
+</ul>
+<h3 id="uncertainty">Uncertainty</h3>
+<p>Let&rsquo;s sample from the posterior.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>mu_s <span style="color:#f92672">=</span> qmu<span style="color:#f92672">.</span>sample(<span style="color:#ae81ff">500</span>)<span style="color:#f92672">.</span>eval()
+</span></span><span style="display:flex;"><span>sigmasq_s <span style="color:#f92672">=</span> qsigmasq<span style="color:#f92672">.</span>sample(<span style="color:#ae81ff">500</span>)<span style="color:#f92672">.</span>eval()
+</span></span><span style="display:flex;"><span>pi_s <span style="color:#f92672">=</span> qpi<span style="color:#f92672">.</span>sample(<span style="color:#ae81ff">500</span>)<span style="color:#f92672">.</span>eval()
+</span></span></code></pre></div><p>We can for instance get information about the uncertainty of our result by looking the distributions of our variables. By plotting this, we see that a value for $\mu$ is probably close to -1.3 (blue line) and that the model is pretty confident about this result as the width of the distribution is very small.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;Distribution of the likelihood of $\mu | X$ in all dimensions&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$P(\mu|X)$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\mu$&#39;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">3</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> j <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">4</span>):
+</span></span><span style="display:flex;"><span>        sns<span style="color:#f92672">.</span>distplot(mu_s[:, i, j], hist<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-15-mixture_models/pmu.png" width="700px"/>
+</figure>
+
+<h3 id="cluster-assignment">Cluster assignment</h3>
+<p>Clustering each datapoint is done by rebuilding our model from <strong>eq (2.1)</strong> with the inferred variables sampled from the posterior distribution and assign each datapoint to the Gaussian with the highest probability.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>np<span style="color:#f92672">.</span>vstack([pi_s<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>)[i] <span style="color:#f92672">*</span> \
+</span></span><span style="display:flex;"><span>           stats<span style="color:#f92672">.</span>multivariate_normal(mu_s<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>)[i], np<span style="color:#f92672">.</span>sqrt(sigmasq_s<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>))[i])<span style="color:#f92672">.</span>pdf(y) \
+</span></span><span style="display:flex;"><span>           <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">3</span>)])<span style="color:#f92672">.</span>argmax(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><p><strong>Out:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>array([<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>])
+</span></span></code></pre></div><p>By reversing the order we can look at the accuracy of our unsupervised learning model.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>np<span style="color:#f92672">.</span>vstack([pi_s<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>)[i] <span style="color:#f92672">*</span> \
+</span></span><span style="display:flex;"><span>           stats<span style="color:#f92672">.</span>multivariate_normal(mu_s<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>)[i], np<span style="color:#f92672">.</span>sqrt(sigmasq_s<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>))[i])<span style="color:#f92672">.</span>pdf(y) \
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">3</span>)])[::<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>argmax(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)<span style="color:#f92672">.</span>sum() <span style="color:#f92672">/</span> df<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]
+</span></span></code></pre></div><p><strong>Out:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#ae81ff">0.94</span>
+</span></span></code></pre></div><p>We have a accuracy of 94%. Which isn&rsquo;t bad considered the fact that we do unsupervised learning here.</p>
+<p>There is one thing however that still bothers me. We&rsquo;ve put prior knowledge in this model, namely the number of clusters! We&rsquo;ve instanciated our prior Dirichlet distribution with $\alpha = \vec{1}$. Hereby dictating the number of clusters we can weigh to sum op to 1. Wouldn&rsquo;t it be neat, if we could define a model that is able to choose its number of clusters as it would see fit?</p>
+<h2 id="dirichlet-process">Dirichlet Process</h2>
+<p>The Dirichlet Process is just as the Dirichlet distribution also a distribution of discrete distributions. And this one could help us with a model that is able to define <strong>k</strong> for us.</p>
+<p>If we sample from a Dirichlet Process, we&rsquo;ll get a distribution of infinite discrete probabilities $\theta$.</p>
+<div class="formula-wrap">
+$$H \sim DP(\alpha H_0) \tag{4.0}$$
+</div>
+<p>The function of the Dirichlet Process is described by:</p>
+<div class="formula-wrap">
+$$f(\theta) = \sum_{i=1}^{\infty}{\pi_i \cdot \delta(\theta_i)} \tag{4.1}$$
+</div>
+<p>where</p>
+<ul>
+<li>$H_0$ is an original distribution by our choosing.</li>
+<li>$\pi_i$ are weights that sum to 1.</li>
+<li>$\delta$ is the Dirac delta function.</li>
+<li>$\theta$ are samples drawn from $H_0$.</li>
+</ul>
+<p>$\pi$ are weights summing to one and can be defined by a metaphor called the stick breaking process, where we first sample infinite values $\pi&rsquo;$ from a Beta distribution parameterized by $1$ and $\alpha$. We start with a whole stick and we will infinitly break of $1 - \pi&rsquo;_i$ from the stick. The first iteration from the whole stick, the other iterations from the remaining part.</p>
+<div class="formula-wrap">
+$$\pi_i = \pi' \cdot \prod_{j=1}^{k-1}(1 - \pi'_j) \tag{4.2}$$
+</div>
+<p>where</p>
+<div class="formula-wrap">
+$$\pi' \sim Beta(1, \alpha) \tag{4.3}$$
+</div>
+<p>Ok, that was the formal definition. Let&rsquo;s look at what it actually means to sample from a Dirichlet Process. Below we define a function where we simulate a Dirichlet Process. We simulate it because in real life it is impossible to sample an infinite amount of values. We truncate the amount of samples based on some heuristics, assuming that the sum of $\pi&rsquo;$ will be approximating 1 with a negligible difference.</p>
+<p>In the plots below we see the influence of $\alpha$ on the sampled distributions. As $H_0$ we choose the familiar Gaussian distribution. In every row we plot three distribution samples. Note that for higher values of $\alpha$, the sampled distribution $H$ will look closer to the original distribution $H_0$.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">dirichlet_process</span>(h_0, alpha):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Truncated dirichlet process.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param h_0: (scipy distribution)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param alpha: (flt)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param n: (int) Truncate value.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    n <span style="color:#f92672">=</span> max(int(<span style="color:#ae81ff">5</span> <span style="color:#f92672">*</span> alpha <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span>), <span style="color:#ae81ff">500</span>)  <span style="color:#75715e"># truncate the values. </span>
+</span></span><span style="display:flex;"><span>    pi <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>beta(<span style="color:#ae81ff">1</span>, alpha)<span style="color:#f92672">.</span>rvs(size<span style="color:#f92672">=</span>n)
+</span></span><span style="display:flex;"><span>    pi[<span style="color:#ae81ff">1</span>:] <span style="color:#f92672">=</span> pi[<span style="color:#ae81ff">1</span>:] <span style="color:#f92672">*</span> (<span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> pi[:<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])<span style="color:#f92672">.</span>cumprod()  <span style="color:#75715e"># stick breaking process</span>
+</span></span><span style="display:flex;"><span>    theta <span style="color:#f92672">=</span> h_0(size<span style="color:#f92672">=</span>n)  <span style="color:#75715e"># samples from original distribution</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> pi, theta
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">plot_normal_dp_approximation</span>(alpha, n<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>):
+</span></span><span style="display:flex;"><span>    pi, theta <span style="color:#f92672">=</span> dirichlet_process(stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>rvs, alpha)
+</span></span><span style="display:flex;"><span>    x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#f92672">-</span><span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>, <span style="color:#ae81ff">4</span>))
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>suptitle(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;Three samples from DP($\alpha$). $\alpha$ = </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#39;</span><span style="color:#f92672">.</span>format(alpha))
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\pi$&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\theta$&#39;</span>)
+</span></span><span style="display:flex;"><span>    pltcount <span style="color:#f92672">=</span> int(<span style="color:#e6db74">&#39;1&#39;</span> <span style="color:#f92672">+</span> str(n) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;0&#39;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(n):
+</span></span><span style="display:flex;"><span>        pltcount <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>        plt<span style="color:#f92672">.</span>subplot(pltcount)
+</span></span><span style="display:flex;"><span>        pi, theta <span style="color:#f92672">=</span> dirichlet_process(stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>rvs, alpha)
+</span></span><span style="display:flex;"><span>        pi <span style="color:#f92672">=</span> pi <span style="color:#f92672">*</span> (stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>pdf(<span style="color:#ae81ff">0</span>) <span style="color:#f92672">/</span> pi<span style="color:#f92672">.</span>max())
+</span></span><span style="display:flex;"><span>        plt<span style="color:#f92672">.</span>vlines(theta, <span style="color:#ae81ff">0</span>, pi, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.5</span>)
+</span></span><span style="display:flex;"><span>        plt<span style="color:#f92672">.</span>ylim(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        plt<span style="color:#f92672">.</span>plot(x, stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>pdf(x))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>seed(<span style="color:#ae81ff">65</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> alpha <span style="color:#f92672">in</span> [<span style="color:#ae81ff">.1</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">1000</span>]:
+</span></span><span style="display:flex;"><span>    plot_normal_dp_approximation(alpha)
+</span></span></code></pre></div><p><figure><img src="../../../../../img/post-15-mixture_models/alpha1.png" width="700px"/>
+</figure>
+
+<figure><img src="../../../../../img/post-15-mixture_models/alpha10.png" width="700px"/>
+</figure>
+
+<figure><img src="../../../../../img/post-15-mixture_models/alpha100.png" width="700px"/>
+</figure>
+
+<figure><img src="../../../../../img/post-15-mixture_models/alpha1000.png" width="700px"/>
+</figure>
+
+<figure><img src="../../../../../img/post-15-mixture_models/alpha10000.png" width="700px"/>
+</figure>
+</p>
+<h2 id="nonparametric-clustering">Nonparametric clustering</h2>
+<p>How can we use the Dirichlet Process in order to nonparametricly (thus without specifying <strong>k</strong>) define the number of clusters in the data? Well, we can actually use the same model as defined in <strong>eq (2.1)</strong>. However instead of sampling from a Dirichlet distribution were we define the number of clusters with the parameter $\alpha$, we now sample from a Dirichlet Process and give a prior on the parameter $\alpha$. Parameter $\alpha$ influences how fast $\sum_{i=1}^{\infty}{\pi_i}$ approaches 1. If we accept only the clusters under a certain percentage the model can define by itself what value for $\alpha$ is most likely given the data. Below we can see how $\alpha$ influences the number of clusters when we accept a total probability of 98%.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>seed(<span style="color:#ae81ff">95</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>acceptance_p <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.98</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Number samples need to have a total probability equal to </span><span style="color:#e6db74">{</span>acceptance_p<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;$\sum_{i=1}^{\infty}{\pi_i}$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;Number of clusters $k$&#39;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">plot_summation</span>(alpha):
+</span></span><span style="display:flex;"><span>    pi, _ <span style="color:#f92672">=</span> dirichlet_process(stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>rvs, alpha)
+</span></span><span style="display:flex;"><span>    p_total <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>cumsum(pi)
+</span></span><span style="display:flex;"><span>    i <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>argmin(np<span style="color:#f92672">.</span>abs(p_total <span style="color:#f92672">-</span> acceptance_p))
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>arange(pi[:i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]), p_total[:i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> i
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>k <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> alpha <span style="color:#f92672">in</span> [<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">5</span>, <span style="color:#ae81ff">7</span>, <span style="color:#ae81ff">10</span>]:
+</span></span><span style="display:flex;"><span>    k_i <span style="color:#f92672">=</span> plot_summation(alpha)
+</span></span><span style="display:flex;"><span>    k <span style="color:#f92672">=</span> max(k, k_i)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>vlines(k_i, <span style="color:#ae81ff">0</span>, acceptance_p, linestyles<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;--&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>text(k_i <span style="color:#f92672">+</span> <span style="color:#ae81ff">0.2</span>, <span style="color:#ae81ff">0.2</span>, <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;k = </span><span style="color:#e6db74">{</span>k_i<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>, rotation<span style="color:#f92672">=</span><span style="color:#ae81ff">45</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylim(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlim(<span style="color:#ae81ff">0</span>, k <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>hlines(acceptance_p, <span style="color:#ae81ff">0</span>, k, linestyles<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;--&#39;</span>)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-15-mixture_models/asymp.png" width="700px"/>
+</figure>
+
+<h3 id="dirichlet-process-mixtures-in-pymc3">Dirichlet Process Mixtures in Pymc3</h3>
+<p>Now we are going to test a Dirichlet Process Mixture model in <a href="https://docs.pymc.io/">Pymc3</a>. We are going to model the density of the data in one dimension. The data dimension we&rsquo;ll be modelling is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;Histogram of the 3d column of the (standardized) Iris dataset.&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;x&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;count&#39;</span>)
+</span></span><span style="display:flex;"><span>sns<span style="color:#f92672">.</span>distplot(y[:, <span style="color:#ae81ff">2</span>], bins<span style="color:#f92672">=</span><span style="color:#ae81ff">20</span>, kde<span style="color:#f92672">=</span><span style="color:#66d9ef">None</span>)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-15-mixture_models/hist.png" width="700px"/>
+</figure>
+
+<p>The model we&rsquo;ve described in <strong>eq (2.1)</strong> can be reshaped a little bit. By setting an extra prior on the $\alpha$ variable and a few other priors, we obtain the following model in Pymc3:</p>
+<div class="formula-wrap">
+$$\alpha \sim Gamma(1, 1) \tag{5.0}$$
+</div>
+<div class="formula-wrap">
+$$\pi' | \alpha \sim Beta(1, \alpha) \tag{5.1}$$
+</div>
+<div class="formula-wrap">
+$$\tau \sim Gamma(1, 1) \tag{5.2}$$
+</div>
+<div class="formula-wrap">
+$$\lambda \sim Uniform(0, 1) \tag{5.3}$$
+</div>
+<div class="formula-wrap">
+$$\mu_0 \sim Uniform(-3, 3) \tag{5.3}$$
+</div>
+<div class="formula-wrap">
+$$\mu | \mu_0, \tau, \lambda \sim Normal(\mu_0, \frac{1}{\tau \lambda}) \tag{5.4}$$
+</div>
+<div class="formula-wrap">
+$$x_j|\pi, \mu, \tau, \lambda \sim \sum_{i=1}^{k} \pi_i Normal(x_j | \mu_i, \frac{1}{\tau_i \lambda_{i}}) \tag{5.5}$$
+</div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>k <span style="color:#f92672">=</span> <span style="color:#ae81ff">35</span>
+</span></span><span style="display:flex;"><span>m <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Model()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">with</span> m:
+</span></span><span style="display:flex;"><span>    alpha <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Gamma(<span style="color:#e6db74">&#39;alpha&#39;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    beta <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Beta(<span style="color:#e6db74">&#39;beta&#39;</span>, <span style="color:#ae81ff">1</span>, alpha, shape<span style="color:#f92672">=</span>k)
+</span></span><span style="display:flex;"><span>    pi <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Deterministic(<span style="color:#e6db74">&#39;pi&#39;</span>, stick_breaking(beta))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    tau <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Gamma(<span style="color:#e6db74">&#39;tau&#39;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, shape<span style="color:#f92672">=</span>k) 
+</span></span><span style="display:flex;"><span>    lambda_ <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Uniform(<span style="color:#e6db74">&#39;lambda&#39;</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, shape<span style="color:#f92672">=</span>k)
+</span></span><span style="display:flex;"><span>    mu0 <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Uniform(<span style="color:#e6db74">&#39;mu0&#39;</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>, shape<span style="color:#f92672">=</span>k)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    mu <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Normal(<span style="color:#e6db74">&#39;mu&#39;</span>, mu<span style="color:#f92672">=</span>mu0, tau<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, shape<span style="color:#f92672">=</span>k)
+</span></span><span style="display:flex;"><span>    obs <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>NormalMixture(<span style="color:#e6db74">&#39;obs&#39;</span>, w<span style="color:#f92672">=</span>pi, mu<span style="color:#f92672">=</span>mu, tau<span style="color:#f92672">=</span>lambda_ <span style="color:#f92672">*</span> tau, observed<span style="color:#f92672">=</span>y[:, <span style="color:#ae81ff">2</span>])
+</span></span></code></pre></div><p>Above we&rsquo;ve defined the priors and combined them in a <code>NormalMixture</code>. This Normal Mixture distribution is what we observe from the world. We pass the observed data in the <code>observed</code> keyword argument. Now we can sample from the posterior and infer the most likely distributions for our models variables.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">with</span> m: 
+</span></span><span style="display:flex;"><span>    trace <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>sample(<span style="color:#ae81ff">500</span>, tune<span style="color:#f92672">=</span><span style="color:#ae81ff">500</span>, init<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;advi&#39;</span>, random_seed<span style="color:#f92672">=</span><span style="color:#ae81ff">35171</span>)
+</span></span></code></pre></div><h3 id="inferred-k">Inferred k</h3>
+<p>We can examine the number of clusters by looking at the weight given to each Gaussian distribution.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;Distribution of $\pi&#39;$&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>bar(np<span style="color:#f92672">.</span>arange(k) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">0.5</span>, trace[<span style="color:#e6db74">&#39;pi&#39;</span>]<span style="color:#f92672">.</span>mean(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), width<span style="color:#f92672">=</span><span style="color:#ae81ff">1.</span>, lw<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlim(<span style="color:#ae81ff">0.5</span>, k);
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;Component&#39;</span>);
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;Posterior expected mixture weight&#39;</span>);
+</span></span></code></pre></div><figure><img src="../../../../../img/post-15-mixture_models/k.png" width="700px"/>
+</figure>
+
+<p>Above we see the weights $\pi&rsquo;$ given to each Gaussian. Here it seems likely there are 2 clusters in our 1 dimensional dataset. As the weights given to any Gaussian with weigths &lt; 0.3 are negligible and don&rsquo;t give any significant mass to our Mixture of Gaussians.</p>
+<p>Appreciate the fact that the number of clusters is defined by the value inferred for $\alpha$.
+Below we sample 6 times from the Dirichlet Process with the mean value inferred from $\alpha$. In these plots it is visible why our model gives most weights to 2 Gaussians and not to 15 Gaussians for instance.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plot_normal_dp_approximation(trace[<span style="color:#e6db74">&#39;alpha&#39;</span>]<span style="color:#f92672">.</span>mean(), <span style="color:#ae81ff">6</span>)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-15-mixture_models/6smpl.png" width="700px"/>
+</figure>
+
+<p>The number of weights drawn with a value &gt; 0.01 varies between 1 and 4, hereby strongly influencing the number of clusters that are most likely according to the model.</p>
+<p>Finally lets look at how the models Gaussian Mixture compares to our dataset. We also plot the confidence interval between 0.05% - 0.95%. This is gives an indication of the uncertainty of the model. Below we&rsquo;ve plotted the two most significant Gaussians and see that they describe the observed data very well. We only plot two, as the rest is negligible.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;Density estimation with Dirichlet Processes&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;x&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;p(x)&#39;</span>)
+</span></span><span style="display:flex;"><span>x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#f92672">-</span><span style="color:#ae81ff">3</span>,  <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>pi_mean <span style="color:#f92672">=</span> trace[<span style="color:#e6db74">&#39;pi&#39;</span>]<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>mu_mean <span style="color:#f92672">=</span> trace[<span style="color:#e6db74">&#39;mu&#39;</span>]<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>) 
+</span></span><span style="display:flex;"><span>mu0_mean <span style="color:#f92672">=</span> trace[<span style="color:#e6db74">&#39;mu0&#39;</span>]<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>lambda_mean <span style="color:#f92672">=</span> trace[<span style="color:#e6db74">&#39;lambda&#39;</span>]<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>tau_mean <span style="color:#f92672">=</span> trace[<span style="color:#e6db74">&#39;tau&#39;</span>]<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>sd_mean <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt((<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> tau_mean <span style="color:#f92672">*</span> lambda_mean))
+</span></span><span style="display:flex;"><span>tau_sd <span style="color:#f92672">=</span> trace[<span style="color:#e6db74">&#39;mu&#39;</span>]<span style="color:#f92672">.</span>std(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>lambda_sd <span style="color:#f92672">=</span> trace[<span style="color:#e6db74">&#39;lambda&#39;</span>]<span style="color:#f92672">.</span>std(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>sd_sd <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt((<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> tau_sd <span style="color:#f92672">*</span> lambda_sd))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>p <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>interval(<span style="color:#ae81ff">0.05</span>, trace[<span style="color:#e6db74">&#39;mu&#39;</span>]<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">0</span>), trace[<span style="color:#e6db74">&#39;mu&#39;</span>]<span style="color:#f92672">.</span>std(<span style="color:#ae81ff">0</span>))
+</span></span><span style="display:flex;"><span>psd <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>interval(<span style="color:#ae81ff">0.05</span>, sd_mean, sd_std)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>fill_between(x, stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>pdf(x, mu_mean[<span style="color:#ae81ff">0</span>], psd[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">0</span>]) <span style="color:#f92672">*</span> pi_mean[<span style="color:#ae81ff">0</span>], stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>pdf(x, mu_mean[<span style="color:#ae81ff">0</span>], psd[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">0</span>]) <span style="color:#f92672">*</span> pi_mean[<span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>fill_between(x, stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>pdf(x, mu_mean[<span style="color:#ae81ff">1</span>], psd[<span style="color:#ae81ff">0</span>][<span style="color:#ae81ff">1</span>]) <span style="color:#f92672">*</span> pi_mean[<span style="color:#ae81ff">1</span>], stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>pdf(x, mu_mean[<span style="color:#ae81ff">1</span>], psd[<span style="color:#ae81ff">1</span>][<span style="color:#ae81ff">1</span>]) <span style="color:#f92672">*</span> pi_mean[<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>sns<span style="color:#f92672">.</span>distplot(y[:, <span style="color:#ae81ff">2</span>], bins<span style="color:#f92672">=</span><span style="color:#ae81ff">20</span>, kde<span style="color:#f92672">=</span><span style="color:#66d9ef">None</span>, norm_hist<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, rug<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, )
+</span></span></code></pre></div><figure><img src="../../../../../img/post-15-mixture_models/modelfit.png" width="700px"/>
+</figure>
+
+<h2 id="conclusion">Conclusion</h2>
+<p>We&rsquo;ve seen two different generative models that utilize the Dirichlet distribution and the Dirichlet Process to cluster observed data. In the first model we defined the number of clusters as a hyperparameter. In the last model the number of clusters was defined nonparameterically by the model itself. The latter seems very powerful for data mining, however I did find it was harder to find the right hyperparameters for the priors than in the fixed cluster model and found that it to becomes much more complex if we want to do the same in multiple dimensions.</p>
+<p>Read more!</p>
+<ul>
+<li><a href="https://www.ritchievink.com/blog/2018/05/18/algorithm-breakdown-affinity-propagation/">Affinity Propagation</a></li>
+<li><a href="https://www.ritchievink.com/blog/2019/02/01/an-intuitive-introduction-to-gaussian-processes/">Gaussian Processes</a></li>
+</ul>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  });
+  </script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

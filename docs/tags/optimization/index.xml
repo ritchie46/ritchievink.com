@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>optimization on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/optimization/</link>
+    <description>Recent content in optimization on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Tue, 07 Apr 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/optimization/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Sparse neural networks and hash tables with Locality Sensitive Hashing</title>
+      <link>https://www.ritchievink.com/blog/2020/04/07/sparse-neural-networks-and-hash-tables-with-locality-sensitive-hashing/</link>
+      <pubDate>Tue, 07 Apr 2020 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2020/04/07/sparse-neural-networks-and-hash-tables-with-locality-sensitive-hashing/</guid>
+      <description>This is post was a real eye-opener for me with regard to the methods we can use to train neural networks. A colleague pointed me to the SLIDE[1] paper. Chen &amp;amp; et al. discussed outperforming a Tesla V100 GPU with a 44 core CPU, by a factor of 3.5, when training large neural networks with millions of parameters. Training any neural network requires many, many, many tensor operations, mostly in the form of matrix multiplications.</description>
+    </item>
+    
+    <item>
+      <title>Sculpting distributions with Normalizing Flows</title>
+      <link>https://www.ritchievink.com/blog/2019/10/11/sculpting-distributions-with-normalizing-flows/</link>
+      <pubDate>Fri, 11 Oct 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/10/11/sculpting-distributions-with-normalizing-flows/</guid>
+      <description>Last posts we&amp;rsquo;ve investigated Bayesian inference through variational inference (post 1/post 2). In Bayesian inference, we often define models with some unknown model parameters $Z$, or latent stochastic variables $Z$. Given this model and some observed data points $D = \{ D_1, D_2, \dots, D_n \} $, we are interested in the true posterior distribution $P(Z|D)$. This posterior is often intractable and the general idea was to forgo the quest of obtaining the true posterior, but to accept that we are bounded to some easily parameterizable approximate posteriors $^*Q(z)$, which we called variational distributions.</description>
+    </item>
+    
+    <item>
+      <title>Variational inference from scratch</title>
+      <link>https://www.ritchievink.com/blog/2019/09/16/variational-inference-from-scratch/</link>
+      <pubDate>Mon, 16 Sep 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/09/16/variational-inference-from-scratch/</guid>
+      <description>In the posts Expectation Maximization and Bayesian inference; How we are able to chase the Posterior, we laid the mathematical foundation of variational inference. This post we will continue on that foundation and implement variational inference in Pytorch. If you are not familiar with the basis, I&amp;rsquo;d recommend reading these posts to get you up to speed.
+This post we&amp;rsquo;ll model a probablistic layer as output layer of a neural network.</description>
+    </item>
+    
+    <item>
+      <title>Algorithm Breakdown: Bayesian Optimization</title>
+      <link>https://www.ritchievink.com/blog/2019/08/25/algorithm-breakdown-bayesian-optimization/</link>
+      <pubDate>Sun, 25 Aug 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/08/25/algorithm-breakdown-bayesian-optimization/</guid>
+      <description>Not that long ago I wrote an introduction post on Gaussian Processes (GP&amp;rsquo;s), a regression technique where we condition a Gaussian prior distribution over functions on observed data. GP&amp;rsquo;s can model any function that is possible within a given prior distribution. And we don&amp;rsquo;t get a function $f$, we get a whole posterior distribution of functions $P(f|X)$.
+This of course, sounds very cool and all, but there is no free lunch.</description>
+    </item>
+    
+  </channel>
+</rss>

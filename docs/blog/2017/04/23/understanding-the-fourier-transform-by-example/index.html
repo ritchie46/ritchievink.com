@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Understanding the Fourier Transform by example - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2017/04/23/understanding-the-fourier-transform-by-example/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-5-fft/fig_2.jpg" />
+
+
+<title>Understanding the Fourier Transform by example | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Understanding the Fourier Transform by example</h1>
+    <h2 class="subtitle is-5">April 23, 2017 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/vibrations">vibrations</a>
+    
+</div>
+
+    
+    <div class="content">
+      <p>In the last couple of weeks I have been playing with the results of the Fourier Transform and it has quite some interesting properties that initially were not clear to me. In this post I summarize the things I found interesting and the things I&rsquo;ve learned about the Fourier Transform.</p>
+<br/>
+<h3 id="application">Application</h3>
+<p>The Fourier Transformation is applied in engineering to determine the dominant frequencies in a vibration signal. When the dominant frequency of a signal corresponds with the natural frequency of a structure, the occurring vibrations can get amplified due to resonance. This can happen to such a degree that a structure may collapse.</p>
+<p>Now say I have bought a new sound system and the natural frequency of the window in my living room is about 100 Hz. Let&rsquo;s use the Fourier Transform and examine if it is safe to turn Kendrick Lamar&rsquo;s song &lsquo;Alright&rsquo; on full volume.</p>
+<br/>
+<h3 id="time-signal">Time signal</h3>
+<p>The Fourier transform is commonly used to convert a signal in the time spectrum to a frequency spectrum. Examples of time spectra are sound waves, electricity, mechanical vibrations etc. The figure below shows 0,25 seconds of Kendrick&rsquo;s tune. As can clearly be seen it looks like a wave with different frequencies. Actually it looks like multiple waves.</p>
+<figure><img src="../../../../../img/post-5-fft/fig_1.png"/><figcaption>
+            <h4>Time spectrum Kendrick Lamar - Alright.</h4>
+        </figcaption>
+</figure>
+
+<br/>
+<h1 id="fourier-transform">Fourier transform</h1>
+<p>This is where the Fourier Transform comes in. This method makes use of te fact that every non-linear function can be represented as a sum of (infinite) sine waves. In the underlying figure this is illustrated, as a step function is simulated by a multitude of sine waves.</p>
+<br/>
+<figure><img src="../../../../../img/post-5-fft/fig_2.png"/><figcaption>
+            <h4>Step function simulated with sine waves</h4>
+        </figcaption>
+</figure>
+
+<br/>
+<p>A Fourier Transform will break apart a time signal and will return information about the frequency of all sine waves needed to simulate that time signal. For sequences of evenly spaced values the Discrete Fourier Transform (DFT) is defined as:</p>
+<div>\[ X_k = \sum_{n=0}^{N-1}x_n  e^{-2 \pi ikn/N}\] </div>
+<p>Where:</p>
+<ul>
+<li>N = number of samples</li>
+<li>n = current sample</li>
+<li>x<sub>n</sub> = value of the signal at time n</li>
+<li>k = current frequency (0 Hz to N-1 Hz)</li>
+<li>X<sub>k</sub> = Result of the DFT (amplitude and phase)</li>
+</ul>
+<p>Note that a dot product is defined as:</p>
+<div>\[ a \cdot b = \sum_{n=1}^{n}a_ib_i\] </div>
+<p>A DFT algorithm can thus be as written as:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">DFT</span>(x):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Compute the discrete Fourier Transform of the 1D array x
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param x: (array)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    N <span style="color:#f92672">=</span> x<span style="color:#f92672">.</span>size
+</span></span><span style="display:flex;"><span>    n <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>arange(N)
+</span></span><span style="display:flex;"><span>    k <span style="color:#f92672">=</span> n<span style="color:#f92672">.</span>reshape((N, <span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span>    e <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>j <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>pi <span style="color:#f92672">*</span> k <span style="color:#f92672">*</span> n <span style="color:#f92672">/</span> N)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>dot(e, x)
+</span></span></code></pre></div><p>However if we run this code on our time signal, wich contains approximately 10,000 values, it takes over 10 seconds to compute! Whoah&hellip; this is slow.</p>
+<p>Luckily some clever guys <a href="https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm">(Cooley and Tukey)</a> have come up with the Fast Fourier Transform (FFT) algorithm which recursively divides the DFT in smaller DFT&rsquo;s bringing down the needed computation time drastically. A standard DFT scales O(N<sup>2</sup>) while the FFT scales O(N log(N)).</p>
+<br/>
+<h1 id="exploring-the-fft">Exploring the FFT</h1>
+<p>Let&rsquo;s write some code to find out what an FFT is actually doing.</p>
+<p>First we define a simple signal containing an addition of two sine waves. One with a frequency of 40 Hz and one with a frequency of 90 Hz.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>t <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0.5</span>, <span style="color:#ae81ff">500</span>)
+</span></span><span style="display:flex;"><span>s <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sin(<span style="color:#ae81ff">40</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>pi <span style="color:#f92672">*</span> t) <span style="color:#f92672">+</span> <span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>sin(<span style="color:#ae81ff">90</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>pi <span style="color:#f92672">*</span> t)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Amplitude&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Time [s]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t, s)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><p><img src="../../../../../img/post-5-fft/fig_3.png" alt=""></p>
+</br>
+<h3 id="complex">Complex</h3>
+<p>In order to retrieve a spectrum of the frequency of the time signal mentioned above we must take a FFT on that sequence.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fft <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>fft<span style="color:#f92672">.</span>fft(s)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">2</span>):
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">&#34;Value at index </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">:</span><span style="color:#ae81ff">\t</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">.</span>format(i, fft[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>]), <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Value at index </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">:</span><span style="color:#ae81ff">\t</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">.</span>format(fft<span style="color:#f92672">.</span>size <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> i, fft[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> i]))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&gt;&gt;&gt;</span>
+</span></span><span style="display:flex;"><span>Value at index <span style="color:#ae81ff">0</span>:	(<span style="color:#ae81ff">0.0003804834928402556</span><span style="color:#f92672">-</span><span style="color:#ae81ff">0.060555031761900024</span>j) 
+</span></span><span style="display:flex;"><span>Value at index <span style="color:#ae81ff">499</span>:	(<span style="color:#ae81ff">0.0003804834928403944</span><span style="color:#f92672">+</span><span style="color:#ae81ff">0.060555031761903175</span>j)
+</span></span><span style="display:flex;"><span>Value at index <span style="color:#ae81ff">1</span>:	(<span style="color:#ae81ff">0.0015317714831371565</span><span style="color:#f92672">-</span><span style="color:#ae81ff">0.12188808528069561</span>j) 
+</span></span><span style="display:flex;"><span>Value at index <span style="color:#ae81ff">498</span>:	(<span style="color:#ae81ff">0.0015317714831373785</span><span style="color:#f92672">+</span><span style="color:#ae81ff">0.1218880852806919</span>j)
+</span></span></code></pre></div><p>In the above code snippet the FFT result of the two sine waves is determined. The first two and the last two values of the FFT sequency were printed to stdout. As we can see we get complex numbers as a result. If we compare the first value of the sequence (index 0) with the last value of the sequence (index 499) we can see that the real parts of both numbers are equal and that the value of the imaginary numbers are also equal in magnitude, only one is positive and the other is negative. The numbers are each others complex conjugate. This is true for all numbers in the sequence;</p>
+<p>For real number inputs is <strong>n</strong> the complex conjugate of <strong>N - n</strong>.</p>
+<p>Because the second half of the sequence gives us no new information we can already conclude that the half of the FFT sequence is the output we need.</p>
+<p>The complex output numbers of the FFT contains the following information:</p>
+<ul>
+<li><strong>Amplitude</strong> of a certain frequency sine wave (energy).</li>
+<li><strong>Phase</strong> offset of a certain frequency sine wave.</li>
+</ul>
+<p>The amplitude is retrieved by taking the absolute value of the number and the phase offset is obtained by computing the angle of the number.</p>
+<h3 id="spectrum">Spectrum</h3>
+<p>We are interested in the energy of each frequency, so we can determine the absolute value of the FFT&rsquo;s output. To get a good insight in the spectrum the energy should be plotted against the frequency. Each discrete number output of the FFT corresponds to a certain frequency. The frequency resolution is determined by:</p>
+<div>\[ \Delta f = \frac{f_s}{N}\] </div>
+<p>Putting it all together we can plot the frequency spectrum for our simple sine wave function. We plot only half of the spectrum, because that is the only half giving us real information.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fft <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>fft<span style="color:#f92672">.</span>fft(s)
+</span></span><span style="display:flex;"><span>T <span style="color:#f92672">=</span> t[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">-</span> t[<span style="color:#ae81ff">0</span>]  <span style="color:#75715e"># sampling interval </span>
+</span></span><span style="display:flex;"><span>N <span style="color:#f92672">=</span> s<span style="color:#f92672">.</span>size
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 1/T = frequency</span>
+</span></span><span style="display:flex;"><span>f <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> T, N)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Amplitude&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Frequency [Hz]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>bar(f[:N <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>], np<span style="color:#f92672">.</span>abs(fft)[:N <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>] <span style="color:#f92672">*</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> N, width<span style="color:#f92672">=</span><span style="color:#ae81ff">1.5</span>)  <span style="color:#75715e"># 1 / N is a normalization factor</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><p><img src="../../../../../img/post-5-fft/fig_4.png" alt=""></p>
+<p>As we can see the FFT works! It has given us information about the frequencies of the waves in the time signal.</p>
+<p>A FFT is a trade-off between time information and frequency information. By taking a FFT of a time signal, all time information is lost in return for frequency information. To keep information about time <strong>and</strong> frequencies in one spectrum, we must make a <a href="https://en.wikipedia.org/wiki/Spectrogram">spectrogram</a>. These are DFT&rsquo;s taken on discrete time windows.</p>
+<h3 id="alright">Alright</h3>
+<p>By taking a FFT result of the time signal of Kendrick Lamar&rsquo;s song, we get the spectrum shown below. The frequency scale is plotted on log scale. As we assumed before the natural frequency of my windows are about 100 Hz. In the figure we can see that the most dominant frequencies occur between 10<sup>1.5</sup>-10<sup>2.2</sup> Hz (30-158 Hz). My windows natural frequency is right in the middle of the dominant frequencies of the song and thus may resonate due to the high volume.</p>
+<p>Now it is too premature to say it wouldn&rsquo;t be safe to listen to this song on full volume. However if I really want to be sure about my windows I maybe should examine the frequency of another song.</p>
+<figure><img src="../../../../../img/post-5-fft/fig_5.png"/><figcaption>
+            <h4>Frequencies in Kendrick Lamar&#39;s Alright</h4>
+        </figcaption>
+</figure>
+
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

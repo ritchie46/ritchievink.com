@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="What should be explained in the Dutch SBR-B Guideline! - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2017/05/07/what-should-be-explained-in-the-dutch-sbr-b-guideline/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+
+<title>What should be explained in the Dutch SBR-B Guideline! | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">What should be explained in the Dutch SBR-B Guideline!</h1>
+    <h2 class="subtitle is-5">May 7, 2017 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/vibrations">vibrations</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/engineering">engineering</a>
+    
+</div>
+
+    
+    <div class="content">
+      <p>The Dutch SBR guideline is intended to help you process vibration data and help you determine when a vibration signal can cause discomfort to persons. It seems to me however, that the SBR-B guideline does not have the intention to be understood. They seem to help you by making a super abstract of scientific papers and by giving you a few keywords so you can Google it yourself.</p>
+<p>This post will elaborate on two formula&rsquo;s given in the guideline. It took me a while to find out what they really ment. But thanks to some help from my colleague <a href="https://www.linkedin.com/in/lex-van-der-meer-phd-0546906/">Lex van der Meer</a>, and some papers he found, I could make sense of it.</p>
+<br/>
+<h2 id="problem">Problem</h2>
+<p>The guideline gives two formula&rsquo;s that should be used to turn your raw data from a vibrations measurement into design values for further processing.
+Roughly translated, in about the same amount of words, it says:</p>
+<p><em>The vibration data needs to be weighed by:</em></p>
+<div>\[|H_a(f)| = \frac{1}{v_0} \cdot \frac{1}{\sqrt{1 + (f_0/f)^2}}\]</div>
+<p><em>In which:</em></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f</td>
+<td>frequency in Hz</td>
+</tr>
+<tr>
+<td>f<sub>0</sub></td>
+<td>5.6 Hz</td>
+</tr>
+<tr>
+<td>v<sub>0</sub></td>
+<td>1 mm/s</td>
+</tr>
+</tbody>
+</table>
+<br/>
+<p><em>From the result of the formula above the effective value is determined by:</em></p>
+<div>\[v_{eff}(t) = \sqrt{ \frac{1}{\tau} \int_0^tg(\xi)v^2(t-\xi)d\xi}\]</div>
+<br/>
+<p><em>In which:</em></p>
+<div>\[\tau = 0.125 s\]</div>
+<div>\[g(\xi) = e^{-\xi/\tau}\]</div>
+<br/>
+<p>In the first formula a frequeny in Hz is required. They do not specify which frequency. I thought my measured vibration signal had infinity frequencies, or at least more than one? In the second formule we integrate the output of the first formula over dξ, again not specifying what ξ is. That&rsquo;s about all the attention the guideline spents on it. Well good luck with that!</p>
+<br/>
+<h2 id="time-signal">Time signal</h2>
+<p>First we need some &lsquo;measured&rsquo; data. In the following code snippet some fake data is created by adding 5 sine waves. The sine waves&rsquo; amplitudes and frequency are random.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>seed(<span style="color:#ae81ff">5</span>)
+</span></span><span style="display:flex;"><span>t <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">2.5</span>, <span style="color:#ae81ff">500</span>)
+</span></span><span style="display:flex;"><span>vibrations <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros_like(t)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">5</span>):
+</span></span><span style="display:flex;"><span>    vibrations <span style="color:#f92672">+=</span> np<span style="color:#f92672">.</span>sin((<span style="color:#ae81ff">10</span> <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>rand())<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>pi <span style="color:#f92672">*</span>t) <span style="color:#f92672">*</span> <span style="color:#ae81ff">10</span> <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>rand()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Measured vibration&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;v [mm/s]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;t [s]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t, vibrations)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-6-sbr/fig_1.png"/><figcaption>
+            <h4>Vibration signal</h4>
+        </figcaption>
+</figure>
+
+<p>Above is the fake vibration data we&rsquo;ve just created shown. Now we have a vibrations signal we can take apart the two give formula&rsquo;s and see what their use is.</p>
+</br>
+<h2 id="weighted-signal">Weighted signal</h2>
+<p>The first formula is used to weight the signal by the frequencies that are most likely to cause hindrance. This becomes more clear if we plot the function first. Let&rsquo;s plot the result of the function in the frequency range 1 - 100 Hz. Note that 1 / v<sub>0</sub> = 1, thus let&rsquo;s ignore that.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>f <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>f0 <span style="color:#f92672">=</span> <span style="color:#ae81ff">5.6</span>
+</span></span><span style="display:flex;"><span>y <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> np<span style="color:#f92672">.</span>sqrt(<span style="color:#ae81ff">1</span> <span style="color:#f92672">+</span> (f0<span style="color:#f92672">/</span>f)<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(f, y)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;f [Hz]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-6-sbr/fig_3.png"/><figcaption>
+            <h4>Weight function</h4>
+        </figcaption>
+</figure>
+
+<p>By plotting <span>\(\frac{1}{\sqrt{1 + (f/5.6)^2}}\)</span> in the range 1-100 Hz we get the curve shown above. Apparently the lower frequencies will be weighted much more than the higher ones, as the the curve will tend to go to zero by increasing the frequency. This weighting is done by multiplying the original signal with this function.</p>
+<p>What the guideline does not mention is that before you are able to do so, you must convert the signal from the time domain to the frequency domain. Well, this can be done by taking the Fast Fourier Transform! <a href="https://www.ritchievink.com/blog/2017/04/23/understanding-the-fourier-transform-by-example/">You can read more about this in the last post.</a></p>
+<p>By taking the FFT we retrieve the frequency bins. Each bin can be multiplied with the weights function. Shown below is the frequency spectrum and the curve that will scale down this spectrum.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>vibrations_fft <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>fft<span style="color:#f92672">.</span>fft(vibrations)
+</span></span><span style="display:flex;"><span>T <span style="color:#f92672">=</span> t[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">-</span> t[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>N <span style="color:#f92672">=</span> t<span style="color:#f92672">.</span>size
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>f <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> T, N)
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> N <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>weight <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> np<span style="color:#f92672">.</span>sqrt(<span style="color:#ae81ff">1</span> <span style="color:#f92672">+</span> (<span style="color:#ae81ff">5.6</span><span style="color:#f92672">/</span>f)<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>vibrations_fft_w <span style="color:#f92672">=</span> weight <span style="color:#f92672">*</span> vibrations_fft
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>, <span style="color:#ae81ff">4</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>subplot(<span style="color:#ae81ff">121</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Frequency spectrum&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;[-]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;f [Hz]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>bar(f[:a], np<span style="color:#f92672">.</span>abs(vibrations_fft[:a]) <span style="color:#f92672">/</span> np<span style="color:#f92672">.</span>max(vibrations_fft[:a]), width<span style="color:#f92672">=</span><span style="color:#ae81ff">0.3</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(f[:a], weight[:a], c<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;r&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>subplot(<span style="color:#ae81ff">122</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Weighted frequency spectrum&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;[-]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;f [Hz]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>bar(f[:a], np<span style="color:#f92672">.</span>abs(vibrations_fft_w[:a]) <span style="color:#f92672">/</span> np<span style="color:#f92672">.</span>max(vibrations_fft[:a]), width<span style="color:#f92672">=</span><span style="color:#ae81ff">0.3</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylim(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-6-sbr/fig_4.png"/><figcaption>
+            <h4>Weighted frequency spectrum</h4>
+        </figcaption>
+</figure>
+
+<p>The above figure shows that all frequencies are downscaled. However the lower frequencies are downscaled most. The higher frequencies are probably leading to the most hindrance. And very low frequencies will probably just rock you to sleep.</p>
+<p>By transforming the signal back to the time spectrum we can see how the frequency scaling affected the signal.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>vibrations_w <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>fft<span style="color:#f92672">.</span>ifft(vibrations_fft_w)<span style="color:#f92672">.</span>real
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Weighted vibration&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;v [mm/s]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;t [s]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t, vibrations_w)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-6-sbr/fig_5.png"/><figcaption>
+            <h4>Weighted time spectrum</h4>
+        </figcaption>
+</figure>
+
+<p>By comparing the above figure with the original signal we can see it has changed a bit. By weakening the lower frequencies the signal has decreased in amplitude. The maximum amplitude has dropped from ~ 30 mm/s to ~ 25 mm/s.</p>
+</br>
+<h2 id="effective-value">Effective value</h2>
+<p>The second formula describes how you can compute the effective value of the vibration signal, or &lsquo;voortschrijdende effectieve waarde&rsquo; in Dutch. This formula looks a lot like the formula of the <a href="https://en.wikipedia.org/wiki/Root_mean_square">Root Mean Square</a> (RMS) of a signal. The formula of the RMS given by:</p>
+<div>\[RMS = \sqrt{\frac{1}{T}\int^T_0 v(t)^2dt}\]</div>
+<p>It resembles the first formula. However for <span>\(v(t - \xi)\)</span> the velocity signal is multiplied with <span>\(e^{-\xi/\tau}\)</span>. Also the signal is not an integral with steps dt, but an integral with steps dξ</p>
+<p>The ξ is actually another parameter for the time t. Every increment in time dt a new integral is computed from t<sub>0</sub> to t<sub>i</sub> with steps dξ (which are the same size as dt); The function <span>\(e^{-\xi/\tau}\)</span> is another scaling function. The larger ξ becomes, the smaller the multiplication factor becomes.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>v_sqrd_w <span style="color:#f92672">=</span> vibrations_w<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> <span style="color:#ae81ff">55</span>
+</span></span><span style="display:flex;"><span>c <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;#1f77b4&#34;</span> <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(a)]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>current <span style="color:#f92672">=</span> <span style="color:#ae81ff">51</span>
+</span></span><span style="display:flex;"><span>c[current] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;#d62728&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>xi <span style="color:#f92672">=</span> t[:current <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span>]
+</span></span><span style="display:flex;"><span>g <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>xi <span style="color:#f92672">/</span> <span style="color:#ae81ff">0.125</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>subplot(<span style="color:#ae81ff">211</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Squared signal&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t[:current <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span>], g[::<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>][:a] <span style="color:#f92672">*</span> v_sqrd_w[current <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>], color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;r&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>bar(t[<span style="color:#ae81ff">1</span>:a], v_sqrd_w[<span style="color:#ae81ff">1</span>:a], width<span style="color:#f92672">=</span><span style="color:#ae81ff">0.002</span>, color<span style="color:#f92672">=</span>c)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylim(<span style="color:#ae81ff">0</span>, np<span style="color:#f92672">.</span>max(v_sqrd_w))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(g<span style="color:#f92672">.</span>size):
+</span></span><span style="display:flex;"><span>    v_sqrd_w[i] <span style="color:#f92672">*=</span> g[<span style="color:#f92672">-</span>i]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>subplot(<span style="color:#ae81ff">212</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Weighted squared signal&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;t [s]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>bar(t[<span style="color:#ae81ff">1</span>:a], v_sqrd_w[<span style="color:#ae81ff">1</span>:a], width<span style="color:#f92672">=</span><span style="color:#ae81ff">0.002</span>, color<span style="color:#f92672">=</span>c)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylim(<span style="color:#ae81ff">0</span>, np<span style="color:#f92672">.</span>max(vibrations_w<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-6-sbr/fig_6.png"/><figcaption>
+            <h4>Scaled down time signal per time step</h4>
+        </figcaption>
+</figure>
+
+<p>In the code snippet above the signal is squared and plotted. The red bar in the plot is the current time inteval t<sub>i</sub>. All the preceding values of, and including the value for v(t)<sup>2</sup>, will be multiplied with the red function. This function ranges from 0 to 1. Values close to the current time interval t<sub>i</sub> will keep their value. Values further away will be scaled down more. This multiplication is done for every time step t<sub>i</sub>. The scaled down signal for the current time step is shown the in the second figure.</p>
+<p>When the weighted value for every time step is determined the RMS can be computed for this weighted signal.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Ts <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.125</span>
+</span></span><span style="display:flex;"><span>v_eff <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros(t<span style="color:#f92672">.</span>size)
+</span></span><span style="display:flex;"><span>dt <span style="color:#f92672">=</span> t[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">-</span> t[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(t<span style="color:#f92672">.</span>size <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>):
+</span></span><span style="display:flex;"><span>    g_xi <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>t[:i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>][::<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">/</span> Ts)
+</span></span><span style="display:flex;"><span>    v_eff[i] <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> Ts <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>trapz(g_xi <span style="color:#f92672">*</span> v_sqrd_w[:i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>], dx<span style="color:#f92672">=</span>dt))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t, v_eff)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Effective value&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;v [mm/s]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;t [s]&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-6-sbr/fig_7.png"/><figcaption>
+            <h4>Effective value time signal</h4>
+        </figcaption>
+</figure>
+
+</br>
+<h2 id="conclusion">Conclusion</h2>
+<p>We have computed the effective value (voortscrhijdende effectieve waarde) for a random time signal. It was quite a hassle for me to find out what should be done. The guideline does not mention that you need to switch between the frequency and the time spectrum two times. Also the interpretation of ξ in the second formula could really use a calculation example.</p>
+<p>What you eventually can do with the computed effective value is something I will leave to the guideline. I hope this helps someone a few hours when dealing with the SBR!</p>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

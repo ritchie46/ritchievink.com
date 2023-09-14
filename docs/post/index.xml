@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/post/</link>
+    <description>Recent content in Posts on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Sun, 28 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>I wrote one of the fastest DataFrame libraries</title>
+      <link>https://www.ritchievink.com/blog/2021/02/28/i-wrote-one-of-the-fastest-dataframe-libraries/</link>
+      <pubDate>Sun, 28 Feb 2021 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2021/02/28/i-wrote-one-of-the-fastest-dataframe-libraries/</guid>
+      <description>1. Introduction At the time of writing this, the coronavirus has been in our country for a year, which means I have been sitting at home for a very long time. At the start of the pandemic, I had a few pet projects in Rust under my belt and I noticed that the &amp;ldquo;are we DataFrame yet&amp;rdquo;, wasn&amp;rsquo;t anywhere near my satisfaction. So I wondered if I could make a minimalistic crate that solved a specific use case of mine.</description>
+    </item>
+    
+    <item>
+      <title>Sparse neural networks and hash tables with Locality Sensitive Hashing</title>
+      <link>https://www.ritchievink.com/blog/2020/04/07/sparse-neural-networks-and-hash-tables-with-locality-sensitive-hashing/</link>
+      <pubDate>Tue, 07 Apr 2020 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2020/04/07/sparse-neural-networks-and-hash-tables-with-locality-sensitive-hashing/</guid>
+      <description>This is post was a real eye-opener for me with regard to the methods we can use to train neural networks. A colleague pointed me to the SLIDE[1] paper. Chen &amp;amp; et al. discussed outperforming a Tesla V100 GPU with a 44 core CPU, by a factor of 3.5, when training large neural networks with millions of parameters. Training any neural network requires many, many, many tensor operations, mostly in the form of matrix multiplications.</description>
+    </item>
+    
+    <item>
+      <title>Another normalizing flow: Inverse Autoregressive Flows</title>
+      <link>https://www.ritchievink.com/blog/2019/11/12/another-normalizing-flow-inverse-autoregressive-flows/</link>
+      <pubDate>Tue, 12 Nov 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/11/12/another-normalizing-flow-inverse-autoregressive-flows/</guid>
+      <description>This post we will explore a type of normalizing flow called **Inverse Autoregressive Flow**. A composition (flow) of transformations, while preserving the constraints of a probability distribution (normalizing), can help us obtain highly correlated variational distributions. Don&amp;rsquo;t repeat yourself
+If what was mentioned in the previous lines didn&amp;rsquo;t ring a bell, do first read these posts: variational inference and normalizing flows. This post could really be seen as an extension of the latter.</description>
+    </item>
+    
+    <item>
+      <title>Distribution estimation with Masked Autoencoders</title>
+      <link>https://www.ritchievink.com/blog/2019/10/25/distribution-estimation-with-masked-autoencoders/</link>
+      <pubDate>Fri, 25 Oct 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/10/25/distribution-estimation-with-masked-autoencoders/</guid>
+      <description>Four of my last five blog posts were more or less related to Baysian inference with variational methods. I had some momentum, and I wanted to use the traction I gained to do another post (which will come!) on enhancing variational methods with Inverse Autoregressive Flows (IAF), but first I have to get something different out of the way.
+In the paper describing IAF, they refer to an autoregressive neural network (and further assume his to be clear knowlegde).</description>
+    </item>
+    
+    <item>
+      <title>Sculpting distributions with Normalizing Flows</title>
+      <link>https://www.ritchievink.com/blog/2019/10/11/sculpting-distributions-with-normalizing-flows/</link>
+      <pubDate>Fri, 11 Oct 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/10/11/sculpting-distributions-with-normalizing-flows/</guid>
+      <description>Last posts we&amp;rsquo;ve investigated Bayesian inference through variational inference (post 1/post 2). In Bayesian inference, we often define models with some unknown model parameters $Z$, or latent stochastic variables $Z$. Given this model and some observed data points $D = \{ D_1, D_2, \dots, D_n \} $, we are interested in the true posterior distribution $P(Z|D)$. This posterior is often intractable and the general idea was to forgo the quest of obtaining the true posterior, but to accept that we are bounded to some easily parameterizable approximate posteriors $^*Q(z)$, which we called variational distributions.</description>
+    </item>
+    
+    <item>
+      <title>Variational inference from scratch</title>
+      <link>https://www.ritchievink.com/blog/2019/09/16/variational-inference-from-scratch/</link>
+      <pubDate>Mon, 16 Sep 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/09/16/variational-inference-from-scratch/</guid>
+      <description>In the posts Expectation Maximization and Bayesian inference; How we are able to chase the Posterior, we laid the mathematical foundation of variational inference. This post we will continue on that foundation and implement variational inference in Pytorch. If you are not familiar with the basis, I&amp;rsquo;d recommend reading these posts to get you up to speed.
+This post we&amp;rsquo;ll model a probablistic layer as output layer of a neural network.</description>
+    </item>
+    
+    <item>
+      <title>Algorithm Breakdown: Bayesian Optimization</title>
+      <link>https://www.ritchievink.com/blog/2019/08/25/algorithm-breakdown-bayesian-optimization/</link>
+      <pubDate>Sun, 25 Aug 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/08/25/algorithm-breakdown-bayesian-optimization/</guid>
+      <description>Not that long ago I wrote an introduction post on Gaussian Processes (GP&amp;rsquo;s), a regression technique where we condition a Gaussian prior distribution over functions on observed data. GP&amp;rsquo;s can model any function that is possible within a given prior distribution. And we don&amp;rsquo;t get a function $f$, we get a whole posterior distribution of functions $P(f|X)$.
+This of course, sounds very cool and all, but there is no free lunch.</description>
+    </item>
+    
+    <item>
+      <title>Bayesian inference; How we are able to chase the Posterior</title>
+      <link>https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/</link>
+      <pubDate>Mon, 10 Jun 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/</guid>
+      <description>Bayesian modeling! Every introduction on that topic starts with a quick conclusion that finding the posterior distribution often is computationally intractable. Last post I looked at Expectation Maximization, which is a solution of this computational intractability for a set of models. However, for most models, it isn&amp;rsquo;t. This post I will take a formal definition of the problem (As I&amp;rsquo;ve skipped that in the Expectation Maximization post) and we&amp;rsquo;ll look at two solutions that help us tackle this problem; Markov Chain Monte Carlo and Variational Inference.</description>
+    </item>
+    
+    <item>
+      <title>Algorithm Breakdown: Expectation Maximization</title>
+      <link>https://www.ritchievink.com/blog/2019/05/24/algorithm-breakdown-expectation-maximization/</link>
+      <pubDate>Fri, 24 May 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/05/24/algorithm-breakdown-expectation-maximization/</guid>
+      <description>I wanted to learn something about variational inference, a technique used to approximate the posterior distribution in Bayesian modeling. However, during my research, I bounced on quite some mathematics that led me to another optimization technique called Expectation Maximization. I believe the theory behind this algorithm is a stepping stone to the mathematics behind variational inference. So we tackle the problems one problem at a time!
+The first part of this post will focus on Gaussian Mixture Models, as expectation maximization is the standard optimization algorithm for these models.</description>
+    </item>
+    
+    <item>
+      <title>Fully automated soil classification with a Convolutional Neural Network and Location embeddings</title>
+      <link>https://www.ritchievink.com/blog/2019/04/02/fully-automated-soil-classification-with-a-convolutional-neural-network-and-location-embeddings/</link>
+      <pubDate>Tue, 02 Apr 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/04/02/fully-automated-soil-classification-with-a-convolutional-neural-network-and-location-embeddings/</guid>
+      <description>Soil classification is, in practice, a human process. A geotechnical engineer interprets results from a Cone Penetration Test and comes up with a plausible depiction of the existing soil layers. These interpretations will often be used throughout a project and are input for many following calculations.
+Just as the poliovirus, the process of manually mapping data from $x$ to $y$, belongs to the list of things that humanity tries to eradicate from earth.</description>
+    </item>
+    
+    <item>
+      <title>Save some time: Embedding jupyter notebook in an iframe and serve as a reverse proxy behind NGINX</title>
+      <link>https://www.ritchievink.com/blog/2019/03/17/save-some-time-embedding-jupyter-notebook-in-an-iframe-and-serve-as-a-reverse-proxy-behind-nginx/</link>
+      <pubDate>Sun, 17 Mar 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/03/17/save-some-time-embedding-jupyter-notebook-in-an-iframe-and-serve-as-a-reverse-proxy-behind-nginx/</guid>
+      <description>Embedding Jupyter notebook/ lab on your website can be done by embedding it in an iframe. However, it takes some configurational quirks to get it done. For my purpose, I also needed to offload validation to another service on the backend. Both the validation server as the jupyter notebook server were proxied behind an NGINX server. Here is the configuration. NGINX setup In the configuration, we set two upstream servers.</description>
+    </item>
+    
+    <item>
+      <title>An intuitive introduction to Gaussian processes</title>
+      <link>https://www.ritchievink.com/blog/2019/02/01/an-intuitive-introduction-to-gaussian-processes/</link>
+      <pubDate>Fri, 01 Feb 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/02/01/an-intuitive-introduction-to-gaussian-processes/</guid>
+      <description>Christopher Fonnesbeck did a talk about Bayesian Non-parametric Models for Data Science using PyMC3 on PyCon 2018. In this talk, he glanced over Bayes&amp;rsquo; modeling, the neat properties of Gaussian distributions and then quickly turned to the application of Gaussian Processes, a distribution over infinite functions. Wait, but what?! How does a Gaussian represent a function? I did not understand how, but the promise of what these Gaussian Processes representing a distribution over nonlinear and nonparametric functions really intrigued me and therefore turned into a new subject for a post.</description>
+    </item>
+    
+    <item>
+      <title>Algorithm breakdown: Why do we call it Gradient Boosting?</title>
+      <link>https://www.ritchievink.com/blog/2018/11/19/algorithm-breakdown-why-do-we-call-it-gradient-boosting/</link>
+      <pubDate>Mon, 19 Nov 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/11/19/algorithm-breakdown-why-do-we-call-it-gradient-boosting/</guid>
+      <description>We were making a training at work about ensemble models. When we were discussing different techniques like bagging, boosting, and stacking, we also came on the subject of gradient boosting. Intuitively, gradient boosting, by training on the residuals made sense. However, the name gradient boosting did not right away. This post we are exploring the name of gradient boosting and of course also the model itself!
+Intuition Single decision tree Gradient boosting is often used as an optimization technique for decision trees.</description>
+    </item>
+    
+    <item>
+      <title>Build Facebook&#39;s Prophet in PyMC3; Bayesian time series analyis with Generalized Additive Models</title>
+      <link>https://www.ritchievink.com/blog/2018/10/09/build-facebooks-prophet-in-pymc3-bayesian-time-series-analyis-with-generalized-additive-models/</link>
+      <pubDate>Tue, 09 Oct 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/10/09/build-facebooks-prophet-in-pymc3-bayesian-time-series-analyis-with-generalized-additive-models/</guid>
+      <description>Last [Algorithm Breakdown](https://www.ritchievink.com/blog/2018/09/26/algorithm-breakdown-ar-ma-and-arima-models/) we build an ARIMA model from scratch and discussed the use cases of that kind of models. ARIMA models are great when you have got stationary data and when you want to predict a few time steps into the future. A lot of business data, being generated by human processes, have got weekly and yearly seasonalities (we for instance, seem work to less in weekends and holidays) and show peaks at certain events.</description>
+    </item>
+    
+    <item>
+      <title>Algorithm Breakdown: AR, MA and ARIMA models</title>
+      <link>https://www.ritchievink.com/blog/2018/09/26/algorithm-breakdown-ar-ma-and-arima-models/</link>
+      <pubDate>Wed, 26 Sep 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/09/26/algorithm-breakdown-ar-ma-and-arima-models/</guid>
+      <description>Time series are a quite unique topic within machine learning. In a lot of problems the dependent variable $y$, i.e. the thing we want to predict is dependent on very clear inputs, such as pixels of an image, words in a sentence, the properties of a persons buying behavior, etc. In time series these indepent variables are often not known. For instance, in stock markets, we don&amp;rsquo;t have a clear independent set of variables where we can fit a model on.</description>
+    </item>
+    
+    <item>
+      <title>Deploy any machine learning model serverless in AWS</title>
+      <link>https://www.ritchievink.com/blog/2018/09/16/deploy-any-machine-learning-model-serverless-in-aws/</link>
+      <pubDate>Sun, 16 Sep 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/09/16/deploy-any-machine-learning-model-serverless-in-aws/</guid>
+      <description>When a machine learning model goes into production, it is very likely to be idle most of the time. There are a lot of use cases, where a model only needs to run inference when new data is available. If we do have such a use case and we deploy a model on a server, it will eagerly be checking for new data, only to be disappointed for most of its lifetime and meanwhile you pay for the live time of the server.</description>
+    </item>
+    
+    <item>
+      <title>Generative Adversarial Networks in Pytorch: The distribution of Art</title>
+      <link>https://www.ritchievink.com/blog/2018/07/16/generative-adversarial-networks-in-pytorch-the-distribution-of-art/</link>
+      <pubDate>Mon, 16 Jul 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/07/16/generative-adversarial-networks-in-pytorch-the-distribution-of-art/</guid>
+      <description>Generative adversarial networks seem to be able to generate amazing stuff. I wanted to do a small project with GANs and in the process create something fancy for on the wall. Therefore I tried to train a GAN on a dataset of art paintings. This post I&amp;rsquo;ll explore if I&amp;rsquo;ll succeed in getting a full hd new Picasso on the wall. The pictures above give you a glimplse of some of the results from the model.</description>
+    </item>
+    
+    <item>
+      <title>Clustering data with Dirichlet Mixtures in Edward and Pymc3</title>
+      <link>https://www.ritchievink.com/blog/2018/06/05/clustering-data-with-dirichlet-mixtures-in-edward-and-pymc3/</link>
+      <pubDate>Tue, 05 Jun 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/06/05/clustering-data-with-dirichlet-mixtures-in-edward-and-pymc3/</guid>
+      <description>Last post I&amp;rsquo;ve described the Affinity Propagation algorithm. The reason why I wrote about this algorithm was because I was interested in clustering data points without specifying k, i.e. the number of clusters present in the data.
+This post continues with the same fascination, however now we take a generative approach. In other words, we are going to examine which models could have generated the observed data. Through bayesian inference we hope to find the hidden (latent) distributions that most likely generated the data points.</description>
+    </item>
+    
+    <item>
+      <title>Algorithm Breakdown: Affinity Propagation</title>
+      <link>https://www.ritchievink.com/blog/2018/05/18/algorithm-breakdown-affinity-propagation/</link>
+      <pubDate>Fri, 18 May 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/05/18/algorithm-breakdown-affinity-propagation/</guid>
+      <description>On a project I worked on at the ANWB (Dutch road side assistence company) we mined driving behavior data. We wanted to know how many persons were likely to drive a certain vehicle on a regular basis. Naturally k-means clustering came to mind. The k-means algorithm finds clusters with the least inertia for a given k.
+A drawback is that often, k is not known. For the question about the numbers of persons driving a car, this isn&amp;rsquo;t that big of a problem as we have a good estimate of what k should be.</description>
+    </item>
+    
+    <item>
+      <title>Transfer learning with Pytorch: Assessing road safety with computer vision</title>
+      <link>https://www.ritchievink.com/blog/2018/04/12/transfer-learning-with-pytorch-assessing-road-safety-with-computer-vision/</link>
+      <pubDate>Thu, 12 Apr 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/04/12/transfer-learning-with-pytorch-assessing-road-safety-with-computer-vision/</guid>
+      <description>For a project at Xomnia, I had the oppertunity to do a cool computer vision assignment. We tried to predict the input of a road safety model. Eurorap is such a model. In short, it works something like this. You take some cars, mount them with cameras and drive around the road you&amp;rsquo;re interested in. The &amp;lsquo;Google Streetview&amp;rsquo; like material you&amp;rsquo;ve collected is sent to a crowdsourced workforce (at Amazon they are called Mechanical Turks) to manually label the footage.</description>
+    </item>
+    
+    <item>
+      <title>Computer build me a bridge</title>
+      <link>https://www.ritchievink.com/blog/2018/01/14/computer-build-me-a-bridge/</link>
+      <pubDate>Sun, 14 Jan 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/01/14/computer-build-me-a-bridge/</guid>
+      <description>In earlier posts I&amp;rsquo;ve analyzed simple structures with a Python fem package called anaStruct. And in this post I&amp;rsquo;ve used anaStruct to analyze a very non linear roof ponding problem.
+Modelling a structure in Python may seem cumbersome in relation to some programs that offer a graphical user interface. For simple structures this may well be the case. However now we&amp;rsquo;ve got a simple way to programmatically model 2D structures, I was wondering if we could let a computer model these structures for us.</description>
+    </item>
+    
+    <item>
+      <title>Implementing a Support Vector Machine in Scala</title>
+      <link>https://www.ritchievink.com/blog/2017/11/27/implementing-a-support-vector-machine-in-scala/</link>
+      <pubDate>Mon, 27 Nov 2017 16:14:21 +0100</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/11/27/implementing-a-support-vector-machine-in-scala/</guid>
+      <description>This post describes the implementation of a linear support vector machine classifier (SVM) in Scala. Scala is a functional programming language that supports functional programming to a far extend. Because I am exploring Scala at the moment and I like the challenge of functional programming, the SVM will be implemented in a functional manner. We are going to test the SVM on two classes from the Iris dataset.
+Linear Support Vector Machine intuition Support Vector Machines are binary classifiers.</description>
+    </item>
+    
+    <item>
+      <title>A nonlinear water accumulation analysis in Python</title>
+      <link>https://www.ritchievink.com/blog/2017/08/23/a-nonlinear-water-accumulation-analysis-in-python/</link>
+      <pubDate>Wed, 23 Aug 2017 13:07:00 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/08/23/a-nonlinear-water-accumulation-analysis-in-python/</guid>
+      <description>Frames One of my first packages in Python is a program for analysing 2D Frames called anaStruct. I wrote this in the summer of 2016 and learned a lot by doing so. When it was &amp;lsquo;finished&amp;rsquo; I was really enthusiastic and eager to give it some purpose in the &amp;lsquo;real&amp;rsquo; engineering world.
+My enthusiasm wasn&amp;rsquo;t for long though. I wrote a fem package that can compute linear force lines. The real world however isn&amp;rsquo;t so linear.</description>
+    </item>
+    
+    <item>
+      <title>Programming a neural network from scratch</title>
+      <link>https://www.ritchievink.com/blog/2017/07/10/programming-a-neural-network-from-scratch/</link>
+      <pubDate>Mon, 10 Jul 2017 12:11:12 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/07/10/programming-a-neural-network-from-scratch/</guid>
+      <description>Intro At the moment of writing this post it has been a few months since I&amp;rsquo;ve lost myself in the concept of machine learning. I have been using packages like TensorFlow, Keras and Scikit-learn to build a high conceptual understanding of the subject. I did understand intuitively what the backpropagation algorithm and the idea of minimizing costs does, but I hadn&amp;rsquo;t programmed it myself. Tensorflow is regarded as quite a low level machine learning package, but it still abstracts the backpropagation algorithm for you.</description>
+    </item>
+    
+    <item>
+      <title>Deep learning music classifier part 2. Computer says no!</title>
+      <link>https://www.ritchievink.com/blog/2017/06/04/deep-learning-music-classifier-part-2.-computer-says-no/</link>
+      <pubDate>Sun, 04 Jun 2017 14:08:34 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/06/04/deep-learning-music-classifier-part-2.-computer-says-no/</guid>
+      <description>Recap Last post I described what my motivations were to start building a music classifier, or at least attempt to build one. The post also described how I collected a dataset, extracted important features and clustered the data based on their variance. You can read the previous post here.
+This post describes how I got my feet wet with classifying music. Spotify kind of sorted the data I&amp;rsquo;ve downloaded by genre.</description>
+    </item>
+    
+    <item>
+      <title>Deep learning music classifier part 1. 30 seconds disco!</title>
+      <link>https://www.ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/</link>
+      <pubDate>Fri, 12 May 2017 16:34:27 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/</guid>
+      <description>Introduction As a nerd I am fascinated by the deep learning hype. Out of interest I have been following some courses, reading blogs and watched youtube video&amp;rsquo;s about the topic. Before diving into the content, I really thought this was something solely for the great internet companies and that it was not a subject us mortals could understand.
+While reading and learning more about it I&amp;rsquo;ve come to the insight that making use of deep learning techniques is not only something the internet giants and scientists can do.</description>
+    </item>
+    
+    <item>
+      <title>What should be explained in the Dutch SBR-B Guideline!</title>
+      <link>https://www.ritchievink.com/blog/2017/05/07/what-should-be-explained-in-the-dutch-sbr-b-guideline/</link>
+      <pubDate>Sun, 07 May 2017 20:27:28 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/05/07/what-should-be-explained-in-the-dutch-sbr-b-guideline/</guid>
+      <description>The Dutch SBR guideline is intended to help you process vibration data and help you determine when a vibration signal can cause discomfort to persons. It seems to me however, that the SBR-B guideline does not have the intention to be understood. They seem to help you by making a super abstract of scientific papers and by giving you a few keywords so you can Google it yourself.
+This post will elaborate on two formula&amp;rsquo;s given in the guideline.</description>
+    </item>
+    
+    <item>
+      <title>Understanding the Fourier Transform by example</title>
+      <link>https://www.ritchievink.com/blog/2017/04/23/understanding-the-fourier-transform-by-example/</link>
+      <pubDate>Sun, 23 Apr 2017 13:07:00 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/04/23/understanding-the-fourier-transform-by-example/</guid>
+      <description>In the last couple of weeks I have been playing with the results of the Fourier Transform and it has quite some interesting properties that initially were not clear to me. In this post I summarize the things I found interesting and the things I&amp;rsquo;ve learned about the Fourier Transform.
+Application The Fourier Transformation is applied in engineering to determine the dominant frequencies in a vibration signal. When the dominant frequency of a signal corresponds with the natural frequency of a structure, the occurring vibrations can get amplified due to resonance.</description>
+    </item>
+    
+    <item>
+      <title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 1)</title>
+      <link>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-1/</link>
+      <pubDate>Thu, 13 Apr 2017 13:02:56 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-1/</guid>
+      <description>Problem If you want to solve a vibrations problem with a force acting on the system you often need to find the solution in nummerical algorithms. Say you have got a single degree of freedom mass spring system as shown in the figure below.
+SDOF damped mass spring system The differential equation of this system is:
+\[ mu&#39;&#39; + cu&#39; + ku = F\] When the force that acts on the system is a function, this problem can be solved with symbolical maths by solving the differential equation.</description>
+    </item>
+    
+    <item>
+      <title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 2)</title>
+      <link>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/</link>
+      <pubDate>Thu, 13 Apr 2017 13:02:56 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/</guid>
+      <description>This post continues where part 1 ended. In order to increase the accuracy of our function solver we are going to use a 4th order Runga Kutta algorithm. The basics are the same as with the Euler method. However the dy part of the 4th order method is more accurately computed.
+Definition The incremental values of this method are defined as:
+\[ y_{n+1} = y_{n} + \frac{h}{6}(k_{1} + 2k_{2} +2k_{3} + k_{4})\] \[ t_{n+1} = t_{n} + h \] With the factors k1 - k4 being:</description>
+    </item>
+    
+    <item>
+      <title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 3)</title>
+      <link>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/</link>
+      <pubDate>Thu, 13 Apr 2017 13:02:56 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/</guid>
+      <description>This post continues where part 2 ended. The Runga Kutta algorithm described in last post is only able to solve first order differential equations.
+The differential equation (de) for a single mass spring vibrations problem is a second order de.
+\[ mu&#39;&#39; + cu&#39; + ku = F\] Note that in this equation:
+u&amp;rsquo;&amp;rsquo; = acceleration a
+u&amp;rsquo; = velocity v
+u = displacement
+Before we can solve it with a Runga Kutta algorithm we must rewrite the base equation to a system of two first order ode&amp;rsquo;s.</description>
+    </item>
+    
+    <item>
+      <title>Python 1D FEM Example 3</title>
+      <link>https://www.ritchievink.com/blog/2017/03/12/python-1d-fem-example-3/</link>
+      <pubDate>Sun, 12 Mar 2017 21:35:33 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/03/12/python-1d-fem-example-3/</guid>
+      <description>Python 1D FEM Example 3. Simple code example for anaStruct.
+# if using ipython notebook %matplotlib inline from anastruct.fem.system import SystemElements # Create a new system object. ss = SystemElements(EA=15000, EI=5000) # Add beams to the system. ss.add_element(location=[[0, 0], [0, 5]]) ss.add_element(location=[[0, 5], [5, 5]]) ss.add_element(location=[[5, 5], [5, 0]]) # Add a fixed support at node 1. ss.add_support_fixed(node_id=1) # Add a rotational spring at node 4. ss.add_support_spring(node_id=4, translation=3, k=4000) # Add loads.</description>
+    </item>
+    
+    <item>
+      <title>Python 1D FEM Example 2</title>
+      <link>https://www.ritchievink.com/blog/2017/02/12/python-1d-fem-example-2/</link>
+      <pubDate>Sun, 12 Feb 2017 21:35:33 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/02/12/python-1d-fem-example-2/</guid>
+      <description>Example 2: Truss framework Simple code example for anaStruct.
+# if using ipython notebook %matplotlib inline import math from anastruct.fem.system import SystemElements # Create a new system object. ss = SystemElements(EA=5000) # Add beams to the system. ss.add_truss_element(location=[[0, 0], [0, 5]]) ss.add_truss_element(location=[[0, 5], [5, 5]]) ss.add_truss_element(location=[[5, 5], [5, 0]]) ss.add_truss_element(location=[[0, 0], [5, 5]], EA=5000 * math.sqrt(2)) # get a visual of the element ID&amp;#39;s and the node ID&amp;#39;s ss.show_structure() # add hinged supports at node ID 1 and node ID 2 ss.</description>
+    </item>
+    
+    <item>
+      <title>Python 1D FEM Example 1</title>
+      <link>https://www.ritchievink.com/blog/2017/01/12/python-1d-fem-example-1/</link>
+      <pubDate>Thu, 12 Jan 2017 21:35:33 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/01/12/python-1d-fem-example-1/</guid>
+      <description>Example 1: Framework Simple code example for anaStruct.
+# if using ipython notebook %matplotlib inline from anastruct.fem.system import SystemElements # Create a new system object. ss = SystemElements() # Add beams to the system. ss.add_element(location=[[0, 0], [3, 4]], EA=5e9, EI=8000) ss.add_element(location=[[3, 4], [8, 4]], EA=5e9, EI=4000) # get a visual of the element IDs and the node IDs ss.show_structure() # add loads to the element ID 2 ss.q_load(element_id=2, q=-10) # add hinged support to node ID 1 ss.</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 3) - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+
+<title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 3) | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 3)</h1>
+    <h2 class="subtitle is-5">April 13, 2017 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/vibrations">vibrations</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/engineering">engineering</a>
+    
+</div>
+
+    
+    <div class="content">
+      <p>This post continues where <a href="https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/">part 2</a> ended. The Runga Kutta algorithm described in last post is only able to solve first order differential equations.</p>
+<p>The differential equation (de) for a single mass spring vibrations problem is a second order de.</p>
+<div>\[ mu'' + cu' + ku = F\] </div>
+<p>Note that in this equation:</p>
+<p>u&rsquo;&rsquo; = acceleration a</p>
+<p>u&rsquo; = velocity v</p>
+<p>u = displacement</p>
+<p>Before we can solve it with a Runga Kutta algorithm we must rewrite the base equation to a system of two first order ode&rsquo;s.</p>
+<p>Rewrite:</p>
+<div>\[ u' = v\] </div>
+<div>\[ v' = \frac{1}{m}(F - cv - ku) \] </div>
+<p>Now there a set of coupled ode&rsquo;s. Both need to be solved together. The solution of both ode&rsquo;s is determined by:</p>
+<div>\[ u_{i+1} = u_{i} + \frac{h}{6}(v_{1} + 2v_{2} + 2v_{3} + v_{4})\] </div>
+<div>\[ v_{i+1} = v_{i} + \frac{h}{6}(a_{1} + 2a_{2} + 2a_{3} + a_{4})\] </div>
+<p>Where v<sub>1</sub> - v<sub>4</sub> and a<sub>1</sub> - a<sub>4</sub> are determined as described in the table below. Note that:</p>
+<div>\[ f(t, u, v) = v' = \frac{1}{m}(F - cv - ku) \] </div>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"><strong>Column values</strong></th>
+<th style="text-align:center"><strong>t</strong></th>
+<th style="text-align:center"><strong>u</strong></th>
+<th style="text-align:center"><strong>v</strong></th>
+<th style="text-align:center"><strong>a</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">t<sub>1</sub>, u<sub>1</sub>, v<sub>1</sub>,  a<sub>1</sub></td>
+<td style="text-align:center">t<sub>i</sub></td>
+<td style="text-align:center">t<sub>i</sub></td>
+<td style="text-align:center">v<sub>i</sub></td>
+<td style="text-align:center">f(t<sub>1</sub>, u<sub>1</sub>, v<sub>1</sub>)</td>
+</tr>
+<tr>
+<td style="text-align:center">t<sub>2</sub>, u<sub>2</sub>, v<sub>2</sub>,  a<sub>2</sub></td>
+<td style="text-align:center">t<sub>i</sub> + h/2</td>
+<td style="text-align:center">t<sub>i</sub>  + v<sub>1</sub>h/2</td>
+<td style="text-align:center">v<sub>i</sub> + a<sub>1</sub>h/2</td>
+<td style="text-align:center">f(t<sub>2</sub>, u<sub>2</sub>, v<sub>2</sub>)</td>
+</tr>
+<tr>
+<td style="text-align:center">t<sub>3</sub>, u<sub>3</sub>, v<sub>3</sub>,  a<sub>3</sub></td>
+<td style="text-align:center">t<sub>i</sub> + h/2</td>
+<td style="text-align:center">t<sub>i</sub>  + v<sub>2</sub>h/2</td>
+<td style="text-align:center">v<sub>i</sub> + a<sub>2</sub>h/2</td>
+<td style="text-align:center">f(t<sub>3</sub>, u<sub>3</sub>, v<sub>3</sub>)</td>
+</tr>
+<tr>
+<td style="text-align:center">t<sub>4</sub>, u<sub>4</sub>, v<sub>4</sub>,  a<sub>4</sub></td>
+<td style="text-align:center">t<sub>i</sub> + h</td>
+<td style="text-align:center">t<sub>i</sub>  + v<sub>3</sub>h</td>
+<td style="text-align:center">v<sub>i</sub> + a<sub>3</sub>h</td>
+<td style="text-align:center">f(t<sub>4</sub>, u<sub>4</sub>, v<sub>4</sub>)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="code">Code</h2>
+<p>If we make this in python we get the function below. The input is an array with time values; t.
+We set the displacement and velocity at the first value of the times array.
+Furthermore we pass the mass, the damping and the spring stiffness of the system.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">runga_kutta_vibrations</span>(t, u0, v0, m, c, k, force):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param t: (list/ array)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param u0: (flt)u at t[0]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param v0: (flt) v at t[0].
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param m:(flt) Mass.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param c: (flt) Damping.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param k: (flt) Spring stiffness.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param force: (list/ array) Force acting on the system.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :return: (tpl) (displacement u, velocity v)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    u <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros(t<span style="color:#f92672">.</span>shape)
+</span></span><span style="display:flex;"><span>    v <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros(t<span style="color:#f92672">.</span>shape)
+</span></span><span style="display:flex;"><span>    u[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> u0
+</span></span><span style="display:flex;"><span>    v[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> v0
+</span></span><span style="display:flex;"><span>    dt <span style="color:#f92672">=</span> t[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">-</span> t[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Returns the acceleration a</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">func</span>(u, V, force):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> (force <span style="color:#f92672">-</span> c <span style="color:#f92672">*</span> V <span style="color:#f92672">-</span> k <span style="color:#f92672">*</span> u) <span style="color:#f92672">/</span> m
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(t<span style="color:#f92672">.</span>size <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>):
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># F at time step t / 2</span>
+</span></span><span style="display:flex;"><span>        f_t_05 <span style="color:#f92672">=</span> (force[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">-</span> force[i]) <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">+</span> force[i]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        u1 <span style="color:#f92672">=</span> u[i]
+</span></span><span style="display:flex;"><span>        v1 <span style="color:#f92672">=</span> v[i]
+</span></span><span style="display:flex;"><span>        a1 <span style="color:#f92672">=</span> func(u1, v1, force[i])
+</span></span><span style="display:flex;"><span>        u2 <span style="color:#f92672">=</span> u[i] <span style="color:#f92672">+</span> v1 <span style="color:#f92672">*</span> dt <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>        v2 <span style="color:#f92672">=</span> v[i] <span style="color:#f92672">+</span> a1 <span style="color:#f92672">*</span> dt <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>        a2 <span style="color:#f92672">=</span> func(u2, v2, f_t_05)
+</span></span><span style="display:flex;"><span>        u3 <span style="color:#f92672">=</span> u[i] <span style="color:#f92672">+</span> v2 <span style="color:#f92672">*</span> dt <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>        v3 <span style="color:#f92672">=</span> v[i] <span style="color:#f92672">+</span> a2 <span style="color:#f92672">*</span> dt <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>        a3 <span style="color:#f92672">=</span> func(u3, v3, f_t_05)
+</span></span><span style="display:flex;"><span>        u4 <span style="color:#f92672">=</span> u[i] <span style="color:#f92672">+</span> v3 <span style="color:#f92672">*</span> dt
+</span></span><span style="display:flex;"><span>        v4 <span style="color:#f92672">=</span> v[i] <span style="color:#f92672">+</span> a3 <span style="color:#f92672">*</span> dt
+</span></span><span style="display:flex;"><span>        a4 <span style="color:#f92672">=</span> func(u4, v4, force[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>        u[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> u[i] <span style="color:#f92672">+</span> dt <span style="color:#f92672">/</span> <span style="color:#ae81ff">6</span> <span style="color:#f92672">*</span> (v1 <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> v2 <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> v3 <span style="color:#f92672">+</span> v4)
+</span></span><span style="display:flex;"><span>        v[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> v[i] <span style="color:#f92672">+</span> dt <span style="color:#f92672">/</span> <span style="color:#ae81ff">6</span> <span style="color:#f92672">*</span> (a1 <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> a2 <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> a3 <span style="color:#f92672">+</span> a4)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> u, v
+</span></span></code></pre></div><p>Lets say we have got a mass spring system with the following parameters:</p>
+<ul>
+<li>Mass			m = 10 kg</li>
+<li>Stiffness		k = 50 N/m</li>
+<li>Viscous damping 	c = 5 Ns/m</li>
+</ul>
+<p>On this system we are going to apply a short pulse. The force on the system is described by the following array:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>n <span style="color:#f92672">=</span> <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>t <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">10</span>, n)
+</span></span><span style="display:flex;"><span>force <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros(n)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">150</span>):
+</span></span><span style="display:flex;"><span>    a <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>pi <span style="color:#f92672">/</span> <span style="color:#ae81ff">50</span> <span style="color:#f92672">*</span> (i <span style="color:#f92672">-</span> <span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>    force[i] <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sin(a)
+</span></span></code></pre></div><p>It is an array of zeros for most of the time values t. Only a small part off the array will be a peak.
+Now we are going to define the parameters of the system, call the runga_kutta_vibrations function and plot the result together with the force.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Parameters of the mass spring system</span>
+</span></span><span style="display:flex;"><span>m <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>k <span style="color:#f92672">=</span> <span style="color:#ae81ff">50</span>
+</span></span><span style="display:flex;"><span>c <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>u, v <span style="color:#f92672">=</span> runga_kutta_vibrations(t, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, m, c, k, force)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Plot the result</span>
+</span></span><span style="display:flex;"><span>fig, ax1 <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots()
+</span></span><span style="display:flex;"><span>l1 <span style="color:#f92672">=</span> ax1<span style="color:#f92672">.</span>plot(t, v, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;b&#39;</span>, label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;displacement&#34;</span>)
+</span></span><span style="display:flex;"><span>ax2 <span style="color:#f92672">=</span> ax1<span style="color:#f92672">.</span>twinx()
+</span></span><span style="display:flex;"><span>l2 <span style="color:#f92672">=</span> ax2<span style="color:#f92672">.</span>plot(t, force, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;r&#39;</span>, label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;force&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>lines <span style="color:#f92672">=</span> l1 <span style="color:#f92672">+</span> l2
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>legend(lines, [l<span style="color:#f92672">.</span>get_label() <span style="color:#66d9ef">for</span> l <span style="color:#f92672">in</span> lines])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-4/figure_3.png"/><figcaption>
+            <h4>Vibration resulting from a pulse.</h4>
+        </figcaption>
+</figure>
+
+<p>If we look at the plot figure. We can see that before the pulse is acting on the system the amplitude is zero. There is no force acting on the system and therefore there is no oscillation. At approximately 1 s, a short puls acts on the system and the system responds. The rest of the plot shows the system oscillating in its natural frequency.</p>
+<p>As you can see, we now can describe a vibrations problem of a singe degree of freedom system nummerically. The Runga Kutta method can be used with predefined force functions as we did (We described the pulse with a sine function, but it can also be used with vibration data resulting from measurements.</p>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

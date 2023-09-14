@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Implementing a Support Vector Machine in Scala - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2017/11/27/implementing-a-support-vector-machine-in-scala/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-11-svm/optimal_margin.jpg" />
+
+
+<title>Implementing a Support Vector Machine in Scala | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Implementing a Support Vector Machine in Scala</h1>
+    <h2 class="subtitle is-5">November 27, 2017 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/scala">scala</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/algorithm-breakdown">algorithm breakdown</a>
+    
+</div>
+
+    
+    <div class="content">
+      <p>This post describes the implementation of a linear support vector machine classifier (SVM) in Scala. Scala is a functional programming language that supports functional programming to a far extend. Because I am exploring Scala at the moment and I like the challenge of functional programming, the SVM will be implemented in a functional manner. We are going to test the SVM on two classes from the Iris dataset.</p>
+</br>
+<h1 id="linear-support-vector-machine-intuition">Linear Support Vector Machine intuition</h1>
+<p>Support Vector Machines are binary classifiers. They label different classes by seperating them with a linear hyperplane.</p>
+<p>A hyperplane sounds like an attack straight from a Dragonball Z episode, but I can assure you it is less impressive. If our feature space (The amount of columns in our dataset) is 1 dimensional, a hyperplane would be a point. Is the feature space 2 dimensional, than the hyperplane is a line. In a 3 dimensional feature space the hyperplane is a plane. Formally a hyperplane is a geometric space one dimension less than the feature space. Below are some hyperplanes shown in the few dimensions I am comfortable at.</p>
+<figure><img src="../../../../../img/post-11-svm/hyperplane.png"/><figcaption>
+            <h4>Hyperplanes at different dimensions.</h4>
+        </figcaption>
+</figure>
+
+<p>To keep things simple we are going to look at only two dimensions and two classes. We can imagine having two classes, the red pills and the green pills, as shown in the image below. A support vector machine tries to draw a hyperplane that splits these two classes. However in this case the classes are linearly seperable by an infinite number of lines. In the figure this infinite number of lines is illustrated with two lines. As this is the first time I borrowed the drawing tablet from my girlfriend and thus am really slooow in making this sketches I stopped at two.</p>
+<figure><img src="../../../../../img/post-11-svm/optimal_bound.png"/><figcaption>
+            <h4>Optimal hyperplane?</h4>
+        </figcaption>
+</figure>
+
+<p>Although not close to infinite, those two lines do illustrate the problem. The SVM must find the optimal hyperplane that splits the observed data points best. Therefore there needs to be a definition of <em>optimal seperating hyperplane</em>.</p>
+<p>The optimal hyperplane is defined by the plane that maximizes the perpendicular distance between the hyperplane and the closest samples. This perpendicular distance can be spanned with support vectors.</p>
+<p>Below is an example of a suboptimal and an optimal separating hyperplane. The optimal hyperplane maximizes the support vectors lenth.</p>
+<figure><img src="../../../../../img/post-11-svm/suboptimal_margin.png"/><figcaption>
+            <h4>Suboptimal separating hyperplane.</h4>
+        </figcaption>
+</figure>
+
+<figure><img src="../../../../../img/post-11-svm/optimal_margin.png"/><figcaption>
+            <h4>Optimal separating hyperplane.</h4>
+        </figcaption>
+</figure>
+
+</br>
+<h1 id="linear-support-vector-machine-model">Linear Support Vector Machine model</h1>
+<p>Now we&rsquo;ve defined what a support vector machine is, let&rsquo;s take a look at the model definition. As noted at the beginning of this post, SVM&rsquo;s are binary models. This means we can only label two classes. Those classes need to be labeled as either <strong>+1</strong> or <strong>-1</strong>. The linear support vector machine model is relatively simple. The hyperplane must fulfil the following equation:</p>
+<div>$$ \vec{x} \cdot \vec{w} - b = 0  $$</div>
+<p>Where:</p>
+<ul>
+<li><span>\( \vec{x}: \)</span> is the feature vector</li>
+<li><span>\( \vec{w}: \)</span> is the models weights vector</li>
+<li><span>\( b: \)</span> is the bias value</li>
+</ul>
+<p>The outer hyperplanes of the margins. The ones that are spanned by the support vectors should fulfil the following properties:</p>
+<p><strong>For class y = -1:</strong></p>
+<div>$$ \vec{x} \cdot \vec{w} - b = -1  $$</div>
+<p><strong>For class y = 1:</strong></p>
+<div>$$ \vec{x} \cdot \vec{w} - b = 1  $$</div>
+<p>The absolute values for samples that are situated outside this margin will have values &gt; 1. The model classifies an input by looking at the sign of the result:</p>
+<p><strong>Classification of a new data point:</strong></p>
+<div>$$ \hat{y} = sgn(\vec{x} \cdot \vec{w} - b)  $$</div>
+<p>Below you&rsquo;ll see the support vector machine model in relation to the dataset. You&rsquo;ll also see that I am getting slightly better at handling a drawing tablet!</p>
+<figure><img src="../../../../../img/post-11-svm/model.png"/><figcaption>
+            <h4>Support vector machine model.</h4>
+        </figcaption>
+</figure>
+
+</br>
+<h1 id="optimization">Optimization</h1>
+<p>The variables of the model <span>\( \vec{x} \)</span> and <span>\( b \)</span> are still unknown. We can find them using gradient descent. Therefore we need a loss function.</p>
+<h2 id="linearly-seperable-classes">linearly seperable classes</h2>
+<p>For a model that is trained on data that is linearly seperable (like the data in my beautiful sketches ♥) the following constraint holds for all data points <span>\( i \)</span>.</p>
+<p>Given the label <span>\( y_i \)</span>:</p>
+<p><span>\( \vec{x} \cdot \vec{w} - b \geq 1 \)</span> for every  <span>\( y_i = 1 \)</span></p>
+<p><span>\( \vec{x} \cdot \vec{w} - b \leq -1 \)</span> for every  <span>\( y_i = -1 \)</span></p>
+<p>This results in the following restriction:</p>
+<div>$$ y_i(\vec{x} \cdot \vec{w} - b) \geq 1$$</div>
+<p>The loss function <span>\( J \)</span> we can minimize is the &lsquo;Hinge loss&rsquo; function:</p>
+<div>$$ J = max(0, 1 - y_i(\vec{x}_i \cdot \vec{w} - b))$$</div>
+</br>
+<h2 id="not-linearly-seperable-classes">Not linearly seperable classes</h2>
+<p>When data is not linearly seperable there cannot be a &lsquo;hard margin&rsquo; between the data samples and the margin that is spanned by the support vectors. A SVM trained on not linearly seperated data is called a &lsquo;soft margin&rsquo; SVM. In such a case a regularization term <span>\( \lambda ||\vec{w}||^2 \)</span> is added.</p>
+<p>The loss function then becomes:</p>
+<div>$$ J = max(0, 1 - y_i(\vec{x}_i \cdot \vec{w} - b)) + \lambda ||\vec{w}||^2 $$</div>
+<p>Where <span>\( \lambda \)</span> is a regularization parameter that controls the trade off between a hard margin and soft margine. In other words, a trade off between following noise in the data or generalizing (with a chance of underfitting).</p>
+<h2 id="partial-derivatives">Partial derivatives</h2>
+<p>As we will update the weights of the model using gradient descent we need the determine the partial derivates of the loss function with respect to the weights.</p>
+<h4 id="first-part-of-the-loss-function">First part of the loss function</h4>
+<p>To make the formulation a little bit easier and more like the way we are going to implement the bias term in code. We will concatenate the bias term <span>\( b \)</span> to the weight vector <span>\( \vec{w} \)</span>. The first part of loss function can then be written as:</p>
+<div>$$ max(0, 1 - y_i(\vec{x}_i \cdot \vec{w}))  $$</div>
+<p>If we look at the loss function we can see that when the model classifies <span>\( y_i \)</span> correctly the result will be <span>\( \geq 1 \)</span>. The second parameter of the max function will in that case be <strong>0</strong> or negative, leading to a maximum loss of <strong>0</strong>. This leads to our first partial derivative:</p>
+<p><strong>CASE model classifies <span>\( y_i \)</span> correct:</strong></p>
+<p><strong><div>$$ \frac{\partial{J}}{ \partial{\vec{w}} } = 0 $$</div></strong></p>
+<p>When the classification is incorrect, the loss is:</p>
+<div>$$ 1 - y_i(\vec{x}_i \cdot \vec{w})  $$</div>
+<div>$$ \frac{ \partial{ 1 - y_i(\vec{x}_i \cdot \vec{w})}}{ \partial{\vec{w}} } = -y_ix_i  $$</div>
+<p><strong>CASE model classifies <span>\( y_i \)</span> incorrect:</strong></p>
+<p><strong><div>$$ \frac{\partial{J}}{ \partial{\vec{w}} } = -y_ix_i  \tag{1} $$</div></strong></p>
+<p>And finaly we&rsquo;ve got the partial derivative of the regularization term:</p>
+<p><strong><div>$$ \frac{ \partial{\lambda ||\vec{w}||^2} }{ \partial{\vec{w}} } = \lambda 2 \vec{w}  \tag{2}$$</div></strong></p>
+<h1 id="scala-implementation">Scala implementation</h1>
+<p>Now we have the dealt with the technicallities we can write the code for our support vector machine. The complete code and the dataset is hosted on <a href="https://github.com/ritchie46/simple-functional-svm">github</a>.</p>
+<h3 id="data">Data</h3>
+<p>The <em>./res</em> folder holds a csv file with the iris dataset.</p>
+<p>First we implement a method to load the data. Because the SVM model is binary we discard the &lsquo;virginica&rsquo; flower</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#66d9ef">DataFrame</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">]]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">object</span> <span style="color:#a6e22e">readCSV</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">    * Reads the iris dataset and return the &#39;setosa&#39; and &#39;versicolor&#39; class and takes the first two feature columns.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">    * 
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">    * @param path Path of the iris.csv file
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">    * @return a dataframe containing the features and the labels.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">    */</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">def</span> apply<span style="color:#f92672">(</span>path<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">String</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">DataFrame</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">],</span> <span style="color:#a6e22e">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">])</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">val</span> bufferedSource <span style="color:#66d9ef">=</span> scala<span style="color:#f92672">.</span>io<span style="color:#f92672">.</span><span style="color:#a6e22e">Source</span><span style="color:#f92672">.</span>fromFile<span style="color:#f92672">(</span>path<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// rename the setosa and versicolor class to -1 and 1
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">def</span> flowerClass<span style="color:#f92672">(</span>v<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">String</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Double</span> <span style="color:#f92672">=</span> v<span style="color:#f92672">.</span>trim<span style="color:#f92672">()</span> <span style="color:#66d9ef">match</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#34;setosa&#34;</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#34;versicolor&#34;</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#34;virginica&#34;</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">case</span> x <span style="color:#66d9ef">=&gt;</span> x<span style="color:#f92672">.</span>toDouble
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// read lines
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">val</span> lines <span style="color:#66d9ef">=</span> bufferedSource<span style="color:#f92672">.</span>getLines<span style="color:#f92672">.</span>toVector<span style="color:#f92672">.</span>tail
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// split lines and map the flowerClass function discarding the virginica flower.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">val</span> rows <span style="color:#66d9ef">=</span> lines<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">.</span>split<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;,&#34;</span><span style="color:#f92672">).</span>map<span style="color:#f92672">(</span>flowerClass<span style="color:#f92672">)).</span>filter<span style="color:#f92672">(</span>i <span style="color:#66d9ef">=&gt;</span> i<span style="color:#f92672">.</span>last <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">val</span> labels <span style="color:#66d9ef">=</span> rows<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">.</span>last<span style="color:#f92672">.</span>toInt<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">val</span> data <span style="color:#66d9ef">=</span> rows<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">.</span>init<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    bufferedSource<span style="color:#f92672">.</span>close<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">(</span>data<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span>i <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">Vector</span><span style="color:#f92672">(</span>i<span style="color:#f92672">(</span><span style="color:#ae81ff">0</span><span style="color:#f92672">),</span> i<span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">))),</span> labels<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>The iris dataset has a feature space of 4 dimensions. Because we want to be able to plot separating hyperplace easily we are going to train the SVM on only the first two features. If we plot those we&rsquo;ll see the following figure.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">import</span> breeze.plot._
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">val</span> f <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Figure</span><span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">val</span> p <span style="color:#66d9ef">=</span> f<span style="color:#f92672">.</span>subplot<span style="color:#f92672">(</span><span style="color:#ae81ff">0</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>p<span style="color:#f92672">.</span>title <span style="color:#66d9ef">=</span> <span style="color:#e6db74">&#34;&#39;setosa&#39; and &#39;versicolor&#39;&#34;</span>
+</span></span><span style="display:flex;"><span>p<span style="color:#f92672">.</span>xlabel <span style="color:#66d9ef">=</span> <span style="color:#e6db74">&#34;x1&#34;</span>
+</span></span><span style="display:flex;"><span>p<span style="color:#f92672">.</span>ylabel <span style="color:#66d9ef">=</span> <span style="color:#e6db74">&#34;x2&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// filter the feature values by the classes 1 and -1
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">val</span> x1 <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>df<span style="color:#f92672">,</span> labels<span style="color:#f92672">).</span>zipped<span style="color:#f92672">.</span>filter<span style="color:#f92672">((</span><span style="color:#66d9ef">_</span><span style="color:#f92672">,</span> b<span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> b <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#f92672">).</span>_1
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">val</span> x2 <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>df<span style="color:#f92672">,</span> labels<span style="color:#f92672">).</span>zipped<span style="color:#f92672">.</span>filter<span style="color:#f92672">((</span><span style="color:#66d9ef">_</span><span style="color:#f92672">,</span> b<span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> b <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">).</span>_1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>p <span style="color:#f92672">+=</span> plot<span style="color:#f92672">(</span>x1<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">(</span><span style="color:#ae81ff">0</span><span style="color:#f92672">)),</span> x1<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">)),</span> <span style="color:#e6db74">&#39;.&#39;</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;b&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>p <span style="color:#f92672">+=</span> plot<span style="color:#f92672">(</span>x2<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">(</span><span style="color:#ae81ff">0</span><span style="color:#f92672">)),</span> x2<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">)),</span> <span style="color:#e6db74">&#39;.&#39;</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;r&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>f<span style="color:#f92672">.</span>saveas<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;fig.png&#34;</span><span style="color:#f92672">)</span>
+</span></span></code></pre></div><figure><img src="../../../../../img/post-11-svm/flower_data.png"/><figcaption>
+            <h4>The setosa and versicolor flower labels</h4>
+        </figcaption>
+</figure>
+
+<p>We can tell from the figure that the two classes are clustered nicely. They seem completely linearly seperable. The SVM we are building should be able to find an optimal hard margin hyperplane based on this figure.</p>
+<h3 id="svm-class">SVM Class</h3>
+<p>For the <code>SVM</code> class we start with a constructor that takes as arguments the data <code>x</code>, the <code>labels</code>, the learning rate <code>eta</code> and the number of training <code>epochs</code>. As we only regard the first two feature dimensions we create a new <code>DataFrame df</code> containing the first two feature rows and a bias term that equals 1.</p>
+<p>Next we initialize the weights vector <code>w</code> with zeros.</p>
+<p><strong>Constructor</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Svm</span><span style="color:#f92672">(</span>x<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">DataFrame</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">],</span> labels<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">],</span> eta<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Double</span><span style="color:#f92672">=</span><span style="color:#ae81ff">1</span><span style="color:#f92672">,</span> epochs<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">=</span><span style="color:#ae81ff">10000</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// add a bias term to the data
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">def</span> prepare<span style="color:#f92672">(</span>x<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">DataFrame</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">DataFrame</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> x<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span> <span style="color:#66d9ef">:</span><span style="color:#66d9ef">+</span> <span style="color:#960050;background-color:#1e0010">1</span><span style="color:#66d9ef">.</span><span style="color:#960050;background-color:#1e0010">0</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Prepared data
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">val</span> df<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">DataFrame</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> prepare<span style="color:#f92672">(</span>x<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// weights initialization
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">var</span> w <span style="color:#66d9ef">:</span><span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">for</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">_</span> <span style="color:#66d9ef">&lt;-</span> <span style="color:#ae81ff">1</span> to df<span style="color:#f92672">(</span><span style="color:#ae81ff">0</span><span style="color:#f92672">).</span>length<span style="color:#f92672">)</span> <span style="color:#66d9ef">yield</span> <span style="color:#ae81ff">0.0</span><span style="color:#f92672">).</span>toVector
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>As noted before, the classifcation of the model was described by:</p>
+<div>$$ \hat{y} = sgn(\vec{x} \cdot \vec{w} - b)  $$</div>
+<p>So we can add a classification method. But first we need a functions that returns the dot product of two vectors.</p>
+<p><strong>Dot product function</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">object</span> <span style="color:#a6e22e">dotProduct</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">def</span> apply<span style="color:#f92672">(</span>x<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">],</span> w<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Double</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">(</span>x<span style="color:#f92672">,</span> w<span style="color:#f92672">).</span>zipped<span style="color:#f92672">.</span>map<span style="color:#f92672">((</span>a<span style="color:#f92672">,</span> b<span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> a <span style="color:#f92672">*</span> b<span style="color:#f92672">).</span>sum
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>The classification method than becomes:</p>
+<p><strong>Classifier</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> classification<span style="color:#f92672">(</span>x<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">]],</span> w<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> w<span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    x<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span>dotProduct<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">,</span> w<span style="color:#f92672">).</span>signum<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>Finally we can implement the training method. This method will update the weights by applying <strong>eq 1.</strong> and <strong>eq. 2</strong>. The <code>fit</code> method implements the training of the SVM model. It returns Unit, because it changes the state of the weights.</p>
+<p>The functions <code>gradient</code> and <code>regularizationGradient</code> are <strong>eq 1.</strong> and <strong>eq. 2</strong> respectively. The function <code>misClassification</code> is a helper function used in the pattern matching guards of the <code>trainOneEpoch</code> function.</p>
+<p>This <code>trainOneEpoch</code> is tail recursive and iterates over all the data samples. If a classification is correct it will update the weights according to <code>regularizationGradient</code>, if the classification is incorrect, the weights are updated with <code>gradient</code>.</p>
+<p>The last function is <code>trainEpochs</code> which is also tail recursive and will iterate until <code>epochCount == 0</code>.</p>
+<p>The call order of the functions is <code>trainEpochs</code> → <code>trainOneEpoch</code> → <strong>{</strong><code>gradient</code>, <code>regularizationGradient</code>, <code>misClassification</code><strong>}</strong>. Note that both gradient methods have a value of <code>1 / epoch</code> wich are a decreasing learning rate, making the learning more stable.</p>
+<p><strong>Training method</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>  <span style="color:#66d9ef">def</span> fit<span style="color:#f92672">()</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Unit</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Will only be called if classification is wrong.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">def</span> gradient<span style="color:#f92672">(</span>w<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">],</span> data<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">],</span> label<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">,</span> epoch<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">(</span>w<span style="color:#f92672">,</span> data<span style="color:#f92672">).</span>zipped<span style="color:#f92672">.</span>map<span style="color:#f92672">((</span>w<span style="color:#f92672">,</span> d<span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> w <span style="color:#f92672">+</span> eta <span style="color:#f92672">*</span> <span style="color:#f92672">((</span>d <span style="color:#f92672">*</span> label<span style="color:#f92672">)</span> <span style="color:#f92672">+</span> <span style="color:#f92672">(-</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> epoch<span style="color:#f92672">)</span> <span style="color:#f92672">*</span> w<span style="color:#f92672">)))</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Misclassification treshold.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">def</span> misClassification<span style="color:#f92672">(</span>x<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">],</span> w<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">],</span> label<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Boolean</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      dotProduct<span style="color:#f92672">(</span>x<span style="color:#f92672">,</span> w<span style="color:#f92672">)</span> <span style="color:#f92672">*</span> label <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> regularizationGradient<span style="color:#f92672">(</span>w<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">],</span> label<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">,</span> epoch<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      w<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span>i <span style="color:#66d9ef">=&gt;</span> i <span style="color:#f92672">+</span> eta <span style="color:#f92672">*</span> <span style="color:#f92672">(-</span><span style="color:#ae81ff">2</span>  <span style="color:#f92672">*</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> epoch<span style="color:#f92672">)</span> <span style="color:#f92672">*</span> i<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> trainOneEpoch<span style="color:#f92672">(</span>w<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">],</span> x<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">DataFrame</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">],</span> labels<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">],</span> epoch<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>x<span style="color:#f92672">,</span> labels<span style="color:#f92672">)</span> <span style="color:#66d9ef">match</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// If classification is wrong. Update weights with loss gradient
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#66d9ef">case</span> <span style="color:#f92672">(</span>xh <span style="color:#f92672">+:</span> xs<span style="color:#f92672">,</span> lh <span style="color:#f92672">+:</span> ls<span style="color:#f92672">)</span> <span style="color:#66d9ef">if</span> misClassification<span style="color:#f92672">(</span>xh<span style="color:#f92672">,</span> w<span style="color:#f92672">,</span> lh<span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> trainOneEpoch<span style="color:#f92672">(</span>gradient<span style="color:#f92672">(</span>w<span style="color:#f92672">,</span> xh<span style="color:#f92672">,</span> lh<span style="color:#f92672">,</span> epoch<span style="color:#f92672">),</span> xs<span style="color:#f92672">,</span> ls<span style="color:#f92672">,</span> epoch<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// If classification is correct: update weights with regularizer gradient
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#66d9ef">case</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">_</span> <span style="color:#f92672">+:</span> xs<span style="color:#f92672">,</span> lh <span style="color:#f92672">+:</span> ls<span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> trainOneEpoch<span style="color:#f92672">(</span>regularizationGradient<span style="color:#f92672">(</span>w<span style="color:#f92672">,</span> lh<span style="color:#f92672">,</span> epoch<span style="color:#f92672">),</span> xs<span style="color:#f92672">,</span> ls<span style="color:#f92672">,</span> epoch<span style="color:#f92672">)</span> 
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">case</span> <span style="color:#66d9ef">_</span> <span style="color:#66d9ef">=&gt;</span> w
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> trainEpochs<span style="color:#f92672">(</span>w<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">],</span> epochs<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">,</span> epochCount<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Vector</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Double</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> epochs <span style="color:#66d9ef">match</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">case</span> <span style="color:#ae81ff">0</span> <span style="color:#66d9ef">=&gt;</span> w
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">case</span> <span style="color:#66d9ef">_</span> <span style="color:#66d9ef">=&gt;</span> trainEpochs<span style="color:#f92672">(</span>trainOneEpoch<span style="color:#f92672">(</span>w<span style="color:#f92672">,</span> df<span style="color:#f92672">,</span> labels<span style="color:#f92672">,</span> epochCount<span style="color:#f92672">),</span> epochs <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">,</span> epochCount <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Update weights
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    w <span style="color:#66d9ef">=</span> trainEpochs<span style="color:#f92672">(</span>w<span style="color:#f92672">,</span> epochs<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">}</span>
+</span></span></code></pre></div></br>
+## Validation
+<p>In the code snippet below a new SVM object is trained on the Iris dataset. The model has an accuracy of 100% on the training data. In the next line we plot the weights learned by the model.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">object</span> <span style="color:#a6e22e">Main</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">def</span> main<span style="color:#f92672">(</span>args<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Array</span><span style="color:#f92672">[</span><span style="color:#66d9ef">String</span><span style="color:#f92672">])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Unit</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// load data
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">val</span> <span style="color:#f92672">(</span>df<span style="color:#f92672">,</span> labels<span style="color:#f92672">)</span> <span style="color:#66d9ef">=</span> readCSV<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;./res/iris.csv&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// initialize new SVM object
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">val</span> svm <span style="color:#66d9ef">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">SVM</span><span style="color:#f92672">(</span>df<span style="color:#f92672">,</span> labels<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// train svm
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    svm<span style="color:#f92672">.</span>fit<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Classification accuracy:&#34;</span><span style="color:#f92672">,</span> 
+</span></span><span style="display:flex;"><span><span style="color:#f92672">(</span>svm<span style="color:#f92672">.</span>classification<span style="color:#f92672">(</span>svm<span style="color:#f92672">.</span>df<span style="color:#f92672">),</span> labels<span style="color:#f92672">).</span>zipped<span style="color:#f92672">.</span>count<span style="color:#f92672">(</span>i <span style="color:#66d9ef">=&gt;</span> i<span style="color:#f92672">.</span>_1 <span style="color:#f92672">==</span> i<span style="color:#f92672">.</span>_2<span style="color:#f92672">).</span>toDouble <span style="color:#f92672">/</span> svm<span style="color:#f92672">.</span>df<span style="color:#f92672">.</span>length<span style="color:#f92672">)</span> 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">//&gt;&gt; (Classification accuracy:,1.0)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Weigths:&#34;</span><span style="color:#f92672">,</span> svm<span style="color:#f92672">.</span>w<span style="color:#f92672">)</span> 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">//&gt;&gt; (Weigths:,Vector(86.00000000000219, -106.09999999999715, -144.0))
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><h3 id="decision-boundary">Decision boundary</h3>
+<p>The first two values of the weights vector correspond to the features <span>\( x_1 \)</span> and <span>\( x_2 \)</span>. The last value of weights vector is the bias term. We know the optimal decision boundary equals:</p>
+<div>$$ \vec{x} \cdot \vec{w} - b = 0  $$</div>
+<p>Because we only have two dimensions we can expand the formula to:</p>
+<div>$$ x_1w_1 + x_2w_2 - b = 0  $$</div>
+<p>The equation for our decision boundary in two dimensions is thus equal to:</p>
+<div>$$ x_2 = \frac{-x_1w_1 + b}{w_2}  $$</div>
+<p>Below we&rsquo;ll see a plot of this separating hyperplane. The eventual optimal seperating hyperplane is tunable. If we change the parameters for the learning rate or the <span>\( \lambda \)</span> value, the separating hyperplane may have an other direction. The parameters that are best are dependent of the data. When the data is for instance linearly separable a hard margin is possible and it may be wise to set the <span>\( \lambda \)</span> value very low.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">val</span> f <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Figure</span><span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">val</span> p <span style="color:#66d9ef">=</span> f<span style="color:#f92672">.</span>subplot<span style="color:#f92672">(</span><span style="color:#ae81ff">0</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>p<span style="color:#f92672">.</span>title <span style="color:#66d9ef">=</span> <span style="color:#e6db74">&#34;Decision boundary SVM&#34;</span>
+</span></span><span style="display:flex;"><span>p<span style="color:#f92672">.</span>xlabel <span style="color:#66d9ef">=</span> <span style="color:#e6db74">&#34;x1&#34;</span>
+</span></span><span style="display:flex;"><span>p<span style="color:#f92672">.</span>ylabel <span style="color:#66d9ef">=</span> <span style="color:#e6db74">&#34;x2&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">val</span> x1 <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>svm<span style="color:#f92672">.</span>df<span style="color:#f92672">,</span> labels<span style="color:#f92672">).</span>zipped<span style="color:#f92672">.</span>filter<span style="color:#f92672">((</span><span style="color:#66d9ef">_</span><span style="color:#f92672">,</span> b<span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> b <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#f92672">).</span>_1
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">val</span> x2 <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>svm<span style="color:#f92672">.</span>df<span style="color:#f92672">,</span> labels<span style="color:#f92672">).</span>zipped<span style="color:#f92672">.</span>filter<span style="color:#f92672">((</span><span style="color:#66d9ef">_</span><span style="color:#f92672">,</span> b<span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> b <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">).</span>_1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>p <span style="color:#f92672">+=</span> plot<span style="color:#f92672">(</span>x1<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">(</span><span style="color:#ae81ff">0</span><span style="color:#f92672">)),</span> x1<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">)),</span> <span style="color:#e6db74">&#39;.&#39;</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;b&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>p <span style="color:#f92672">+=</span> plot<span style="color:#f92672">(</span>x2<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">(</span><span style="color:#ae81ff">0</span><span style="color:#f92672">)),</span> x2<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">)),</span> <span style="color:#e6db74">&#39;.&#39;</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;r&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">val</span> sorted_x <span style="color:#66d9ef">=</span> x<span style="color:#f92672">.</span>sortWith<span style="color:#f92672">((</span>i1<span style="color:#f92672">,</span> i2<span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> i1<span style="color:#f92672">(</span><span style="color:#ae81ff">0</span><span style="color:#f92672">)</span> <span style="color:#f92672">&gt;</span> i2<span style="color:#f92672">(</span><span style="color:#ae81ff">0</span><span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">val</span> w_ <span style="color:#66d9ef">=</span> weights<span style="color:#f92672">.</span>patch<span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">,</span> <span style="color:#a6e22e">Vector</span><span style="color:#f92672">(</span><span style="color:#ae81ff">0.0</span><span style="color:#f92672">),</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>p <span style="color:#f92672">+=</span> plot<span style="color:#f92672">(</span>sorted_x<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">(</span><span style="color:#ae81ff">0</span><span style="color:#f92672">)),</span> sorted_x<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span>x <span style="color:#66d9ef">=&gt;</span> <span style="color:#f92672">-</span>dotProduct<span style="color:#f92672">(</span>x<span style="color:#f92672">,</span> w_<span style="color:#f92672">)</span> <span style="color:#f92672">/</span>  weights<span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">)))</span>
+</span></span><span style="display:flex;"><span>f<span style="color:#f92672">.</span>saveas<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;fig.png&#34;</span><span style="color:#f92672">)</span>
+</span></span></code></pre></div><figure><img src="../../../../../img/post-11-svm/validation.png"/><figcaption>
+            <h4>Decision boundary SVM object.</h4>
+        </figcaption>
+</figure>
+
+</br>
+# End notes
+<p>This post we discussed the definition of a linear support vector machine in a high level view. Next we defined the mathematical model of a SVM and finally we wrote a Scala class that is able to find an optimal hyperplane in linearly seperable data.</p>
+<p><strong>Further reads:</strong></p>
+<p>The model for the SVM discussed today is restricted to binary linearly seperable data only. If we want to classify non linearly seperable data, we need to attend to a technique called the <a href="https://en.wikipedia.org/wiki/Kernel_method">kernel trick</a>. If you want to classify more than two classes with a SVM, a commonly used method is <a href="https://en.wikipedia.org/wiki/Multiclass_classification">one-vs-rest</a>.</p>
+<p><a href="https://www.ritchievink.com/blog/2017/07/10/programming-a-neural-network-from-scratch/">If you want to read a same kind of post about neural networks, read my earlier post.</a></p>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

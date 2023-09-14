@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Programming a neural network from scratch - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2017/07/10/programming-a-neural-network-from-scratch/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-9-mlp/nn_diagram_1.jpg" />
+
+
+<title>Programming a neural network from scratch | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Programming a neural network from scratch</h1>
+    <h2 class="subtitle is-5">July 10, 2017 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/algorithm-breakdown">algorithm breakdown</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/deep-learning">deep learning</a>
+    
+</div>
+
+    
+    <div class="content">
+      <h2 id="intro">Intro</h2>
+<p>At the moment of writing this post it has been a few months since I&rsquo;ve lost myself in the concept of machine learning. I have been using packages like TensorFlow, Keras and Scikit-learn to build a high conceptual understanding of the subject. I did understand intuitively what the backpropagation algorithm and the idea of minimizing costs does, but I hadn&rsquo;t programmed it myself.
+Tensorflow is regarded as quite a low level machine learning package, but it still abstracts the backpropagation algorithm for you. In order to better understand the underlying concepts I&rsquo;ve decided to build a simple neural network without any machine learning framework. In this post I describe my implementation of a various depth multi layer perceptron in Python. We&rsquo;ll be only using the Numpy package for the linear algebra abstraction.</p>
+</br>
+<h2 id="1-network">1. Network</h2>
+<p>This part of the post is going to walk through the basic mathematical concepts of what a neural network does. In the same time we are going to write the code needed to implement these concepts.</p>
+<p>We are going to build a three layer neural network. Figure 1 shows an example of a three layered neural network. This is the minimum required amount of layers when talking of a multi layer perceptron network. Every neural net requires an input layer and an output layer. The remaining layers are the so called hidden layers. The input layers will have data as input and the output layers will make predictions. Such a prediction can be a continuous value like stock market prices or could be a label classifying images.</p>
+<figure><img src="../../../../../img/post-9-mlp/nn_diagram_1.png"/><figcaption>
+            <h4>Image 1: Feed forward pass of a neural network</h4>
+        </figcaption>
+</figure>
+
+</br>
+<h3 id="11-single-layer">1.1 Single layer</h3>
+<p>The mathematics of a single layer are the same for every layer. This means that we can focus on the mathematical operations of a single layer and later apply it to the whole network. We are now looking at the first layer of the network.</p>
+<p>If we look at this first layer, it has got a certain input vector <span>\( \vec{x} \)</span> representing the data. This data is multiplied with the weights <span>\( \vec{w} \)</span> and shifted over <span>\( \vec{b} \)</span>. The output is:</p>
+<div class="formula-wrap">$$ \sum{\vec{x} \odot \vec{w} + \vec{b}} = z \tag{1.1.0} $$</div>
+<p>Note that <span>\( \odot \)</span> means the Hadamard product and is just elementwise multiplication. If we would make this visual in vector or neuron form it would look something like this.</p>
+<div style="text-align:center"><figure><img src="../../../../../img/post-9-mlp/pc_1.png"/><figcaption>
+            <h4>Vector form</h4>
+        </figcaption>
+</figure>
+</div>
+<div style="text-align:center"><figure><img src="../../../../../img/post-9-mlp/pc_2.png"/><figcaption>
+            <h4>Neuron form</h4>
+        </figcaption>
+</figure>
+</div>
+<p>The figures above show the connection of three input nodes to one node of a hidden layer. The output vector is eventually summed resulting in one scalar output in the hidden layer node. The output of a hidden layer node is the input for the next layer. As you can see the process repeats until the neural networks generates an output.</p>
+<p>Note that we can also replace the bias vector with one bias scalar. By doing so we can use the dot product of the weights and the activations of the previous layer <span>\( x \)</span>.</p>
+<div class="formula-wrap">$$ \vec{x} \cdot \vec{w_1} + b_1 = z \tag{1.1.1} $$</div>
+</br>
+<h3 id="12-non-linearity">1.2 Non linearity</h3>
+<p>As discussed above figure 1 shows a network that consists of inputs. The input vector <span>\( \vec{x}\)</span> is multiplied with <span>\( \vec{w} \)</span> and shifted along <span>\( \vec{b} \)</span>, the weights and biases of the first layer. The second layer seems to repeat the same math operation, only with other weights and biases. This is a concatenation of two linear functions. <span>\( w \cdot x + b \)</span> is a linear function, and feeding the output of <span>\( w^{(1)} \cdot x + b^{(1)} \)</span> in <span>\( w^{(2)} \cdot x + b^{(2)} \)</span> will result in another linear function. If we assume that our network is properly trained, we can conclude that the last layer is redundant as the first layer could have already represented the linear function we are looking for.</p>
+<p>A concatenation of multiple linear functions can thus be replaced by one linear function and isn&rsquo;t beneficial to the model. To give the second layer any purpose the output of the first layer <span>\( z \)</span> is multiplied with a non linear function <span>\( f(x) \)</span> resulting in:</p>
+<div class="formula-wrap">$$ f(\vec{x} \cdot \vec{w^{(1)}} + b^{(1)}) = a^{(2)} \tag{1.2.0} $$</div>
+<p>The final output a<sup>(2)</sup> is called the activation of the neuron. In this case we use the supercript 2, as it is the activation of the node in the second layer.</p>
+<p>The non linear functions we are going to use are the Relu function and the Sigmoid function.</p>
+<p>Relu function:</p>
+<div class="formula-wrap">$$ f(x) = max(0, x) \tag{1.2.1}$$</div>
+<div style="text-align:center"><figure><img src="../../../../../img/post-9-mlp/relu.png"/>
+</figure>
+</div>
+<p>Sigmoid function:</p>
+<div class="formula-wrap">$$ f(x) = \frac{1}{1 + e^{-x}} \tag{1.2.2} $$</div>
+<div style="text-align:center"><figure><img src="../../../../../img/post-9-mlp/sigmoid.png"/>
+</figure>
+</div>
+<p>These non linear functions give the network the ability to learn non linear relations in the data and make it possible to learn in more depths of abstraction. The relu function will let every positive value pass through the network. Negative values will be changed to zero so the neuron doesn&rsquo;t activate at all. The sigmoid function squashes the outputs to a value between zero and one. We can think of this as probabilities. We will use the relu function at the hidden layer and the sigmoid function at the output layer.</p>
+</br>
+<h2 id="13-code">1.3 Code</h2>
+<p>Now that we have got some sort of high level view on what is happening in the net, we can write some code. Just a few variable notations up front:</p>
+<ul>
+<li><strong>w</strong>: weights</li>
+<li><strong>b</strong>: biases</li>
+<li><strong>z</strong>: output of a neuron: <span>\(x \cdot w + b\)</span></li>
+<li><strong>a</strong>: activations of z:  <span>\(f(z)\)</span></li>
+</ul>
+<h3 id="activation-functions">Activation functions</h3>
+<p>First we write the two activation functions. The @staticmethod decorator makes it possible to call the two methods directly from class level so we don&rsquo;t have to create any objects from the two classes.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Relu</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@staticmethod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">activation</span>(z):
+</span></span><span style="display:flex;"><span>        z[z <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> z
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Sigmoid</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@staticmethod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">activation</span>(z):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> (<span style="color:#ae81ff">1</span> <span style="color:#f92672">+</span> np<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>z))
+</span></span></code></pre></div></br>
+<h3 id="network-class">Network class</h3>
+<p>Next is the container that will keep the hidden state and perform all the logic for the neural network: the Network class.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Network</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, dimensions, activations):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param dimensions: (tpl/ list) Dimensions of the neural net. (input, hidden layer, output)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param activations: (tpl/ list) Activations functions.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>n_layers <span style="color:#f92672">=</span> len(dimensions)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>loss <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>learning_rate <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Weights and biases are initiated by index. For a one hidden layer net you will have a w[1] and w[2]</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>w <span style="color:#f92672">=</span> {}
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>b <span style="color:#f92672">=</span> {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Activations are also initiated by index. For the example we will have activations[2] and activations[3]</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>activations <span style="color:#f92672">=</span> {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(len(dimensions) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>):
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>w[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>randn(dimensions[i], dimensions[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>]) <span style="color:#f92672">/</span> np<span style="color:#f92672">.</span>sqrt(dimensions[i])
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>b[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros(dimensions[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>activations[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> activations[i]
+</span></span></code></pre></div><p>In the <code>__init__</code> function we initiate the neural network. The <code>dimensions</code> argument should be an iterable with the dimensions of the layers. Or in other words the amount of nodes per layer. The <code>activations</code> argument should be an iterable containing the activation class objects we want to use. We need to create some inner state of weights and biases. This inner state is represented with two dictionaries <code>self.w</code> and <code>self.b</code>. In the for loop we assign the chosen dimensions to the layer numbers. A neural network containing 3 layers; input layer, hidden layer, output layer will have weights and biases assigned in layer 1 and layer 2. Layer 3 will be the output neuron.</p>
+<p>We can see that the biases are initiated as zero and the weights are drawn from a random distribution. The dimensions of the weights are determined by the dimensions of the layers. The drawn weights are eventually divided by the square root of the current layers dimensions. This is called <a href="http://andyljones.tumblr.com/post/110998971763/an-explanation-of-xavier-initialization">Xavier initialization</a> and helps prevent neuron activations from being too large or too small.</p>
+<p>So if we want to initiate a neural network with the same dimensons as the one in figure 1 we could create an object from the Network class. I&rsquo;ve set the random seed to 1 in order to reproduce the same outputs.</p>
+<h4 id="initialization">initialization</h4>
+<pre tabindex="0"><code>np.random.seed(1)
+nn = Network((2, 3, 1), (Relu, Sigmoid))
+</code></pre><p>If we print the weights and biases we will receive the following dictionaries. As said in the first part of the post, every input neuron is connected to all the neurons of the next layer, resulting in 2 * 3 = 6 weights in the first layer and resulting in 3 * 1 = 3 weights in de second layer. Because we&rsquo;ve chosen to add the biases after the summation has taken place, we only need as many biases as there are nodes in the next layer.</p>
+<p>The following snippet shows the location of the internal state of the network. The keys represent the layers, the values represent the weights, biases and activation classes.</p>
+<h4 id="internal-state">internal state</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Weights:
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">1</span>: array([[ <span style="color:#ae81ff">1.14858562</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">0.43257711</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">0.37347383</span>],
+</span></span><span style="display:flex;"><span>	       [<span style="color:#f92672">-</span><span style="color:#ae81ff">0.75870339</span>,  <span style="color:#ae81ff">0.6119356</span> , <span style="color:#f92672">-</span><span style="color:#ae81ff">1.62743362</span>]]),
+</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">2</span>: array([[ <span style="color:#ae81ff">1.00736754</span>],
+</span></span><span style="display:flex;"><span>	       [<span style="color:#f92672">-</span><span style="color:#ae81ff">0.43948301</span>],
+</span></span><span style="display:flex;"><span>	       [ <span style="color:#ae81ff">0.18419731</span>]])}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Biases:
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">1</span>: array([ <span style="color:#ae81ff">0.</span>,  <span style="color:#ae81ff">0.</span>,  <span style="color:#ae81ff">0.</span>]), 
+</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">2</span>: array([ <span style="color:#ae81ff">0.</span>])
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Activation classes:
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">2</span>: <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span> <span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">__main__</span><span style="color:#f92672">.</span>Relu<span style="color:#e6db74">&#39;&gt;, </span>
+</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">3</span>: <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span> <span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#a6e22e">__main__</span><span style="color:#f92672">.</span>Sigmoid<span style="color:#e6db74">&#39;&gt;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div></br>
+<h2 id="13-feeding-forward">1.3 Feeding forward</h2>
+<p>Now we are going to implement the forward pass. The forward pass is how the network generates output. The inputs that are fed into the network are multiplied with the weights and shifted along the biases of every layer (if they pass through the Relu function) and finaly they pass the sigmoid function resulting in an output between 0 and 1. The mathematics of the forward pass are the same for every layer. The only variable is the activation function <span>\( f(x) \)</span>.</p>
+<div class="formula-wrap">$$ \vec{a_(i - 1)} \cdot \vec{w_i} + b_i = z_i \tag{1.3.0} $$</div>
+<div class="formula-wrap">$$ f(z_i) = a_i \tag{1.3.1} $$</div>
+<p>However algorithmicly we have abstracted the activation function with activation classes. All the activation classes have got the method <code>.activation()</code>. This means that we can loop over all the layers doing the same mathematical operation. Finally we call the varying activation function with the <code>.activation()</code> method. We add a <code>._feed_forward()</code> method to the <code>Network</code> class.</p>
+<pre tabindex="0"><code>    def _feed_forward(self, x):
+        &#34;&#34;&#34;
+        Execute a forward feed through the network.
+
+        :param x: (array) Batch of input data vectors.
+        :return: (tpl) Node outputs and activations per layer. 
+                 The numbering of the output is equivalent to the layer numbers.
+        &#34;&#34;&#34;
+
+        # w(x) + b
+        z = {}
+
+        # activations: f(z)
+        a = {1: x}  # First layer has no activations as input. The input x is the input.
+
+        for i in range(1, self.n_layers):
+            # current layer = i
+            # activation layer = i + 1
+            z[i + 1] = np.dot(a[i], self.w[i]) + self.b[i]
+            a[i + 1] = self.activations[i + 1].activation(z[i + 1])
+
+        return z, a
+</code></pre><p>We create two new dictionaries in the function <code>z</code> and <code>a</code>. In these dictionaries we append the outputs of every layer, thus again the keys of the dictionaries map to the layers of the neural network. Note that the first layer has no &lsquo;real&rsquo; activations as it is the input layer. Here we consider the inputs <code>x</code> as the activations of the previous layer.</p>
+<p>The dictionaries structure looks like this.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>a:
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">1</span>: <span style="color:#e6db74">&#34;inputs x&#34;</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">2</span>: <span style="color:#e6db74">&#34;activations of relu function in the hidden layer&#34;</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">3</span>: <span style="color:#e6db74">&#34;activations of the sigmoid function in the output layer&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>z:
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">2</span>: <span style="color:#e6db74">&#34;z values of the hidden layer&#34;</span>, 
+</span></span><span style="display:flex;"><span>	<span style="color:#ae81ff">3</span>: <span style="color:#e6db74">&#34;z values of the output layer&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The last thing we need is a <code>.predict()</code> method.</p>
+<pre tabindex="0"><code>    def predict(self, x):
+        &#34;&#34;&#34;
+        :param x: (array) Containing parameters
+        :return: (array) A 2D array of shape (n_cases, n_classes).
+        &#34;&#34;&#34;
+        _, a = self._feed_forward(x)
+        return a[self.n_layers]
+</code></pre></br>
+<h2 id="2-learning">2. Learning</h2>
+<p>Well, that&rsquo;s nice. We now have created a neural network that can produce outputs based on inputs. However the neural network in this state is still quite useless. Slightly understating, the chance of us initializing the weights and biases just right are pretty slim. In this part we are going through the math and the code required to make the network learn. This part is going to be quite mathematical, but it shouldn&rsquo;t be too hard, as it is most repetition of the same concept. It will help if you keep an eye on the superscript notations. These notations will tell you in which layer we are in the network.</p>
+<h3 id="21-loss-function">2.1 Loss function</h3>
+<p>The network should be able to learn and optimize its inner state. This is done by minimizing a loss function. A loss function describes the rate of error of the predictive power of a neural network. We define a loss function that gives high error rates when the model is very bad at predictions and low error rates when the model gives good predictions. The loss function we define is dependent of the weights and biases of the model. We can tweak the weights and the biases in such a way the output of loss function declines, minimizing the loss function and maximizing the predictive power of the neural network. As a lost function (J) we use the squared error loss.</p>
+<div class="formula-wrap">$$ J = \sum{\frac{1}{2}(y - \hat{y})^2} \tag{2.1.0} $$</div>
+<p>Where <span>\( y \)</span> is the neural networks prediction and <span>\( \hat{y} \)</span> is the ground truth label, the real world observation.</p>
+<h3 id="gradient-descent">Gradient descent</h3>
+<p>Ok, now let&rsquo;s think about this intuitively. The loss function gives us information about the prediction error of the model. Our goal is to minimize the output of the loss function by minimizing the weights and biases. We know from calculus that if we take the partial derivative of the loss function with respect to a certain weight <span>\( w_i \) </span> we get the gradient of the curve <span>\( \frac{\partial{J}}{\partial{w_i}} \)</span> in that direction. In other words we get information of how much the weight <span>\( w_i \)</span> contributes to the loss functions output. The opposite direction of <span>\( \frac{\partial{J}}{\partial{w_i}} \)</span> points to the direction that minimizes the output of the loss function.</p>
+<p>We can go in this opposite direction by reducing the value <span> \( w_i \) </spang> with a fraction of <span>\( \frac{\partial{J}}{\partial{w_i}} \)</span>. By doing so we reduce the loss functions error and we get a slightly better prediction in the future. This weight optimization is called gradient descent and is done with every weight and bias of the network.</p>
+<figure><img src="../../../../../img/post-9-mlp/minimize_J.png"/><figcaption>
+            <h4>Image 2: Minimize the loss function J(w) by updating the weights.</h4>
+        </figcaption>
+</figure>
+
+</br>
+<h3 id="chain-rule">Chain rule</h3>
+<p>To determine the partial derivative of J with respect to a certain weight, we need to apply the <a href="https://en.wikipedia.org/wiki/Chain_rule">chain rule in differentiation</a>, meaning we can break the problem down in subsequent multiplications of derivatives. The chain rule is noted as:</p>
+<div class="formula-wrap">$$ \frac{dz}{dx} = \frac{dz}{dy} \cdot \frac{dy}{dx} \tag{2.1.1}$$</div>
+<p>And because of the <a href="https://en.wikipedia.org/wiki/Sum_rule_in_differentiation">sum rule in differentiation</a> we can also say that the derivative of the sum is equal to the sum of the derivates, therefore we can lose the sum sign in the loss function and determine the derivative of a single weight.</p>
+<p>In the following part we are going to walk through the derivation of the partial derivatives of a single weight in layer one and a single weight in layer two. In reality we are going to apply this to a whole batch of weights, but for now we&rsquo;ll just consider one. Figure 3 shows the notations we&rsquo;ll use. Note that the derivation of the partial derivatives follows the direction of the green arrow. We are going to backpropagate the error up until the weight we are considering.</p>
+<figure><img src="../../../../../img/post-9-mlp/partial_derivative_notations.png"/><figcaption>
+            <h4>Image 3: Notation of the functions in the three layer network.</h4>
+        </figcaption>
+</figure>
+
+</br>
+<h3 id="22-weights-layer-2">2.2 Weights layer 2</h3>
+<p>So let&rsquo;s start with the derivative of a weight in layer 2, <span>\( w^{(2)} \)</span>. If we apply the chain rule upon <span>\( w^{(2)} \)</span>, we derive:</p>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(2)}}} = \frac{\partial{J}}{\partial{y}} \cdot \frac{\partial{y}}{\partial{z^{(3)}}} \cdot \frac{\partial{z^{(3)}}}{\partial{w^{(2)}}} \tag{2.2.0} $$</div>
+<p>We are grouping the first two derivatives of the formula above in a new variable <span>\( \delta^{(L)} \)</span> where the superscript L means &lsquo;Last layer&rsquo;.</p>
+<div class="formula-wrap">$$ \delta^{(L)} = \frac{\partial{J}}{\partial{y}} \cdot \frac{\partial{y}}{\partial{z^{(3)}}} \tag{2.2.1} $$</div>
+<p>Breaking apart the two derivates that make up <span>\( \delta^{(L)} \)</span> we find:</p>
+<ul>
+<li><span>\( \frac{\partial{J}}{\partial{y}} \)</span>: Derivate of the loss function with respect to the prediction y.</li>
+<li><span>\( \frac{\partial{y}}{\partial{z^{(3)}}} \)</span>: Derivate of the sigmoid function with respect to the neurons output z.</li>
+</ul>
+</br>
+<h5 id="derivative-of-the-loss-function">Derivative of the loss function</h5>
+<div class="formula-wrap">$$ J = \frac{1}{2}(y - \hat{y})^2 \tag{2.2.2} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{y}} = y - \hat{y} \tag{2.2.3} $$</div>
+<h5 id="derivative-of-the-sigmoid-function">Derivative of the sigmoid function</h5>
+<div class="formula-wrap">$$ \sigma(z) = \frac{1}{1 + e^{-z}} \tag{2.2.4} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{\sigma}}{\partial{z}} =  \sigma(z) \cdot (1 - \sigma(z)) \tag{2.2.5} $$</div>
+</br>
+<h5 id="coding-up">Coding up</h5>
+<p>We now have enough mathematical background to write the code for determining <span>\( \delta^{(L)} \)</span>. First we need to update our <code>Sigmoid</code> class, so we can call the derivative of the function via the <code>.prime()</code> method.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Sigmoid</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@staticmethod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">activation</span>(z):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> (<span style="color:#ae81ff">1</span> <span style="color:#f92672">+</span> np<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>z))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@staticmethod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">prime</span>(z):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> Sigmoid<span style="color:#f92672">.</span>activation(z) <span style="color:#f92672">*</span> (<span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> Sigmoid<span style="color:#f92672">.</span>activation(z))
+</span></span></code></pre></div><p>We also need a container for our squared error loss. I&rsquo;ve chosen to make a class from which we initialize objects by passing the activation function of our last layer in the network. In this case we initialize it with the <code>Sigmoid</code> class. If you like to use another function in the final layer, you can choose to do differently. The <code>MSE</code> class below is able to compute the <span>\( \delta^{(L)} \)</span> via calling the <code>.delta()</code> method. We are going to use this class later on in the network.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MSE</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, activation_fn):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param activation_fn: Class object of the activation function.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>activation_fn <span style="color:#f92672">=</span> activation_fn
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">activation</span>(self, z):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>activation_fn<span style="color:#f92672">.</span>activation(z)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@staticmethod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">loss</span>(y_true, y_pred):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param y_true: (array) One hot encoded truth vector.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param y_pred: (array) Prediction vector
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :return: (flt)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>mean((y_pred <span style="color:#f92672">-</span> y_true)<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@staticmethod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">prime</span>(y_true, y_pred):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> y_pred <span style="color:#f92672">-</span> y_true
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">delta</span>(self, y_true, y_pred):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Back propagation error delta
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :return: (array)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>prime(y_true, y_pred) <span style="color:#f92672">*</span> self<span style="color:#f92672">.</span>activation_fn<span style="color:#f92672">.</span>prime(y_pred)
+</span></span></code></pre></div><h5 id="derivative-of-the-z-function">Derivative of the z function</h5>
+<p>The last derivative we need is <span>\( \frac{\partial{z^{(3)}}}{\partial{w^{(2)}}} \)</span>. The derivative of the output of</p>
+<div class="formula-wrap">$$ z^{(3)}(a^{(2)}) = a^{(2)} \cdot w^{(2)} + b^{(2)}  \tag{2.2.6}$$</div>
+<div class="formula-wrap">$$ \frac{\partial{z^{(3)}}}{\partial{w^{(2)}}} = a^{(2)} \tag{2.2.7} $$</div>
+<h5 id="conclusion-weights-layer-2">Conclusion weights layer 2</h5>
+<p>Summing it all up we can conclude that we can define the partial derivative of the loss function with respect to <span>\( w^{(2)} \)</span> as the product of the <span>\( \delta^{(L)} \)</span> and the activations of the layer before the weights (i - 1).</p>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(2)}}} = \delta^{(L)} \cdot a^{(2)} \tag{2.2.8} $$</div>
+</br>
+<h3 id="23-weights-layer-1">2.3 Weights layer 1</h3>
+<p>For the weights in the first layer we can start with the chain rule right where we left off with <span>\( \delta^{(L)} \)</span>.</p>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(1)}}} = \delta^{(L)} \cdot \frac{\partial{z^{(3)}}}{\partial{a^{(2)}}} \cdot \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}}  \cdot \frac{\partial{z^{(2)}}}{\partial{w^{(1)}}}  \tag{2.3.0} $$</div>
+</br>
+##### Backpropagating error
+For this layer we can also determine a backpropagating error <span>\\( \delta^{(2)} \\)</span>. By doing so we'll find a repetitive pattern regarding the previous layer. The backpropagation error <span>\\( \delta \\)</span> is equal to the outcome of all the products of the chain rule except the last.
+<div class="formula-wrap">$$ \delta^{(2)} =  \delta^{(L)} \cdot \frac{\partial{z^{(3)}}}{\partial{a^{(2)}}} \cdot \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}}  \tag{2.3.1} $$</div>
+<h5 id="derivative-of-the-z-function-1">Derivative of the z function</h5>
+<p>For the derivate of <span>\( z^{(3)} \)</span> with respect to the activations of the second layer we find:</p>
+<div class="formula-wrap">$$ z^{(3)}(a^{(2)}) = a^{(2)} \cdot w^{(2)} + b^{(2)} \tag{2.3.2} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{z^{(3)}}}{\partial{a^{(2)}}} =  w^{(2)} \tag{2.3.3} $$</div>
+<h5 id="derivative-of-the-activation-function">Derivative of the activation function</h5>
+<p>And for the derivate of <span>\( a^{(2)} \)</span> we need to determine the prime of the Relu function:</p>
+<p>This derivative is zero for any negative value and one for any positive value.</p>
+<div class="formula-wrap">$$  (a^{(2)} > 0)  \quad \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}} = 1 \tag{2.3.4} $$</div>
+<div class="formula-wrap">$$  (a^{(2)} <= 0)  \quad \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}} = 0 \tag{2.3.5} $$</div>
+<p>For simplicity we&rsquo;ll just note this as:</p>
+<div class="formula-wrap">$$ \frac{\partial{a^{(2)}}}{\partial{z^{(2)}}} = f'^{(2)}(z^{(2)}) \tag{2.3.6} $$</div>
+<p>Resulting in <span>\( \delta^{(2)} \)</span> being:</p>
+<div class="formula-wrap">$$ \delta^{(2)} =  \delta^{(L)} \cdot w^{(2)} \cdot f'^{(2)}(z^{(2)}) \tag{2.3.7} $$</div>
+<p>By substituting <strong>eq. (2.3.7)</strong>  in <strong>eq. (2.3.0)</strong> we&rsquo;ll find:</p>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(1)}}} = \delta^{(2)} \cdot \frac{\partial{z^{(2)}}}{\partial{w^{(1)}}} \tag{2.3.8} $$</div>
+<p>In the equation above we only need to solve the last term.</p>
+<div class="formula-wrap">$$ z^{(2)}(w^{(1)}) = x \cdot w^{(1)} + b^{(1)} \tag{2.3.9} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{z^{(2)}}}{\partial{w^{(1)}}}  = x = a^{(1)} \tag{2.3.10} $$</div>
+<h5 id="conclusion-weights-layer-1">Conclusion weights layer 1</h5>
+<p>Just as we did for the weights in layer 2 we can define the partial derivative of the loss function with respect to <span>\( w^{(1)} \)</span> as the product of a backpropagating error <span>\( \delta \)</span> and the activations of the layer before the weights (i - 1).</p>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(1)}}} = \delta^{(2)} \cdot a^{(1)} \tag{2.2.9} $$</div>
+</br>
+<h3 id="24-backpropagation-formulas-single-weight">2.4 Backpropagation formulas single weight</h3>
+<p>We have derived how we can determine the partial derivates of a single weight. These partial derivates show the direction in which the error function is increasing due to that weight, thus by multiplying the weight in the opposite direction we decrease the error function and have got a learning algorithm!</p>
+<p>The important formulas for backpropagation are:</p>
+<h5 id="output-layer">output layer</h5>
+<div class="formula-wrap">$$ \delta^{(L)} = J' \cdot f'^{(L)}(z^{(L)}) \tag{2.4.0} $$</div>
+<h5 id="hidden-layers">hidden layers</h5>
+<div class="formula-wrap">$$ \delta^{(n)} =  \delta^{(n + 1)} \cdot w^{(n)} \cdot f'^{(n)}(z^{(n)}) \tag{2.4.1} $$</div>
+<h5 id="all-layers">all layers</h5>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(n - 1)}}} = \delta^{(n)} \cdot a^{(n - 1)} \tag{2.4.2} $$</div>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{b^{(n - 1)}}} = \delta^{(n)}  \tag{2.4.3} $$</div>
+<h5 id="updating-weights-and-biases">updating weights and biases</h5>
+</br>
+<h3 id="25-multiple-weights-and-batched-inputs">2.5 Multiple weights and batched inputs</h3>
+<p>To keep things simple, we have only regarded a single weight in the derivation above. In practice we are going to determine the derivates of all weights at once. We are also going to batch our training data by doing a feedforward pass to determine the loss function and then doing a backpropagation pass to update the weights and biases. This is called stochastic gradient descent, as we randomly choose the batches. <a href="http://ruder.io/optimizing-gradient-descent/">This blog post</a> gives you a really nice 3D-view of what minimizing a cost function with stochastic gradienct descent means.</p>
+<p>Let&rsquo;s see how the backpropagation formulas look in vector notation if we used a batch of three inputs. In the following vectors every row is a new training sample.</p>
+<p>The notation for a single weight was:</p>
+<div class="formula-wrap">$$ \delta^{(L)} = (y - \hat{y}) \odot f'^{(3)}(z^{(3)}) \tag{2.5.0} $$</div> 
+<p>If we rewrite <span>\( f&rsquo;^{(3)}(z^{(3)}) \)</span> in a shorter notation <span>\( f&rsquo; \)</span>, the vector notation of the <strong>eq. (2.5.0)</strong> becomes:</p>
+<div class="formula-wrap">$$
+\begin{bmatrix}
+y_1 - \hat{y_1}  \\ 
+y_2 - \hat{y_2}  \\
+y_3 - \hat{y_3} 
+\end{bmatrix} \odot 
+<p>\begin{bmatrix}
+f&rsquo;_1  \
+f&rsquo;_2  \
+f&rsquo;_3
+\end{bmatrix} =</p>
+<p>\begin{bmatrix}
+\delta_1  \
+\delta_2  \
+\delta_3
+\end{bmatrix}
+\tag{2.5.1}
+$$</div></p>
+<p>The next step is multiplying the backpropagating error <span>\( \delta \)</span> with our activities <span>\( a^{(2)}\)</span>. For a single weight the notation was:</p>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(2)}}} = \delta^{(L)} \cdot a^{(2)} \tag{2.5.2} $$</div>
+<p>We have got three nodes in layer 2 and three batched inputs. So our activity matrix has a shape of 3x3. Where every row represents the three nodes per input x.</p>
+<div class="formula-wrap">$$
+ a^{(2)} =
+\begin{bmatrix}
+a^{(2)}_{11} & a^{(2)}_{12} & a^{(2)}_{13} \\ 
+a^{(2)}_{21} & a^{(2)}_{22} & a^{(2)}_{23}& \\
+a^{(2)}_{31} & a^{(2)}_{32} & a^{(2)}_{33} &
+\end{bmatrix} 
+\tag{2.5.3} 
+$$</div>
+<p>If we transpose matrix <span>\( a^{(2)}\)</span> and matrix multiply with <span>\( \delta^{(L)} \)</span> we retrieve 3x1 vector representing the three derivatives for our three weights <span>\( w^{(2)} \)</span>.</p>
+<div class="formula-wrap">$$
+a^{(2)T} = 
+\begin{bmatrix}
+a^{(2)}_{11} & a^{(2)}_{21} & a^{(2)}_{31} \\ 
+a^{(2)}_{12} & a^{(2)}_{22} & a^{(2)}_{32}& \\
+a^{(2)}_{13} & a^{(2)}_{23} & a^{(2)}_{33} &
+\end{bmatrix}
+\tag{2.5.4} 
+$$</div>
+<div class="formula-wrap">$$
+\begin{bmatrix}
+a^{(2)}_{11} & a^{(2)}_{21} & a^{(2)}_{31} \\ 
+a^{(2)}_{12} & a^{(2)}_{22} & a^{(2)}_{32}& \\
+a^{(2)}_{13} & a^{(2)}_{23} & a^{(2)}_{33} &
+\end{bmatrix}  \cdot
+\begin{bmatrix}
+\delta_1  \\ 
+\delta_2  \\
+\delta_3
+\end{bmatrix} =
+<p>\begin{bmatrix}
+a^{(2)}<em>{11} \cdot \delta_1 + a^{(2)}</em>{21} \cdot \delta_2 + a^{(2)}<em>{31} \cdot \delta_3 \
+a^{(2)}</em>{12} \cdot \delta_1 + a^{(2)}<em>{22} \cdot \delta_2 + a^{(2)}</em>{32} \cdot \delta_3  \
+a^{(2)}<em>{13} \cdot \delta_1 + a^{(2)}</em>{23} \cdot \delta_2 + a^{(2)}_{33} \cdot \delta_3 &amp;
+\end{bmatrix}
+\tag{2.5.5}
+$$</div></p>
+<p>These matrix multiplications are way faster in an algorithm than a loop could be, so this is what we are going to implement for our neural net class. The backpropagation formula can be rewritten as:</p>
+<div class="formula-wrap">$$ \frac{\partial{J}}{\partial{w^{(n - 1)}}} = \delta^{(n)} \cdot a^{(n - 1)T} \tag{2.5.6} $$</div>
+</br>
+<h3 id="26-backpropagation-method">2.6 Backpropagation method</h3>
+<p>Ok this was the lengthy math part. I promise nothing but code up ahead. Now we know how we can compute the partial derivatives, we can finally implement the backpropagation algorithm. First we start with an <code>._update_w_b()</code> method to update the weights and biases of any given layer. The <code>self.learning_rate</code> attribute will control the learning process. The <code>index</code> parameter refers to the layer we want to update and the parameters <code>dw</code> and <code>delta</code> are the partial derivative and the backpropagating error.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_update_w_b</span>(self, index, dw, delta):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Update weights and biases.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param index: (int) Number of the layer
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param dw: (array) Partial derivatives
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param delta: (array) Delta error.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>w[index] <span style="color:#f92672">-=</span> self<span style="color:#f92672">.</span>learning_rate <span style="color:#f92672">*</span> dw
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>b[index] <span style="color:#f92672">-=</span> self<span style="color:#f92672">.</span>learning_rate <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>mean(delta, <span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><p>Now we can finally implement the backpropagation method <code>._back_prop()</code>. The inputs are two dictionaries containing the keys with the layer numbers and values representing the results of <span>\( w^{(i)} + b^{(i)} = z^{(i)} \)</span> and the activations <span>\( a^{(i)} \)</span>. The derivative <code>dw</code> and <code>delta</code> of the last layer are determined outside the for loop, as they differ from the other layers. Next we determine <code>dw</code> and <code>delta</code> for the remaining layers inside the for loop. Because the backpropagation is in the opposite direction, we reverse the loop, starting at the last layer.</p>
+<p><code>dw</code> and <code>delta</code> are added to a dictionary <code>update_params</code> where the keys represent the layer numbers and the values are a tuple containing <code>(dw, delta)</code>. When all derivatives of all the layers are determined, a second for loop runs to update our weights and biases.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_back_prop</span>(self, z, a, y_true):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        The input dicts keys represent the layers of the net.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        a = { 1: x,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              2: f(w1(x) + b1)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              3: f(w2(a2) + b2)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param z: (dict) w(x) + b
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param a: (dict) f(z)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param y_true: (array) One hot encoded truth vector.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Determine partial derivative and delta for the output layer.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># delta output layer</span>
+</span></span><span style="display:flex;"><span>        delta <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>loss<span style="color:#f92672">.</span>delta(y_true, a[self<span style="color:#f92672">.</span>n_layers])
+</span></span><span style="display:flex;"><span>        dw <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>dot(a[self<span style="color:#f92672">.</span>n_layers <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>T, delta)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        update_params <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>n_layers <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>: (dw, delta)
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># In case of three layer net will iterate over i = 2 and i = 1</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Determine partial derivative and delta for the rest of the layers.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Each iteration requires the delta from the previous layer, propagating backwards.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> reversed(range(<span style="color:#ae81ff">2</span>, self<span style="color:#f92672">.</span>n_layers)):
+</span></span><span style="display:flex;"><span>            delta <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>dot(delta, self<span style="color:#f92672">.</span>w[i]<span style="color:#f92672">.</span>T) <span style="color:#f92672">*</span> self<span style="color:#f92672">.</span>activations[i]<span style="color:#f92672">.</span>prime(z[i])
+</span></span><span style="display:flex;"><span>            dw <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>dot(a[i <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>T, delta)
+</span></span><span style="display:flex;"><span>            update_params[i <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> (dw, delta)
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e"># Update the weights and biases</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> k, v <span style="color:#f92672">in</span> update_params<span style="color:#f92672">.</span>items():
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>_update_w_b(k, v[<span style="color:#ae81ff">0</span>], v[<span style="color:#ae81ff">1</span>])
+</span></span></code></pre></div><h3 id="27-tying-it-all-together">2.7 Tying it all together</h3>
+<p>There is only one method left for a working neural network. The <code>.fit()</code> method will implement the control flow of the training procedure. It will start an outer loop running <strong>n</strong> epochs. Every new epoch the training data will be shuffled. The inner loop will go through the training data in step sizes of the <code>batch_size</code> parameter. The inner loop computes the <span>\( \vec{z} \)</span> and <span>\( \vec{a} \)</span> vector in the forward pass and feeds those in the <code>._back_prop()</code> method applying backpropagation on the internal state.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fit</span>(self, x, y_true, loss, epochs, batch_size, learning_rate<span style="color:#f92672">=</span><span style="color:#ae81ff">1e-3</span>):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param x: (array) Containing parameters
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param y_true: (array) Containing one hot encoded labels.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param loss: Loss class (MSE, CrossEntropy etc.)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param epochs: (int) Number of epochs.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param batch_size: (int)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param learning_rate: (flt)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">==</span> y_true<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">ValueError</span>(<span style="color:#e6db74">&#34;Length of x and y arrays don&#39;t match&#34;</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Initiate the loss object with the final activation function</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>loss <span style="color:#f92672">=</span> loss(self<span style="color:#f92672">.</span>activations[self<span style="color:#f92672">.</span>n_layers])
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>learning_rate <span style="color:#f92672">=</span> learning_rate
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(epochs):
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># Shuffle the data</span>
+</span></span><span style="display:flex;"><span>            seed <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>arange(x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span>            np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>shuffle(seed)
+</span></span><span style="display:flex;"><span>            x_ <span style="color:#f92672">=</span> x[seed]
+</span></span><span style="display:flex;"><span>            y_ <span style="color:#f92672">=</span> y_true[seed]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">for</span> j <span style="color:#f92672">in</span> range(x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">//</span> batch_size):
+</span></span><span style="display:flex;"><span>                k <span style="color:#f92672">=</span> j <span style="color:#f92672">*</span> batch_size
+</span></span><span style="display:flex;"><span>                l <span style="color:#f92672">=</span> (j <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">*</span> batch_size
+</span></span><span style="display:flex;"><span>                z, a <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_feed_forward(x_[k:l])
+</span></span><span style="display:flex;"><span>                self<span style="color:#f92672">.</span>_back_prop(z, a, y_[k:l])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">%</span> <span style="color:#ae81ff">10</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>                _, a <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_feed_forward(x)
+</span></span><span style="display:flex;"><span>                print(<span style="color:#e6db74">&#34;Loss:&#34;</span>, self<span style="color:#f92672">.</span>loss<span style="color:#f92672">.</span>loss(y_true, a[self<span style="color:#f92672">.</span>n_layers]))
+</span></span></code></pre></div></br>
+<h2 id="3-validation">3. Validation</h2>
+<p>That was all the code needed for implementing a vanilla multi layer perceptron. There is only one thing left to do, and that is validation of the code. We need to make sure the algorithm is indeed learning and isn&rsquo;t just a pseudo random number generator.</p>
+<p>As validation the small script below imports a dataset from the <code>sklearn</code> package. The dataset contains flattened images of the digits 1-9. By flattened we mean the 2D matrix containing the image&rsquo;s pixels is reshaped to a 1D vector. The <code>y</code> variable contains the labels of the dataset, being numbers from 1-9. The labels are stored as &lsquo;one hot encoded&rsquo; vectors. <a href="https://www.quora.com/What-is-one-hot-encoding-and-when-is-it-used-in-data-science">This Quora question</a> has a good answer to why we use one hot encoding!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> sklearn <span style="color:#f92672">import</span> datasets
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> sklearn.metrics
+</span></span><span style="display:flex;"><span>np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>seed(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>data <span style="color:#f92672">=</span> datasets<span style="color:#f92672">.</span>load_digits()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>x <span style="color:#f92672">=</span> data[<span style="color:#e6db74">&#34;data&#34;</span>]
+</span></span><span style="display:flex;"><span>y <span style="color:#f92672">=</span> data[<span style="color:#e6db74">&#34;target&#34;</span>]
+</span></span><span style="display:flex;"><span>y <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>eye(<span style="color:#ae81ff">10</span>)[y]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>nn <span style="color:#f92672">=</span> Network((<span style="color:#ae81ff">64</span>, <span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">10</span>), (Relu, Sigmoid))
+</span></span><span style="display:flex;"><span>nn<span style="color:#f92672">.</span>fit(x, y, loss<span style="color:#f92672">=</span>MSE, epochs<span style="color:#f92672">=</span><span style="color:#ae81ff">100</span>, batch_size<span style="color:#f92672">=</span><span style="color:#ae81ff">15</span>, learning_rate<span style="color:#f92672">=</span><span style="color:#ae81ff">1e-3</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>prediction <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>predict(x)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>y_true <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>y_pred <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(len(y)):
+</span></span><span style="display:flex;"><span>y_pred<span style="color:#f92672">.</span>append(np<span style="color:#f92672">.</span>argmax(prediction[i]))
+</span></span><span style="display:flex;"><span>y_true<span style="color:#f92672">.</span>append(np<span style="color:#f92672">.</span>argmax(y[i]))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(sklearn<span style="color:#f92672">.</span>metrics<span style="color:#f92672">.</span>classification_report(y_true, y_pred))
+</span></span></code></pre></div><p>Next we create an object <code>nn</code> from the <code>Network</code> class. The size of the first layer and the last layer are defined by our problem. The images have got 64 pixels, thus we need 64 input nodes. There is a total of 10 digits, resulting in 10 output nodes. The size of the hidden layer is arbitrary chosen to be 15.</p>
+<p>The <code>nn.predict()</code> method returns probabilities for every digit. We append the maximum argument (being the highest prediction) to a <code>y_true</code> and <code>y_pred</code> variable, representing the ground truth labels and the neural nets prediction respectively.</p>
+<p>Finally we print a classification report to see how well the neural net has performed for every single digit. The output is shown below.</p>
+<pre tabindex="0"><code>             precision    recall  f1-score   support
+
+          0       1.00      1.00      1.00       178
+          1       0.99      1.00      1.00       182
+          2       1.00      1.00      1.00       177
+          3       0.99      1.00      1.00       183
+          4       1.00      1.00      1.00       181
+          5       1.00      0.99      1.00       182
+          6       1.00      1.00      1.00       181
+          7       1.00      1.00      1.00       179
+          8       1.00      0.99      1.00       174
+          9       0.99      0.99      0.99       180
+
+avg / total       1.00      1.00      1.00      1797
+</code></pre><p>After 100 epochs the neural net is able to almost classify all the digits in the dataset and thus is learning!</p>
+<p>That is all the mathematics and code needed for the implementation of a multi layer perceptron. This is a vanilla neural network without any bells and whistles and will probably not yield the optimal results. Google&rsquo;s Tensorflow, for instance, has many more abstractions like convolutions and different kinds of optimizers. However, by programming such a network myself once, I&rsquo;ve gained a lot of insights and will appreciate the frameworks I use even more.</p>
+<p>If you are interested in the complete code, <a href="https://github.com/ritchie46/vanilla-machines/blob/master/vanilla_mlp.py">it is available on github!</a></p>
+<p>Want to read more about machine learning algorithms?</p>
+<ul>
+<li><a href="https://www.ritchievink.com/blog/2018/09/26/algorithm-breakdown-ar-ma-and-arima-models/">ARIMA (time series)</a></li>
+<li><a href="https://www.ritchievink.com/blog/2017/11/27/implementing-a-support-vector-machine-in-scala/">Support Vector Machines</a></li>
+</ul>
+</br>
+<h2 id="tldr">tl;dr</h2>
+<p>I wrote a simple multi layer perceptron using only Numpy and Python and learned a lot about backpropagation. <a href="https://github.com/ritchie46/vanilla-machines/blob/master/vanilla_mlp.py">You can find the complete code here</a>.</p>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

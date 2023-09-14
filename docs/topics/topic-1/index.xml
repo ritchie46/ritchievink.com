@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>topic 1 on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/topics/topic-1/</link>
+    <description>Recent content in topic 1 on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Fri, 12 May 2017 16:34:27 +0200</lastBuildDate><atom:link href="https://www.ritchievink.com/topics/topic-1/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Deep learning music classifier part 1. 30 seconds disco!</title>
+      <link>https://www.ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/</link>
+      <pubDate>Fri, 12 May 2017 16:34:27 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/</guid>
+      <description>Introduction As a nerd I am fascinated by the deep learning hype. Out of interest I have been following some courses, reading blogs and watched youtube video&amp;rsquo;s about the topic. Before diving into the content, I really thought this was something solely for the great internet companies and that it was not a subject us mortals could understand.
+While reading and learning more about it I&amp;rsquo;ve come to the insight that making use of deep learning techniques is not only something the internet giants and scientists can do.</description>
+    </item>
+    
+    <item>
+      <title>What should be explained in the Dutch SBR-B Guideline!</title>
+      <link>https://www.ritchievink.com/blog/2017/05/07/what-should-be-explained-in-the-dutch-sbr-b-guideline/</link>
+      <pubDate>Sun, 07 May 2017 20:27:28 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/05/07/what-should-be-explained-in-the-dutch-sbr-b-guideline/</guid>
+      <description>The Dutch SBR guideline is intended to help you process vibration data and help you determine when a vibration signal can cause discomfort to persons. It seems to me however, that the SBR-B guideline does not have the intention to be understood. They seem to help you by making a super abstract of scientific papers and by giving you a few keywords so you can Google it yourself.
+This post will elaborate on two formula&amp;rsquo;s given in the guideline.</description>
+    </item>
+    
+    <item>
+      <title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 1)</title>
+      <link>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-1/</link>
+      <pubDate>Thu, 13 Apr 2017 13:02:56 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-1/</guid>
+      <description>Problem If you want to solve a vibrations problem with a force acting on the system you often need to find the solution in nummerical algorithms. Say you have got a single degree of freedom mass spring system as shown in the figure below.
+SDOF damped mass spring system The differential equation of this system is:
+\[ mu&#39;&#39; + cu&#39; + ku = F\] When the force that acts on the system is a function, this problem can be solved with symbolical maths by solving the differential equation.</description>
+    </item>
+    
+    <item>
+      <title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 2)</title>
+      <link>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/</link>
+      <pubDate>Thu, 13 Apr 2017 13:02:56 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/</guid>
+      <description>This post continues where part 1 ended. In order to increase the accuracy of our function solver we are going to use a 4th order Runga Kutta algorithm. The basics are the same as with the Euler method. However the dy part of the 4th order method is more accurately computed.
+Definition The incremental values of this method are defined as:
+\[ y_{n+1} = y_{n} + \frac{h}{6}(k_{1} + 2k_{2} +2k_{3} + k_{4})\] \[ t_{n+1} = t_{n} + h \] With the factors k1 - k4 being:</description>
+    </item>
+    
+    <item>
+      <title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 3)</title>
+      <link>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/</link>
+      <pubDate>Thu, 13 Apr 2017 13:02:56 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/</guid>
+      <description>This post continues where part 2 ended. The Runga Kutta algorithm described in last post is only able to solve first order differential equations.
+The differential equation (de) for a single mass spring vibrations problem is a second order de.
+\[ mu&#39;&#39; + cu&#39; + ku = F\] Note that in this equation:
+u&amp;rsquo;&amp;rsquo; = acceleration a
+u&amp;rsquo; = velocity v
+u = displacement
+Before we can solve it with a Runga Kutta algorithm we must rewrite the base equation to a system of two first order ode&amp;rsquo;s.</description>
+    </item>
+    
+  </channel>
+</rss>

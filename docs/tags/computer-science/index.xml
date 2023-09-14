@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>computer science on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/computer-science/</link>
+    <description>Recent content in computer science on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Sun, 28 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/computer-science/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>I wrote one of the fastest DataFrame libraries</title>
+      <link>https://www.ritchievink.com/blog/2021/02/28/i-wrote-one-of-the-fastest-dataframe-libraries/</link>
+      <pubDate>Sun, 28 Feb 2021 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2021/02/28/i-wrote-one-of-the-fastest-dataframe-libraries/</guid>
+      <description>1. Introduction At the time of writing this, the coronavirus has been in our country for a year, which means I have been sitting at home for a very long time. At the start of the pandemic, I had a few pet projects in Rust under my belt and I noticed that the &amp;ldquo;are we DataFrame yet&amp;rdquo;, wasn&amp;rsquo;t anywhere near my satisfaction. So I wondered if I could make a minimalistic crate that solved a specific use case of mine.</description>
+    </item>
+    
+  </channel>
+</rss>

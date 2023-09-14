@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 2) - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+
+<title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 2) | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 2)</h1>
+    <h2 class="subtitle is-5">April 13, 2017 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/vibrations">vibrations</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/engineering">engineering</a>
+    
+</div>
+
+    
+    <div class="content">
+      <p>This post continues where <a href="https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-1/">part 1</a> ended. In order to increase the accuracy of our function solver we are going to use a 4th order Runga Kutta algorithm. The basics are the same as with the Euler method. However the dy part of the 4th order method is more accurately computed.</p>
+<h2 id="definition">Definition</h2>
+<p>The incremental values of this method are defined as:</p>
+<div>\[ y_{n+1} = y_{n} + \frac{h}{6}(k_{1} + 2k_{2} +2k_{3} + k_{4})\] </div>
+<div>\[ t_{n+1} = t_{n} + h \] </div>
+<p>With the factors k<sub>1</sub> - k<sub>4</sub> being:</p>
+<div>\[k_{1} = f(t_{n}, y_{n}) \]</div>
+<div>\[k_{2} = f(t_{n} + \frac{h}{2}, y_{n}) + \frac{h}{2}k_{1}) \]</div>
+<div>\[k_{3} = f(t_{n} + \frac{h}{2}, y_{n}) + \frac{h}{2}k_{2}) \]</div>
+<div>\[k_{4} = f(t_{n} + h, y_{n}) + hk_{3}) \]</div>
+<p>The function f is again the derivative of y.</p>
+<div>\[y'= f(t, y)\]</div>
+<h2 id="code">Code</h2>
+<p>Lets see how this looks in Python.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">runga_kutta_4</span>(t, f, initial<span style="color:#f92672">=</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>)):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Runga Kutta nummerical method.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Computes dy and adds it to previous y-value.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param t: (list/ array) Time values of function f.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param f: (function)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param initial:(tpl) Initial values
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :return: (list/ array) y values.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># step size</span>
+</span></span><span style="display:flex;"><span>    h <span style="color:#f92672">=</span> t[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">-</span> t[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>    y <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros((t<span style="color:#f92672">.</span>size, ))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    t[<span style="color:#ae81ff">0</span>], y[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> initial
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(t<span style="color:#f92672">.</span>size <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>):
+</span></span><span style="display:flex;"><span>        k1 <span style="color:#f92672">=</span> h <span style="color:#f92672">*</span> f(t[i], y[i])
+</span></span><span style="display:flex;"><span>        k2 <span style="color:#f92672">=</span> h <span style="color:#f92672">*</span> f(t[i] <span style="color:#f92672">+</span> h <span style="color:#f92672">*</span> <span style="color:#ae81ff">0.5</span>, y[i] <span style="color:#f92672">+</span> <span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> k1)
+</span></span><span style="display:flex;"><span>        k3 <span style="color:#f92672">=</span> h <span style="color:#f92672">*</span> f(t[i] <span style="color:#f92672">+</span> h <span style="color:#f92672">*</span> <span style="color:#ae81ff">0.5</span>, y[i] <span style="color:#f92672">+</span> <span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> k2)
+</span></span><span style="display:flex;"><span>        k4 <span style="color:#f92672">=</span> h <span style="color:#f92672">*</span> f(t[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>], y[i] <span style="color:#f92672">+</span> k3)
+</span></span><span style="display:flex;"><span>        y[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> y[i] <span style="color:#f92672">+</span> (k1 <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> k2 <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> k3 <span style="color:#f92672">+</span> k4) <span style="color:#f92672">/</span> <span style="color:#ae81ff">6</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> y
+</span></span></code></pre></div><p>As you can see above the input values are the same as with euler function. Again the starting point of the curve must be set by passing the initial values for t<sub>0</sub> and y<sub>0</sub>.</p>
+<p>By plotting all 3 curves, the Euler method, the 4th order Runga Kutta method and the function y = e<sup>t</sup> than we find that the curve of the Runga Kutta method is plotted above the curve of the solution and thus has far more acccuracy than the Euler method.</p>
+<figure><img src="../../../../../img/post-4/figure_2.png"/><figcaption>
+            <h4>Euler method, Runga Kutta method and solution.</h4>
+        </figcaption>
+</figure>
+
+<p>In the <a href="https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/">next post</a> we are going to apply the Runga Kutta solution to the vibrations problem.</p>
+<p><a href="https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/">READ HERE FOR THE NEXT PART!</a></p>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

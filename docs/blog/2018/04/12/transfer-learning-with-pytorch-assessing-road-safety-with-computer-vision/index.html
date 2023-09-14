@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Transfer learning with Pytorch: Assessing road safety with computer vision - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2018/04/12/transfer-learning-with-pytorch-assessing-road-safety-with-computer-vision/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-13-eurorap/results1.jpg" />
+
+
+<title>Transfer learning with Pytorch: Assessing road safety with computer vision | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Transfer learning with Pytorch: Assessing road safety with computer vision</h1>
+    <h2 class="subtitle is-5">April 12, 2018 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/deep-learning">deep learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/computer-vision">computer vision</a>
+    
+</div>
+
+    
+    <div class="content">
+      <p>For a project at Xomnia, I had the oppertunity to do a cool computer vision assignment. We tried to predict the input of a road safety model. <a href="http://www.eurorap.org/">Eurorap</a> is such a model.
+In short, it works something like this. You take some cars, mount them with cameras and drive around the road you&rsquo;re interested in. The &lsquo;Google Streetview&rsquo; like material you&rsquo;ve collected is sent to a crowdsourced workforce (at Amazon they are called Mechanical Turks) to manually label the footage.</p>
+<figure><img src="../../../../../img/post-13-eurorap/mechanical_turks.jpg"/><figcaption>
+            <h4>Workforce labeling images of Dutch Roads.</h4>
+        </figcaption>
+</figure>
+
+<p>This manually labeling of pictures is of course very time consuming, costly, not scalable and last but not least boooring!</p>
+<p>Just imagine yourself clicking through thousands of images like the one shown below.</p>
+<figure><img src="../../../../../img/post-13-eurorap/road_drenthe.jpg"/><figcaption>
+            <h4>The thrilling working life of a mechanical Turk.</h4>
+        </figcaption>
+</figure>
+
+<p>This post describes the proof of concept we&rsquo;ve done, and how we&rsquo;ve implemented it in Pytorch.</p>
+<h2 id="dataset">Dataset</h2>
+<p>The video material is divided in images shot every 10 meters. Even a Mechanical Turk has trouble not shooting itself of boredom when he has to fill in 300 labels of what he sees every 10 meters. To make his work a little bit more pleasant he only had to fill in the labels every 100 meter for what they had seen in the 10 pictures.</p>
+<p>This working method has led to terrible labeling of the footage however. Every object that you drive by within these 100 meters is labeled to all 10 images, whilst it most of the time only is visible in 2~4 images!</p>
+<p>We did a proof of concept and we&rsquo;ve only regarded a small subset of all labels. In total there are approximately 300. We have done our analysis on 28 labels. And because of the problem of the mislabeled objects, we&rsquo;ve chosen mostly labels that are visible parallel to the road. As it seems likely that those labels hold true for all 10 images. For instance, a road that has emergency lane in one image, is likely to have an emergency lane in the subsequent images.</p>
+<p>Below you&rsquo;ll see a plot with the labels we have trained our model on, and the amount of occurrences of that specific label. In total there were approximately 100,000 images in our dataset.</p>
+<figure><img src="../../../../../img/post-13-eurorap/subset.png"/><figcaption>
+            <h4>Counts of the labels we&#39;ve used.</h4>
+        </figcaption>
+</figure>
+
+<h2 id="transfer-learning">Transfer learning</h2>
+<p>There is a reasonable amount of images to work with, however the large inbalance in the labels, the errors in the labeling, and the amount of data required for the data hungry models called neural networks make it unlikely that we have enough data to properly train a robust computer vision model.</p>
+<p>To give you an idea of the scale here. The record breaking convolutional neural networks, you read about in the news, are often trained on the imageNet dataset, which contains 1.2 million images. These modern ConvNets (convolutional neural networks) are trained for ~2 weeks on heavy duty GPU&rsquo;s to go from their random initialization of weights, to a configuration that is able to win prices.</p>
+<p>It would be nice if we don&rsquo;t have to waste all this computational effort and somehow could transfer what we have learned in one problem (imageNet) to another (roadImages). Luckely, with ConvNets this isn&rsquo;t a bad idea and there is quite some logical intuition in doing so.
+Neural networks are often regarded as black box classifiers. And for the classification part, this is currently somewhat true. But for traditional ConvNet architectures there is a clear distinction between the classification and the feature extraction.</p>
+<p>And this feature extraction part is:</p>
+<ol>
+<li>Not so black box at all.</li>
+<li>Very transferable.</li>
+</ol>
+<h3 id="not-so-black-box-at-all">Not so black box at all</h3>
+<p>When taking a look at which pixels of an image result in activations (i.e. neurons having a large output) in convolutional layers, we can get some intuition on what is happening and meant with feature extraction.</p>
+<figure><img src="../../../../../img/post-13-eurorap/activated_features.jpg"/><figcaption>
+            <h4>Feature extraction.</h4>
+        </figcaption>
+</figure>
+
+<p>When we look at the activated neurons in the first layers, we can clearly identify the car. This means that there are a lot of low level features activated. Even so much that we can still identify the car in the activated neurons. The lower level features are for instance, edges, shadows, textures, lines, colors, etc.</p>
+<figure><img src="../../../../../img/post-13-eurorap/fe_start.png"/><figcaption>
+            <h4>Feature extractions in the first layer.</h4>
+        </figcaption>
+</figure>
+
+<p>Based on these activations of lower features, new neurons will activate, growing in hierarchy and complexity. Activated edges combine in activations of curves, which can on itself in combination with other features lead to activations of objects, like a tyre or a grill.
+Lets say that in the image above a neuron is highly activated because a complex feature like a car grill. We wouldn&rsquo;t be able to see this in an image of the activations. As there is only one grill in car (and one grill detector in our network), we would only see one activated neuron, i.e. one white pixel!</p>
+<figure><img src="../../../../../img/post-13-eurorap/fe_end.png"/><figcaption>
+            <h4>Feature extractions in the last layer.</h4>
+        </figcaption>
+</figure>
+
+<h3 id="very-transferable">Very transferable</h3>
+<p>Continuing in this line of thought, it seems pretty reasonable to assume that these lower level features extend to more objects than cars.
+Almost every picture has got edges, shadows, colors and so forth. This means that a lot of the weigths in the feature extraction neurons in a price winning ConvNet are set just right, or at least close by, to our wanted configuration of the weights.</p>
+<p>This works so well, that we can pretrain a ConvNet on a large dataset like ImageNet and transfer the ConvNet to a problem with a relatively small dataset (that normally would be insufficient for this ConvNet architecture). The pretrained model still needs to be finetuned. There are a few options like freezing the lower layers and retraining the upper layers with a lower learning rate, finetuning the whole net, or retraining the classifier.</p>
+<p>In our case we finetuned the feature extraction layers with low learning rates, and changed the classifier of the model.</p>
+<h2 id="implementation">Implementation</h2>
+<p>For this project we&rsquo;ve tried various pretrained ConvNet architectures like GoogleNet, ResNet and VGG and found VGG to produce the best result, closely followed by ResNet. In this section we&rsquo;ll go through the VGG implementation in Pytorch.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> torch
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch.nn <span style="color:#66d9ef">as</span> nn
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">VGG</span>(nn<span style="color:#f92672">.</span>Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self):
+</span></span><span style="display:flex;"><span>        num_classes <span style="color:#f92672">=</span> <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>        super(VGG, self)<span style="color:#f92672">.</span>__init__()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>features <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>make_layers([<span style="color:#ae81ff">64</span>, <span style="color:#e6db74">&#39;M&#39;</span>, <span style="color:#ae81ff">128</span>, <span style="color:#e6db74">&#39;M&#39;</span>, <span style="color:#ae81ff">256</span>, <span style="color:#ae81ff">256</span>, <span style="color:#e6db74">&#39;M&#39;</span>, <span style="color:#ae81ff">512</span>, <span style="color:#ae81ff">512</span>, <span style="color:#e6db74">&#39;M&#39;</span>, <span style="color:#ae81ff">512</span>, <span style="color:#ae81ff">512</span>, <span style="color:#e6db74">&#39;M&#39;</span>])
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>classifier <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Sequential(
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Linear(<span style="color:#ae81ff">512</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">7</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">7</span>, <span style="color:#ae81ff">4096</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>ReLU(<span style="color:#66d9ef">True</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Dropout(),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Linear(<span style="color:#ae81ff">4096</span>, <span style="color:#ae81ff">4096</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>ReLU(<span style="color:#66d9ef">True</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Dropout(),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Linear(<span style="color:#ae81ff">4096</span>, num_classes),
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">make_layers</span>(self, cfg):
+</span></span><span style="display:flex;"><span>        layers <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>        in_channels <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> v <span style="color:#f92672">in</span> cfg:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> v <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;M&#39;</span>:
+</span></span><span style="display:flex;"><span>                layers <span style="color:#f92672">+=</span> [nn<span style="color:#f92672">.</span>MaxPool2d(kernel_size<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>, stride<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>)]
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>                conv2d <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Conv2d(in_channels, v, kernel_size<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>, padding<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>                layers <span style="color:#f92672">+=</span> [conv2d, nn<span style="color:#f92672">.</span>BatchNorm2d(v), nn<span style="color:#f92672">.</span>ReLU(inplace<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)]
+</span></span><span style="display:flex;"><span>                in_channels <span style="color:#f92672">=</span> v
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> nn<span style="color:#f92672">.</span>Sequential(<span style="color:#f92672">*</span>layers)
+</span></span></code></pre></div><p>Shown above is the a base implementation of a pretrained VGG net with 11 layers and batch normalization. The feature extraction part of VGG is <code>cfg</code> variable we pass to the <code>make_layers</code> method. The list <code>[64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M']</code> describes the architecture, with the integers being the depth of the convolution channels, and <code>M</code> being a maxpooling layer to reduce dimensionality.</p>
+<p>As you can see we&rsquo;ve still defined a classifier with 1000 classes (# of classes in ImageNet) in the model, even though I&rsquo;ve just mentioned that we would change that. We need the original model to be able to load the <code>state_dict</code> (dictionary containing al the weights and biases of the pretrained model) and load the weights and biases.
+This pretrained model is of course not suitable for our problem, therefore we will define another class which will enbody the model we need for our problem.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">VGGmod</span>(nn<span style="color:#f92672">.</span>Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, h, dropout):
+</span></span><span style="display:flex;"><span>        super(VGGmod, self)<span style="color:#f92672">.</span>__init__()
+</span></span><span style="display:flex;"><span>        model <span style="color:#f92672">=</span> VGG()
+</span></span><span style="display:flex;"><span>        model_pretrained<span style="color:#f92672">.</span>load_state_dict(
+</span></span><span style="display:flex;"><span>            model_zoo<span style="color:#f92672">.</span>load_url(model_urls[<span style="color:#e6db74">&#39;https://download.pytorch.org/models/vgg11_bn-6002323d.pth&#39;</span>]))
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>features <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>features
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>classifier <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Sequential(
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Linear(<span style="color:#ae81ff">25088</span>, h),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>ReLU(inplace<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Dropout(dropout),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Linear(h, h),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>ReLU(inplace<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Dropout(dropout),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Linear(h, <span style="color:#ae81ff">28</span>)
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">forward</span>(self, x):
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>features(x)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># view is a resizing method</span>
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> x<span style="color:#f92672">.</span>view(x<span style="color:#f92672">.</span>size(<span style="color:#ae81ff">0</span>), <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)  <span style="color:#75715e"># -1 means infer the shape based on the other dimension</span>
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>classifier(x)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># area type</span>
+</span></span><span style="display:flex;"><span>        a <span style="color:#f92672">=</span> F<span style="color:#f92672">.</span>sigmoid(x[:, <span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># curvature</span>
+</span></span><span style="display:flex;"><span>        b <span style="color:#f92672">=</span> F<span style="color:#f92672">.</span>softmax(x[:, <span style="color:#ae81ff">1</span>: <span style="color:#ae81ff">4</span>], dim<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># facilities for bicycles</span>
+</span></span><span style="display:flex;"><span>        c <span style="color:#f92672">=</span> F<span style="color:#f92672">.</span>softmax(x[:, <span style="color:#ae81ff">4</span>: <span style="color:#ae81ff">7</span>], dim<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># lane width</span>
+</span></span><span style="display:flex;"><span>        d <span style="color:#f92672">=</span> F<span style="color:#f92672">.</span>softmax(x[:, <span style="color:#ae81ff">7</span>: <span style="color:#ae81ff">10</span>], dim<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># median type</span>
+</span></span><span style="display:flex;"><span>        e <span style="color:#f92672">=</span> F<span style="color:#f92672">.</span>softmax(x[:, <span style="color:#ae81ff">10</span>: <span style="color:#ae81ff">20</span>], dim<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># number of lanes</span>
+</span></span><span style="display:flex;"><span>        f <span style="color:#f92672">=</span> F<span style="color:#f92672">.</span>softmax(x[:, <span style="color:#ae81ff">20</span>: <span style="color:#ae81ff">23</span>], dim<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># rest</span>
+</span></span><span style="display:flex;"><span>        g <span style="color:#f92672">=</span> F<span style="color:#f92672">.</span>sigmoid(x[:, <span style="color:#ae81ff">23</span>:])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> torch<span style="color:#f92672">.</span>cat([a<span style="color:#f92672">.</span>unsqueeze(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>), b, c, d, e, f, g], dim<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>model <span style="color:#f92672">=</span> VGGmod(<span style="color:#ae81ff">300</span>, <span style="color:#ae81ff">0.5</span>)
+</span></span></code></pre></div><p>Above we&rsquo;ve defined the final model. At initialization we assign the pretrained VGG-net to <code>model</code> and we copy its feature extraction layers at <code>self.features = model.features</code>.</p>
+<h3 id="combined-output-layer">Combined output layer</h3>
+<p>The model has to classify various objects in a picture. Some objects can always be in the picture, whilst others are mutually exclusive. The presence of one object means that another cannot be present. There can for instance be only one type of median type in the picture.
+To implement this constraint there are different activations functions applied to different parts of the output vector. The objects that are not restricted by the presence of other objects (tree, street light, etc.) are activated by a sigmoid function. The mutually exclusive objects (types of curvature, types of bicycle facilities, etc.) are activated by a softmax function. This way the dependence is learned through backpropagation.</p>
+<p>In the last part of the model this special output vector is implemented in the classifier consisting of two fully connected layers with Relu activation, dropout, and finally the output vector.</p>
+<p>The output vector and the different activations are shown below.</p>
+<figure><img src="../../../../../img/post-13-eurorap/eurorap_vector.svg"/><figcaption>
+            <h4>The different activations on the final output vector.</h4>
+        </figcaption>
+</figure>
+
+<h3 id="loss-function">Loss function</h3>
+<p>This mutually exclusive constraint could also be implemented in the loss function by using a Binary Crossentropy loss on the sigmoids and a normal Crossentropy loss on the softmax and summarizing the outputs. However we&rsquo;ve learned that the lazy implementation worked quite well. We&rsquo;ve used a Binary Crossentropy loss on the whole output vector.</p>
+<h2 id="results">Results</h2>
+<p>Shown below are the results of the training effort. The horizontal axis shows the recall score of the labels, and the vertical axis the precision. It is often an exchange of those metrics, where scoring better on one, reduces the score of the other. The optimal spot is in the upper right corner.</p>
+<p>The size of the scatter dots are proportional to the amount of labels in the dataset. Unsurprisingly we can see a correlation with the number of labels and the final score.</p>
+<p>I am quite pleased with the results however. Especcially knowing that a lot of the data is mislabeled. The model gained high scores on <code>number of lanes: 2</code>, <code>facilities bicycles: on-road lane</code>, <code>median type: metal safety barrier</code>. All labels that weren&rsquo;t abundantly available in the dataset.</p>
+<figure><img src="../../../../../img/post-13-eurorap/results.png"/><figcaption>
+            <h4>Results of the different labels</h4>
+        </figcaption>
+</figure>
+
+<p>Some inference of the model. Below are some random classification results shown. <em>Note: the absence of a median type is labeled as <code>median type: centre line</code> in the dataset.</em></p>
+<figure><img src="../../../../../img/post-13-eurorap/results1.png"/><figcaption>
+            <h4>Random inference sample.</h4>
+        </figcaption>
+</figure>
+
+<br>
+<figure><img src="../../../../../img/post-13-eurorap/results2.png"/><figcaption>
+            <h4>Random inference sample.</h4>
+        </figcaption>
+</figure>
+
+<br>
+<figure><img src="../../../../../img/post-13-eurorap/results3.png"/><figcaption>
+            <h4>Random inference sample.</h4>
+        </figcaption>
+</figure>
+
+<h2 id="conclusion">Conclusion</h2>
+<p>This project we&rsquo;ve seen the effectiveness of transfer learning. Though the dataset was quite dirty and had a lot of flawed labels, the proof of concept was successfull.</p>
+<p>By using a model pretrained on imageNet, the final model seemed robust and was able to successfully learn the features that were sufficiently available in the dataset. The other features are certainly learnable, but would require some hand labeling the future. The feasibility of this hand labeling is something that is being researched at the moment. So, who knows. Maybe there will be a follow up on this post in the future!</p>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

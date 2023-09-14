@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>pyro on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/pyro/</link>
+    <description>Recent content in pyro on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Mon, 10 Jun 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/pyro/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Bayesian inference; How we are able to chase the Posterior</title>
+      <link>https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/</link>
+      <pubDate>Mon, 10 Jun 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/</guid>
+      <description>Bayesian modeling! Every introduction on that topic starts with a quick conclusion that finding the posterior distribution often is computationally intractable. Last post I looked at Expectation Maximization, which is a solution of this computational intractability for a set of models. However, for most models, it isn&amp;rsquo;t. This post I will take a formal definition of the problem (As I&amp;rsquo;ve skipped that in the Expectation Maximization post) and we&amp;rsquo;ll look at two solutions that help us tackle this problem; Markov Chain Monte Carlo and Variational Inference.</description>
+    </item>
+    
+  </channel>
+</rss>

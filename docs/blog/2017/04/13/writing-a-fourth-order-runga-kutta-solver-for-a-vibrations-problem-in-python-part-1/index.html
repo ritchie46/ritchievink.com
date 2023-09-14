@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 1) - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-1/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+
+<title>Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 1) | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 1)</h1>
+    <h2 class="subtitle is-5">April 13, 2017 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/vibrations">vibrations</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/engineering">engineering</a>
+    
+</div>
+
+    
+    <div class="content">
+      <h2 id="problem">Problem</h2>
+<p>If you want to solve a vibrations problem with a force acting on the system you often need to find the solution in nummerical algorithms. Say you have got a single degree of freedom mass spring system as shown in the figure below.</p>
+<figure><img src="../../../../../img/post-4/mass_spring.PNG"/><figcaption>
+            <h4>SDOF damped mass spring system</h4>
+        </figcaption>
+</figure>
+
+<br/>
+<p>The differential equation of this system is:</p>
+<div>\[ mu'' + cu' + ku = F\] </div>
+<p>When the force that acts on the system is a function, this problem can be solved with symbolical maths by solving the differential equation. However if raw measured vibration data is used the problem needs to be solved nummerically.</p>
+<h2 id="euler-method">Euler method</h2>
+<p>Before we can solve the problem mentioned above we are first going to take a look at nummerical methods for first first order ordinary differential equations (ode&rsquo;s). These are differential equations in the form:</p>
+<div>\[ y' + y = 0\] </div>
+<p>The Runga Kutta method is a nummerical method for solving first order ode&rsquo;s.</p>
+<p>This method determines the tangent line for the derivative of y (y&rsquo;) for every small step in time dt.
+So it is possible to describe a yet unknown function by computing the derivative for each small step
+dt. For this to be possible the start conditions of the curve need to be known.
+The starting conditions and the derivatives function are the input for this method.</p>
+<p>The simplest of the Runga Kutta methods is the <a href="https://en.wikipedia.org/wiki/Euler_method">Euler method</a>. This method only determines the tangent for each step dt and increments with ti + dt and yt + dy. (dy is the tangent line of y multiplied with dt).</p>
+<figure><img src="../../../../../img/post-4/euler.png"/><figcaption>
+            <h4>Visual example of the Euler method.</h4>
+        </figcaption>
+</figure>
+
+<p>Written in math the Euler method is describes as:</p>
+<div>\[ y_{n+1} = y_{n} + h \cdot y'(t_{n})\] </div>
+<p>Well I am definitly not a mathmetician, so I understand such methods often a lot better written in code.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">euler</span>(t, f, initial<span style="color:#f92672">=</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>)):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Eulers nummerical method.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Computes dy and adds it to previous y-value.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param t: (list/ array) Time values of function f.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param f: (function) y&#39;.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param initial:(tpl) Initial values.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :return: (list/ array) y values.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># step size</span>
+</span></span><span style="display:flex;"><span>    h <span style="color:#f92672">=</span> t[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">-</span> t[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>    y <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros((t<span style="color:#f92672">.</span>size, ))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    t[<span style="color:#ae81ff">0</span>], y[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> initial
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(t<span style="color:#f92672">.</span>size <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>):
+</span></span><span style="display:flex;"><span>        y[i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> y[i] <span style="color:#f92672">+</span> h <span style="color:#f92672">*</span> f(t[i], y[i])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> y
+</span></span></code></pre></div><p>The first parameter is a numpy array of the time values t. The second parameter is a function that should return y&rsquo;. In the case of:</p>
+<div>\[ y' + y = 0\] </div>
+<p>the function should return</p>
+<div>\[ y'= y\] </div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Note that the t values is not needed for this problem.</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">func</span>(t, y):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> y
+</span></span></code></pre></div><p>The third parameter tuple are the starting conditions (t0, y0).</p>
+<p>If we compare the output of the Euler method wit the real solution y = exp(t) we see that this nummerical method deviates quite a lot.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># initiate the time values.</span>
+</span></span><span style="display:flex;"><span>t <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">50</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">solution</span>(t):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>exp(t)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t, euler(t, func, initial<span style="color:#f92672">=</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;euler&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t, solution(t), label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;solution&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>legend()
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-4/figure_1.png"/><figcaption>
+            <h4>Euler method and solution.</h4>
+        </figcaption>
+</figure>
+
+<p>This deviation from the real solution can be decreased by minimizing the step size, but overall this method should not be used for acquiring accuracy.
+To get more accuracy we are going to do the same in a <a href="https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/">4th order Runga Kutta method in the next post</a>.</p>
+<p><a href="https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-2/">READ HERE FOR THE NEXT PART!</a></p>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

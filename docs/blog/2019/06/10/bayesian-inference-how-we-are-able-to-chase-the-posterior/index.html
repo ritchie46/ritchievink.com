@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Bayesian inference; How we are able to chase the Posterior - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-25-vi/variational_inference.jpg" />
+
+
+<title>Bayesian inference; How we are able to chase the Posterior | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Bayesian inference; How we are able to chase the Posterior</h1>
+    <h2 class="subtitle is-5">June 10, 2019 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/bayesian">bayesian</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/pymc3">pymc3</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/pyro">pyro</a>
+    
+</div>
+
+    
+    <div class="content">
+      <p><figure><img src="../../../../../img/post-25-vi/variational_inference.jpg"/>
+</figure>
+
+<br></p>
+<p>Bayesian modeling! Every introduction on that topic starts with a quick conclusion that finding the posterior distribution often is computationally intractable. Last post I looked at <a href="https://www.ritchievink.com/blog/2019/05/24/algorithm-breakdown-expectation-maximization/">Expectation Maximization</a>, which is a solution of this computational intractability for a set of models. However, for most models, it isn&rsquo;t. This post I will take a formal definition of the problem (As I&rsquo;ve skipped that in the Expectation Maximization post) and we&rsquo;ll look at two solutions that help us tackle this problem; Markov Chain Monte Carlo and Variational Inference.</p>
+<h2 id="0-bayes-formula">0. Bayes&rsquo; formula</h2>
+<p>Bayes&rsquo; formula is a way to reverse conditional probability. It is quite elegant and if we apply it on machine learning we often find Bayes&rsquo; formula in the following form:</p>
+<p>$$ P(\theta|D) = \frac{P(D|\theta) P(\theta)}{P(D)}$$</p>
+<p>Let&rsquo;s say we&rsquo;ve defined a model architecture and we want to find the most likely parameters $\theta$ (a large vector, containing all the parameters from the model) for that model, given a set of observed data points $D$. This is what we are interested in, and this is called the posterior: $P(\theta|D)$. We often have some prior belief about the value of our parameters. For example, in a neural network, we often initialize our weights following a Gaussian distribution with a zero mean and unit variance. We believe that the true weights should be somewhere in that distribution. We call that our prior; $p(\theta)$. Given all values of $\theta$, we can compute the probability of observing our data. This is called the likelihood $P(D|\theta)$. And finally, we have a term, often called the evidence, $P(D)$. This is where the problems begin, as this is the marginal likelihood where all the parameters are marginalized.</p>
+<p>$$ P(D) = \int_{\theta} P(D| \theta) P(\theta) \text{d} \theta $$</p>
+<p>This integral is the problem. At even moderately high dimensions of $\theta$ the amount numerical operations explode.</p>
+<h2 id="1-simple-example">1. Simple example</h2>
+<p>Let&rsquo;s base this post on a comprehensible example (courtesy of our <a href="https://www.xomnia.com/">Xomnia</a> statistics training). We will do a full Bayesian analysis in Python by computing the posterior. Later we will assume that we cannot. Therefore we will approximate the posterior (we&rsquo;ve computed) with MCMC and Variational Inference.</p>
+<p>Assume that we have observed two data points; $D=\{195, 182\}$. Both are observed lengths in cm of men in a basketball competition.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> stats
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>lengths <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([<span style="color:#ae81ff">195</span>, <span style="color:#ae81ff">182</span>])
+</span></span></code></pre></div><h3 id="11-likelihood-function">1.1 Likelihood function</h3>
+<p>I assume that the distribution of the true weights (the posterior) follow a Gaussian distribution. A Gaussian is parameterized with a mean $\mu$ and variance $\sigma^2$. For a reasonable domain of these parameters $\theta = \{ \mu , \sigma \}$ we can compute the likelihood $P(D|\theta) = P(D| \mu, \sigma)$.</p>
+<p><strong>computation domain</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># lets create a grid of our two parameters</span>
+</span></span><span style="display:flex;"><span>mu <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">150</span>, <span style="color:#ae81ff">250</span>)
+</span></span><span style="display:flex;"><span>sigma <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">15</span>)[::<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>mm, ss <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>meshgrid(mu, sigma)  <span style="color:#75715e"># just broadcasted parameters</span>
+</span></span></code></pre></div><p><strong>likelihood</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>likelihood <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm(mm, ss)<span style="color:#f92672">.</span>pdf(lengths[<span style="color:#ae81ff">0</span>]) <span style="color:#f92672">*</span> stats<span style="color:#f92672">.</span>norm(mm, ss)<span style="color:#f92672">.</span>pdf(lengths[<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>aspect <span style="color:#f92672">=</span> mm<span style="color:#f92672">.</span>max() <span style="color:#f92672">/</span> ss<span style="color:#f92672">.</span>max() <span style="color:#f92672">/</span> <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>extent <span style="color:#f92672">=</span> [mm<span style="color:#f92672">.</span>min(), mm<span style="color:#f92672">.</span>max(), ss<span style="color:#f92672">.</span>min(), ss<span style="color:#f92672">.</span>max()]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># extent = left right bottom top</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>imshow(likelihood, cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;Reds&#39;</span>, aspect<span style="color:#f92672">=</span>aspect, extent<span style="color:#f92672">=</span>extent)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\mu$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\sigma$&#39;</span>)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-25-vi/likelihood_grid.png"/><figcaption>
+            <h4>Likelihood function results</h4>
+        </figcaption>
+</figure>
+
+<p>As we can see, the likelihood function represents the most likely parameters. If we would infer the most likely parameters $\theta$ based on only the likelihood we would choose the darkest red spots in the plot. By eyeballing it, I would say that $\mu=190$ and $\sigma=5$.</p>
+<h3 id="12-prior-distribution">1.2 Prior distribution</h3>
+<p>Besides the likelihood, Bayes&rsquo; rule allows us to also include our prior belief in estimating the parameters. I actually believe most basketball players are longer. I believe the means follow a Gaussian distribution:</p>
+<p>$$ \mu \sim \mathcal{N}(200, 15^2)$$</p>
+<p>And that the variance $\sigma^2$ comes from a Cauchy distribution:</p>
+<p>$$ \sigma \sim \mathcal{Cauchy}(0, 10^2)$$</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>prior <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm(<span style="color:#ae81ff">200</span>, <span style="color:#ae81ff">15</span>)<span style="color:#f92672">.</span>pdf(mm) <span style="color:#f92672">*</span> stats<span style="color:#f92672">.</span>cauchy(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">10</span>)<span style="color:#f92672">.</span>pdf(ss)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>imshow(prior, cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;Greens&#39;</span>, aspect<span style="color:#f92672">=</span>aspect, extent<span style="color:#f92672">=</span>extent)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\mu$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\sigma$&#39;</span>)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-25-vi/prior_grid.png"/><figcaption>
+            <h4>Prior distribution.</h4>
+        </figcaption>
+</figure>
+
+<h3 id="13-posterior-distribution">1.3 Posterior distribution</h3>
+<p>As we now have a simple model, not more than two dimensions, and a reasonable idea in which domain we need to search, we can compute the posterior directly by applying Bayes&rsquo; rule.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>unnormalized_posterior <span style="color:#f92672">=</span> prior <span style="color:#f92672">*</span> likelihood
+</span></span><span style="display:flex;"><span>posterior <span style="color:#f92672">=</span> unnormalized_posterior <span style="color:#f92672">/</span> np<span style="color:#f92672">.</span>nan_to_num(unnormalized_posterior)<span style="color:#f92672">.</span>sum()
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>imshow(posterior, cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;Blues&#39;</span>, aspect<span style="color:#f92672">=</span>aspect, extent<span style="color:#f92672">=</span>extent)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\mu$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\sigma$&#39;</span>)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-25-vi/posterior_grid.png"/><figcaption>
+            <h4>Posterior distribution.</h4>
+        </figcaption>
+</figure>
+
+<p>This was easy. Because we weren&rsquo;t cursed by high dimensions. Increase the dimensions, or define a more complex model, and the calculation of $P(D)$ becomes intractable.</p>
+<h2 id="2-markov-chain-monte-carlo-mcmc">2. Markov Chain Monte Carlo (MCMC)</h2>
+<p>One tool to tackle this intractability problem is Markov Chain Monte Carlo or <strong>MCMC</strong>.</p>
+<p>In the plot showing the posterior distribution we first normalized the <code>unnormalized_posterior</code> by adding this line;
+<code>posterior = unnormalized_posterior / np.nan_to_num(unnormalized_posterior).sum()</code>. The only thing this did was ensuring that the integral over the posterior equals 1; $\int_{\theta} P(\theta|D) \text{d}\theta =1$. This is necessary if we want the posterior distribution to be a probability distribution as one of the properties of a probability distribution is that the sum of all probability is 1!</p>
+<p>However, if we would plot our unnormalized posterior, we would see exactly the same plot.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>imshow(unnormalized_posterior, cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;Blues&#39;</span>, aspect<span style="color:#f92672">=</span>aspect, extent<span style="color:#f92672">=</span>extent)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\mu$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$\sigma$&#39;</span>)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-25-vi/posterior_grid.png"/><figcaption>
+            <h4>Unnormalized posterior distribution.</h4>
+        </figcaption>
+</figure>
+
+<p>This is because the normalization does not change the relative probabilities of $\theta_i$. This insight is very important and means that the posterior is proportional to the joint probability of $P(\theta, D)$, i.e. prior times likelihood.</p>
+<p>$$ P(\theta|D) = \propto P(D|\theta)P(\theta)$$</p>
+<p>So we don&rsquo;t have to compute the evidence $P(D)$ to infer which parameters are more likely! However, making a grid over all of $\theta$ with a reasonable interval (which is what we did in our example), is still very expensive.</p>
+<p>It turns out that we don&rsquo;t need to compute $P(D|\theta)P(\theta)$ for every possible $\theta_i$ (or any reasonable grid approximation), but that we can sample $\theta_i$ proportional to the probability mass. This is done by exploring $\theta$ space by taking a random walk and computing the joint probability $P(\theta, D)$ and saving the parameter sample of $\theta_i$ according to the following probability:</p>
+<p>$$ P(\text{acceptance}) = \text{min}(1, \frac{P(D|\theta^*)P(\theta^*)}{P(D|\theta)P(\theta)}$$</p>
+<p>Where $\theta=$ current state, $\theta^*=$ proposal state.</p>
+<p>The proposals that were accepted are samples from the actual posterior distribution. This is of course very powerful, as we are able to directly sample from, and therefore approximate, the real posterior!</p>
+<p>Now we can see the relation with the name of the algorithm.</p>
+<ul>
+<li>Markov Chain: A chain of events, where every new event depends only on the current state; <strong>Acceptance probability</strong>.</li>
+<li>Monte Carlo: Doing something at random; <strong>Random walk through $\theta$ space</strong>.</li>
+</ul>
+<p>If you want to get a solid intuition to why the acceptance ratio leads to samples from the posterior, take a look at <a href="https://xcelab.net/rm/statistical-rethinking/">Statistical Rethinking, Chapter 8: Markov chain Monte Carlo Estimation by Richard McElreath</a>.</p>
+<h3 id="21-pymc3">2.1 PyMC3</h3>
+<p>A Python package that does MCMC is <a href="https://docs.pymc.io/">PyMC3</a>. Below we will show that MCMC works by modeling our example in PyMC3.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">with</span> pm<span style="color:#f92672">.</span>Model():
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># priors</span>
+</span></span><span style="display:flex;"><span>    mu <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Normal(<span style="color:#e6db74">&#39;mu&#39;</span>, mu<span style="color:#f92672">=</span><span style="color:#ae81ff">200</span>, sd<span style="color:#f92672">=</span><span style="color:#ae81ff">15</span>)
+</span></span><span style="display:flex;"><span>    sigma <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>HalfCauchy(<span style="color:#e6db74">&#39;sigma&#39;</span>, <span style="color:#ae81ff">10</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># likelihood</span>
+</span></span><span style="display:flex;"><span>    observed <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Normal(<span style="color:#e6db74">&#39;observed&#39;</span>, mu<span style="color:#f92672">=</span>mu, sd<span style="color:#f92672">=</span>sigma, observed<span style="color:#f92672">=</span>lengths)<span style="color:#f92672">.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># sample</span>
+</span></span><span style="display:flex;"><span>    trace <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>sample(draws<span style="color:#f92672">=</span><span style="color:#ae81ff">10000</span>, chains<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig, axes <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(<span style="color:#ae81ff">2</span>, sharex<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, sharey<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, figsize <span style="color:#f92672">=</span> (<span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>imshow(posterior, cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;Blues&#39;</span>, extent<span style="color:#f92672">=</span>extent, aspect<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#39;$\sigma$&#39;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>scatter(trace[<span style="color:#e6db74">&#39;mu&#39;</span>], trace[<span style="color:#e6db74">&#39;sigma&#39;</span>], alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.01</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#39;$\sigma$&#39;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#39;True posterior&#39;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#39;Sampled $</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;$\mu$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlim(<span style="color:#ae81ff">150</span>, mm<span style="color:#f92672">.</span>max())
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylim(<span style="color:#ae81ff">0</span>, ss<span style="color:#f92672">.</span>max())
+</span></span></code></pre></div><figure><img src="../../../../../img/post-25-vi/sampled_posterior.png"/><figcaption>
+            <h4>Samples from the posterior distribution with MCMC.</h4>
+        </figcaption>
+</figure>
+
+<p>Above we clearly see that the samples obtained with MCMC are from the posterior distribution. Given enough samples, we can be assured that we have sampled the true probability density. The algorithm can be quite slow, but for a large number of models, it is fast enough.</p>
+<h3 id="3-variational-inference">3. Variational Inference</h3>
+<p>If we go into the realm of deep learning with large datasets and potentially millions of parameters <br> $\theta$, sampling with MCMC is often too slow. For this kind of problems, we rely on a technique called Variational Inference. Instead of computing the distribution, or approximating the real posterior by sampling from it, we choose an approximated posterior distribution and try to make it resemble the real posterior as close as possible.</p>
+<p>The drawback of this method is that our approximation of the posterior can be really off.</p>
+<p>The benefit is that it is an optimization problem with flowing gradients, which in the current world of <a href="https://en.wikipedia.org/wiki/Automatic_differentiation">autograd</a> isn&rsquo;t a problem at all!</p>
+<p>Before reading further, I would recommend reading my <a href="https://www.ritchievink.com/blog/2019/05/24/algorithm-breakdown-expectation-maximization/">Expectation Maximization post</a>. In that post explore the derivation of the ELBO (<strong>E</strong>vidence <strong>L</strong>ower <strong>BO</strong>und), which turns out to be very important for Variational Inference.</p>
+<h3 id="31-approximate-distribution">3.1 Approximate distribution</h3>
+<p>We don&rsquo;t know the real posterior so we are going to choose a distribution $Q(\theta)$ from a family of distributions $Q^*$ that is <strong>easy to work with</strong>, and <strong>parameterized by $\theta$</strong>. $Q(\theta)$ should resemble the posterior as closely as possible for the family $Q^*$. This &lsquo;closeness&rsquo; is going to be measured by the Kullback-Leibler divergence.</p>
+<p>Below this goal is shown visually. From a set of <em>easy to work with</em> distributions, we choose the one with the minimal KL-divergence w.r.t. the actual posterior distribution.</p>
+<figure><img src="../../../../../img/post-25-vi/q-posterior.svg"/><figcaption>
+            <h4>Search an approximation $Q(\theta$) that is &#39;close&#39; to the posterior.</h4>
+        </figcaption>
+</figure>
+
+<h3 id="32-kullback-leibler-to-elbo">3.2 Kullback-Leibler to ELBO</h3>
+<p>Now your head should be filled with question marks!</p>
+<p>How can we compute the KL-divergence $D_{\text{KL}}(Q(\theta) \: || \: P(\theta|D))$ when we don&rsquo;t know the posterior?! It turns out that is the reason we&rsquo;ve chosen KL-divergence (and not a real metric such as Wasserstein distance between $Q(\theta)$ and $P(\theta|D)$). With KL-divergence we don&rsquo;t have to know the posterior! Below we&rsquo;ll see why:</p>
+<p>$$ D_{\text{KL}}(Q(\theta) \: || \: P(\theta|D))  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)}{P(\theta|D)}\text{d}\theta $$</p>
+<p>If we rewrite the posterior as $\frac{P(\theta, D)}{P(D)}$, we obtain:</p>
+<p>$$ D_\text{KL}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)P(D)}{P(\theta, D)}\text{d}\theta $$</p>
+<p>Then we apply the logarithm rule of multiplication $\log (A \cdot B) = \log A + \log B$:</p>
+<div>
+$$ D_{\text{KL}}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)}{P(\theta, D)}\text{d}\theta + \int_{\theta} Q(\theta) \log P(D) \text{d} \theta $$</div>
+<p>As $P(D)$ is not parameterized by $\theta$ and $\int_{\theta} Q(\theta) \text{d} \theta = 1$ we can write:</p>
+<p>$$ D_\text{KL}  = \int_{\theta} Q(\theta) \log \frac{Q(\theta)}{P(\theta, D)}\text{d}\theta +  \log P(D) $$</p>
+<p>By yet applying another log rule; $\log A = -\log \frac{1}{A}$ we obtain:</p>
+<p>$$ D_\text{KL}  = \log P(D) -\int_{\theta} Q(\theta) \log \frac{P(\theta, D)}{Q(\theta)}\text{d}\theta  $$</p>
+<p>And now we can see that the second term on the <em>rhs</em> is actually the <strong>ELBO</strong>, which can be written in expectation (over $\theta$) form.</p>
+<p>$$ D_\text{KL}  = \log P(D) - E_{\theta \sim Q}[\log \frac{P(\theta, D)}{Q(\theta)} ] $$</p>
+<p>Now comes the <strong>key insight</strong>; The KL-divergence range is always positive. That means that in order to <strong>minimize KL-divergence</strong> we need to <strong>maximize the ELBO</strong> and we don&rsquo;t need to know the value of $P(D)$.</p>
+<p><em>In the <a href="https://www.ritchievink.com/blog/2019/05/24/algorithm-breakdown-expectation-maximization/">Expectation Maximization</a> post we see another derivation of the ELBO (the lower bound on the evidence $P(D)$. In that post we derived it using <a href="https://en.wikipedia.org/wiki/Jensen%27s_inequality">Jensen&rsquo;s Inequality</a>.</em></p>
+<p>The ELBO is something we can compute as it only contains the approximation distribution $Q(\theta)$ (which we determine), and the joint probability $P(\theta, D)$, i.e. the <strong>prior times the likelihood!</strong></p>
+<div style="background-color: #E0E1F4; padding: 8px; border-radius: 5px" b><i>
+Update 11-09-2019<br>
+In the derivation of Variational Autoencoders, the ELBO is often written in two terms; a reconstruction error and a KL-term on the variational distribution $Q_\theta$ and the prior $P(\theta)$
+<p>First we rewrite the joint probability $P(\theta, D)$ into conditional probability $P(D|\theta)P(\theta)$.</p>
+<p>$$ \text{ELBO}  = E_{\theta \sim Q}[\log \frac{P(D|\theta)P(\theta)}{Q(\theta)} ] $$</p>
+<p>Then we expand the equation and thereby isolating the reconstruction error $\log P(D|\theta)$, i.e. the log likelihood.</p>
+<p>$$ \text{ELBO}  = E_{\theta \sim Q}[\log P(D|\theta)] +  E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$$</p>
+<p>If we rewrite the $E_{\theta \sim Q}[\log \frac{P(\theta)}{Q(\theta)}]$ in the integral form $\int_{\theta} Q(\theta)\log\frac{P(\theta)}{Q(\theta)}d\theta$, we can observe that this is the KL-divergence between the prior $P(\theta)$ and the variational distribution $Q(\theta)$. Resulting in an ELBO defined by the reconstruction error and $-D_{KL}(Q(\theta)||P(\theta)).$</p>
+<p>$$ \text{ELBO}  = E_{\theta \sim Q}[\log P(D|\theta)] - D_{KL}(Q(\theta)||P(\theta))$$
+</i></div></p>
+<h3 id="33-mean-field-approximation">3.3 Mean Field Approximation</h3>
+<p>Once we&rsquo;ve defined a model, we need to define a distribution $Q(\theta)$ that approximates the posterior. One approach is called the Mean Field Approximation. Note that the joint probability is defined by:</p>
+<p>$$ P(A,B) = P(A|B)P(B) $$</p>
+<p>If $A$ is independent of $B$, the above simplifies to:</p>
+<p>$$ P(A,B) = P(A) P(B) $$</p>
+<p>Let&rsquo;s redefine what we are doing here. The first step is approximating the posterior (a conditional probability) with a variational distribution (a joint probability).</p>
+<p>$$ P(\theta|D) \approx Q(\theta) $$</p>
+<p>Then we define the variational distribution as a product of independent partitions of $\theta$ (the partitions can span multiple dimensions, but can also be one dimensional).</p>
+<p>$$ Q_\text{mfa}(\theta) = \prod_{i=1}^N Q_i(\theta_i) $$</p>
+<p>Where the partitioned distribution is often chosen to be from an exponential family. By defining a mean field approximation we end up with an &rsquo;easy to work with&rsquo; distribution, which is parameterized the same way as the posterior.</p>
+<p>The only thing that lasts now is finding the variational parameters of $Q_\text{mfa}(\theta)$ through optimization.</p>
+<h3 id="34-variational-inference-in-pyro">3.4 Variational Inference in Pyro</h3>
+<p>There are several ways to solve this optimization problem. One solution is stochastic gradient descent. This requires computing gradients, which we don&rsquo;t want to do by hand. Therefore we are going to use [Pyro](Deep Universal Probabilistic Programming). This is a probabilistic programming language based on <a href="https://pytorch.org/">Pytorch</a>. First, we are going to define the generative model just as we did in PyMC3.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> pyro
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> pyro.optim
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> pyro.distributions <span style="color:#66d9ef">as</span> dist
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> pyro.infer <span style="color:#f92672">import</span> SVI, Trace_ELBO
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch.distributions.constraints <span style="color:#66d9ef">as</span> constraints
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">model</span>():
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># priors</span>
+</span></span><span style="display:flex;"><span>    mu <span style="color:#f92672">=</span> pyro<span style="color:#f92672">.</span>sample(<span style="color:#e6db74">&#39;mu&#39;</span>, dist<span style="color:#f92672">.</span>Normal(loc<span style="color:#f92672">=</span>torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">200.</span>), 
+</span></span><span style="display:flex;"><span>                                       scale<span style="color:#f92672">=</span>torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">15.</span>)))
+</span></span><span style="display:flex;"><span>    sigma <span style="color:#f92672">=</span> pyro<span style="color:#f92672">.</span>sample(<span style="color:#e6db74">&#39;sigma&#39;</span>, dist<span style="color:#f92672">.</span>HalfCauchy(scale<span style="color:#f92672">=</span>torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">10.</span>)))
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># likelihood</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">with</span> pyro<span style="color:#f92672">.</span>plate(<span style="color:#e6db74">&#39;plate&#39;</span>, size<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>):
+</span></span><span style="display:flex;"><span>        pyro<span style="color:#f92672">.</span>sample(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;obs&#39;</span>, dist<span style="color:#f92672">.</span>Normal(loc<span style="color:#f92672">=</span>mu, scale<span style="color:#f92672">=</span>sigma), 
+</span></span><span style="display:flex;"><span>                    obs<span style="color:#f92672">=</span>torch<span style="color:#f92672">.</span>tensor([<span style="color:#ae81ff">195.</span>, <span style="color:#ae81ff">185.</span>]))
+</span></span></code></pre></div><p>Then we are going to define the variational distribution $Q(\theta)$, in pyro, this is called the <code>guide</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">guide</span>():
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># variational parameters</span>
+</span></span><span style="display:flex;"><span>    var_mu <span style="color:#f92672">=</span> pyro<span style="color:#f92672">.</span>param(<span style="color:#e6db74">&#39;var_mu&#39;</span>, torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">180.</span>))
+</span></span><span style="display:flex;"><span>    var_mu_sig <span style="color:#f92672">=</span> pyro<span style="color:#f92672">.</span>param(<span style="color:#e6db74">&#39;var_mu_sig&#39;</span>, torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">5.</span>),
+</span></span><span style="display:flex;"><span>                             constraint<span style="color:#f92672">=</span>constraints<span style="color:#f92672">.</span>positive)
+</span></span><span style="display:flex;"><span>    var_sig <span style="color:#f92672">=</span> pyro<span style="color:#f92672">.</span>param(<span style="color:#e6db74">&#39;var_sig&#39;</span>, torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">5.</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># factorized distribution</span>
+</span></span><span style="display:flex;"><span>    pyro<span style="color:#f92672">.</span>sample(<span style="color:#e6db74">&#39;mu&#39;</span>, dist<span style="color:#f92672">.</span>Normal(loc<span style="color:#f92672">=</span>var_mu, scale<span style="color:#f92672">=</span>var_mu_sig))
+</span></span><span style="display:flex;"><span>    pyro<span style="color:#f92672">.</span>sample(<span style="color:#e6db74">&#39;sigma&#39;</span>, dist<span style="color:#f92672">.</span>Chi2(var_sig))
+</span></span></code></pre></div><p>It is important that the <code>guide</code> samples from the same named random variables (defined by <code>pyro.sample</code>). This counts for all random variables except the likelihood (has the <code>obs</code> keyword argument). In the guide, we define how the posterior approximation is distributed. In our case we assume <code>mu</code> to be normally distributed, and that <code>sigma</code> is drawn from a Chi-squared distribution. Those approximated posterior distributions are parameterized by <em>variational</em> parameters. <strong>Not the parameters $\theta$ we try to infer!</strong> Pyro will adjust those variational parameters using Stochastic Variational Inference (SVI) guided by the ELBO loss.</p>
+<p>Below we optimize our guide, conditioned on our model. We use clipped gradients as the data isn&rsquo;t scaled.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>pyro<span style="color:#f92672">.</span>clear_param_store()
+</span></span><span style="display:flex;"><span>pyro<span style="color:#f92672">.</span>enable_validation(<span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>svi <span style="color:#f92672">=</span> SVI(model, guide, 
+</span></span><span style="display:flex;"><span>          optim<span style="color:#f92672">=</span>pyro<span style="color:#f92672">.</span>optim<span style="color:#f92672">.</span>ClippedAdam({<span style="color:#e6db74">&#34;lr&#34;</span>:<span style="color:#ae81ff">0.01</span>}), 
+</span></span><span style="display:flex;"><span>          loss<span style="color:#f92672">=</span>Trace_ELBO())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># do gradient steps</span>
+</span></span><span style="display:flex;"><span>c <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> step <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">5000</span>):
+</span></span><span style="display:flex;"><span>    c <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    loss <span style="color:#f92672">=</span> svi<span style="color:#f92672">.</span>step()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> step <span style="color:#f92672">%</span> <span style="color:#ae81ff">100</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">&#34;[iteration </span><span style="color:#e6db74">{:&gt;4}</span><span style="color:#e6db74">] loss: </span><span style="color:#e6db74">{:.4f}</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">.</span>format(c, loss))
+</span></span></code></pre></div><p>After we have done inference, we can initialize our approximated distributions and sample from them.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>sigma <span style="color:#f92672">=</span> dist<span style="color:#f92672">.</span>Chi2(pyro<span style="color:#f92672">.</span>param(<span style="color:#e6db74">&#39;var_sig&#39;</span>))<span style="color:#f92672">.</span>sample((<span style="color:#ae81ff">10000</span>,))<span style="color:#f92672">.</span>numpy()
+</span></span><span style="display:flex;"><span>mu <span style="color:#f92672">=</span> dist<span style="color:#f92672">.</span>Normal(pyro<span style="color:#f92672">.</span>param(<span style="color:#e6db74">&#39;var_mu&#39;</span>), pyro<span style="color:#f92672">.</span>param(<span style="color:#e6db74">&#39;var_mu_sig&#39;</span>))<span style="color:#f92672">.</span>sample((<span style="color:#ae81ff">10000</span>,))<span style="color:#f92672">.</span>numpy()
+</span></span></code></pre></div><pre tabindex="0"><code>fig, axes = plt.subplots(2, sharex=True, sharey=True, figsize = (16, 6))
+axes[0].imshow(posterior, cmap=&#39;Blues&#39;, extent=extent, aspect=1)
+axes[0].set_ylabel(&#39;$\sigma$&#39;)
+axes[1].scatter(mu, sigma, alpha=0.1)
+axes[1].set_ylabel(&#39;$\sigma$&#39;)
+axes[0].set_title(&#39;True posterior $P(\\theta|D)$&#39;)
+axes[1].set_title(&#39;Approximated posterior $Q(\\theta)$&#39;)
+plt.xlabel(&#39;$\mu$&#39;)
+plt.xlim(150, mm.max())
+plt.ylim(0, ss.max())
+</code></pre><figure><img src="../../../../../img/post-25-vi/variational_samples.png"/><figcaption>
+            <h4>Samples from the Mean Field Approximation.</h4>
+        </figcaption>
+</figure>
+
+<p>Above we see the result. As we can see, the variational distribution isn&rsquo;t a perfect approximation and is of course greatly influenced by how we choose our variational distributions. But it is a technique that is usable with models with large numbers of parameters. And in neural networks, where we have such numeric violence, I guess a Gaussian approximation is pretty OK, no matter what the data looks like.</p>
+<h2 id="tldr">TL;DR</h2>
+<p>$$ Q(\theta) \approx P(\theta|D) $$
+The code of this post can be found on <a href="https://github.com/ritchie46/vanilla-machine-learning/blob/master/bayesian/variation_inference_post.ipynb">github</a>.</p>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  });
+  </script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

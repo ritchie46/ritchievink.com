@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+	<meta name="generator" content="Hugo 0.118.2">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+
+<title>Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container">
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2019/03/17/save-some-time-embedding-jupyter-notebook-in-an-iframe-and-serve-as-a-reverse-proxy-behind-nginx/">Save some time: Embedding jupyter notebook in an iframe and serve as a reverse proxy behind NGINX</a></h1>
+      <h2 class="subtitle is-5">March 17, 2019</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/save-some-time">save-some-time</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/web">web</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+</div>
+
+      
+
+
+ <img src="https://www.ritchievink.com/img/post-22-embedding-jupyter/crossroads.jpg">
+
+
+      <div class="content">
+        Embedding Jupyter notebook/ lab on your website can be done by embedding it in an iframe. However, it takes some configurational quirks to get it done. For my purpose, I also needed to offload validation to another service on the backend. Both the validation server as the jupyter notebook server were proxied behind an NGINX server. Here is the configuration. NGINX setup In the configuration, we set two upstream servers.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2019/03/17/save-some-time-embedding-jupyter-notebook-in-an-iframe-and-serve-as-a-reverse-proxy-behind-nginx/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2019/02/01/an-intuitive-introduction-to-gaussian-processes/">An intuitive introduction to Gaussian processes</a></h1>
+      <h2 class="subtitle is-5">February 1, 2019</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/algorithm-breakdown">algorithm breakdown</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/gaussian-processes">gaussian processes</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/bayesian">bayesian</a>
+    
+</div>
+
+      
+
+
+ <img src="https://www.ritchievink.com/img/post-21-gp/waves-banner.jpg">
+
+
+      <div class="content">
+        Christopher Fonnesbeck did a talk about Bayesian Non-parametric Models for Data Science using PyMC3 on PyCon 2018. In this talk, he glanced over Bayes&rsquo; modeling, the neat properties of Gaussian distributions and then quickly turned to the application of Gaussian Processes, a distribution over infinite functions. Wait, but what?! How does a Gaussian represent a function? I did not understand how, but the promise of what these Gaussian Processes representing a distribution over nonlinear and nonparametric functions really intrigued me and therefore turned into a new subject for a post.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2019/02/01/an-intuitive-introduction-to-gaussian-processes/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2018/11/19/algorithm-breakdown-why-do-we-call-it-gradient-boosting/">Algorithm breakdown: Why do we call it Gradient Boosting?</a></h1>
+      <h2 class="subtitle is-5">November 19, 2018</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/algorithm-breakdown">algorithm breakdown</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/gradient-boosting">gradient boosting</a>
+    
+</div>
+
+      
+
+
+ <img src="https://www.ritchievink.com/img/post-20-gbm/stacking.jpg">
+
+
+      <div class="content">
+        We were making a training at work about ensemble models. When we were discussing different techniques like bagging, boosting, and stacking, we also came on the subject of gradient boosting. Intuitively, gradient boosting, by training on the residuals made sense. However, the name gradient boosting did not right away. This post we are exploring the name of gradient boosting and of course also the model itself!
+Intuition Single decision tree Gradient boosting is often used as an optimization technique for decision trees.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2018/11/19/algorithm-breakdown-why-do-we-call-it-gradient-boosting/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2018/10/09/build-facebooks-prophet-in-pymc3-bayesian-time-series-analyis-with-generalized-additive-models/">Build Facebook&#39;s Prophet in PyMC3; Bayesian time series analyis with Generalized Additive Models</a></h1>
+      <h2 class="subtitle is-5">October 9, 2018</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/algorithm-breakdown">algorithm breakdown</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/time-series">time series</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/pymc3">pymc3</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/bayesian">Bayesian</a>
+    
+</div>
+
+      
+
+
+ <img src="https://www.ritchievink.com/img/post-19-prophet/head.jpg">
+
+
+      <div class="content">
+        Last [Algorithm Breakdown](https://www.ritchievink.com/blog/2018/09/26/algorithm-breakdown-ar-ma-and-arima-models/) we build an ARIMA model from scratch and discussed the use cases of that kind of models. ARIMA models are great when you have got stationary data and when you want to predict a few time steps into the future. A lot of business data, being generated by human processes, have got weekly and yearly seasonalities (we for instance, seem work to less in weekends and holidays) and show peaks at certain events.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2018/10/09/build-facebooks-prophet-in-pymc3-bayesian-time-series-analyis-with-generalized-additive-models/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2018/09/26/algorithm-breakdown-ar-ma-and-arima-models/">Algorithm Breakdown: AR, MA and ARIMA models</a></h1>
+      <h2 class="subtitle is-5">September 26, 2018</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/algorithm-breakdown">algorithm breakdown</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/time-series">time series</a>
+    
+</div>
+
+      
+
+
+ <img src="https://www.ritchievink.com/img/post-18-arima/random-walk.jpg">
+
+
+      <div class="content">
+        Time series are a quite unique topic within machine learning. In a lot of problems the dependent variable $y$, i.e. the thing we want to predict is dependent on very clear inputs, such as pixels of an image, words in a sentence, the properties of a persons buying behavior, etc. In time series these indepent variables are often not known. For instance, in stock markets, we don&rsquo;t have a clear independent set of variables where we can fit a model on.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2018/09/26/algorithm-breakdown-ar-ma-and-arima-models/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2018/09/16/deploy-any-machine-learning-model-serverless-in-aws/">Deploy any machine learning model serverless in AWS</a></h1>
+      <h2 class="subtitle is-5">September 16, 2018</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/cloud">cloud</a>
+    
+</div>
+
+      
+
+
+ <img src="https://www.ritchievink.com/img/post-17-serverless_model/serverless-architecture.jpg">
+
+
+      <div class="content">
+        When a machine learning model goes into production, it is very likely to be idle most of the time. There are a lot of use cases, where a model only needs to run inference when new data is available. If we do have such a use case and we deploy a model on a server, it will eagerly be checking for new data, only to be disappointed for most of its lifetime and meanwhile you pay for the live time of the server.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2018/09/16/deploy-any-machine-learning-model-serverless-in-aws/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2018/07/16/generative-adversarial-networks-in-pytorch-the-distribution-of-art/">Generative Adversarial Networks in Pytorch: The distribution of Art</a></h1>
+      <h2 class="subtitle is-5">July 16, 2018</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/pytorch">pytorch</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/deep-learning">deep learning</a>
+    
+</div>
+
+      
+
+
+ <img src="https://www.ritchievink.com/img/post-16-gan_art/result.jpg">
+
+
+      <div class="content">
+        Generative adversarial networks seem to be able to generate amazing stuff. I wanted to do a small project with GANs and in the process create something fancy for on the wall. Therefore I tried to train a GAN on a dataset of art paintings. This post I&rsquo;ll explore if I&rsquo;ll succeed in getting a full hd new Picasso on the wall. The pictures above give you a glimplse of some of the results from the model.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2018/07/16/generative-adversarial-networks-in-pytorch-the-distribution-of-art/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2018/06/05/clustering-data-with-dirichlet-mixtures-in-edward-and-pymc3/">Clustering data with Dirichlet Mixtures in Edward and Pymc3</a></h1>
+      <h2 class="subtitle is-5">June 5, 2018</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/pymc3">pymc3</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/edward">edward</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/bayesian">bayesian</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/clustering">clustering</a>
+    
+</div>
+
+      
+
+
+ <img src="https://www.ritchievink.com/img/post-15-mixture_models/gmount1.jpg">
+
+
+      <div class="content">
+        Last post I&rsquo;ve described the Affinity Propagation algorithm. The reason why I wrote about this algorithm was because I was interested in clustering data points without specifying k, i.e. the number of clusters present in the data.
+This post continues with the same fascination, however now we take a generative approach. In other words, we are going to examine which models could have generated the observed data. Through bayesian inference we hope to find the hidden (latent) distributions that most likely generated the data points.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2018/06/05/clustering-data-with-dirichlet-mixtures-in-edward-and-pymc3/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2018/05/18/algorithm-breakdown-affinity-propagation/">Algorithm Breakdown: Affinity Propagation</a></h1>
+      <h2 class="subtitle is-5">May 18, 2018</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/algorithm-breakdown">algorithm breakdown</a>
+    
+</div>
+
+      
+
+
+ <img src="https://www.ritchievink.com/img/post-14-affinity_propagation/fw.jpg">
+
+
+      <div class="content">
+        On a project I worked on at the ANWB (Dutch road side assistence company) we mined driving behavior data. We wanted to know how many persons were likely to drive a certain vehicle on a regular basis. Naturally k-means clustering came to mind. The k-means algorithm finds clusters with the least inertia for a given k.
+A drawback is that often, k is not known. For the question about the numbers of persons driving a car, this isn&rsquo;t that big of a problem as we have a good estimate of what k should be.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2018/05/18/algorithm-breakdown-affinity-propagation/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2018/04/12/transfer-learning-with-pytorch-assessing-road-safety-with-computer-vision/">Transfer learning with Pytorch: Assessing road safety with computer vision</a></h1>
+      <h2 class="subtitle is-5">April 12, 2018</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/deep-learning">deep learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/computer-vision">computer vision</a>
+    
+</div>
+
+      
+
+
+ <img src="https://www.ritchievink.com/img/post-13-eurorap/results1.jpg">
+
+
+      <div class="content">
+        For a project at Xomnia, I had the oppertunity to do a cool computer vision assignment. We tried to predict the input of a road safety model. Eurorap is such a model. In short, it works something like this. You take some cars, mount them with cameras and drive around the road you&rsquo;re interested in. The &lsquo;Google Streetview&rsquo; like material you&rsquo;ve collected is sent to a crowdsourced workforce (at Amazon they are called Mechanical Turks) to manually label the footage.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2018/04/12/transfer-learning-with-pytorch-assessing-road-safety-with-computer-vision/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+  </div>
+</section>
+<section class="section">
+  <div class="container">
+    <nav class="level is-mobile">
+      <div class="level-left">
+        <div class="level-item">
+          
+          <a class="button" href="../../">
+            <span class="icon is-small is-marginless">
+              <i class="fa fa-angle-left"></i>
+            </span>
+            Newer
+          </a>
+          
+        </div>
+      </div>
+      <div class="level-right is-marginless">
+        <div class="level-item">
+          
+          <a class="button" href="../../page/3/">
+            Older
+            <span class="icon is-small is-marginless">
+              <i class="fa fa-angle-right"></i>
+            </span>
+          </a>
+          
+        </div>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+

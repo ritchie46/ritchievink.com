@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="I wrote one of the fastest DataFrame libraries - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2021/02/28/i-wrote-one-of-the-fastest-dataframe-libraries/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-34-polars/polars.webp" />
+
+
+<title>I wrote one of the fastest DataFrame libraries | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">I wrote one of the fastest DataFrame libraries</h1>
+    <h2 class="subtitle is-5">February 28, 2021 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/computer-science">computer science</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/rust">rust</a>
+    
+</div>
+
+    
+    <div class="content">
+      <p><figure><img src="../../../../../img/post-34-polars/polars.webp"/>
+</figure>
+
+<br></p>
+<h2 id="1-introduction">1. Introduction</h2>
+<p>At the time of writing this, the coronavirus has been in our country for a year, which means I have been sitting at home for a very long time. At the start of the pandemic, I had a few pet projects in Rust under my belt and I noticed that the <em>&ldquo;are we DataFrame yet&rdquo;</em>, wasn&rsquo;t anywhere near my satisfaction. So I wondered if I could make a minimalistic crate that solved a specific use case of mine. But boy, did that get out of hand.</p>
+<p>A year later with lots of programming resulting in one of the fastest DataFrame libraries available in Rust and Python. This is my first official &ldquo;Hello World&rdquo; from <a href="https://github.com/ritchie46/polars">polars</a> on my personal blog. With this post, I hope I can take the reader along with some design decisions I encountered and get a more thorough understanding of how Polars works under the hood.</p>
+<h2 id="2-quite-a-bold-claim">2. Quite a bold claim</h2>
+<p>I know it is quite a bold claim to make, and I would not make it lightly. There is a benchmark for database systems that does a benchmark on in-memory tools ran by h2o.ai. This benchmark consists of 10 groupby tests on different data cardinalities and query complexity to give a well-rounded view of a tool&rsquo;s performance, and 5 tests on different join questions. At the time of writing this blog, Polars is the fastest DataFrame library in the benchmark second to R&rsquo;s data.table, and Polars is top 3 all tools considered.</p>
+<p>Below are shown the summaries of the 5GB dataset test, and you can see the whole <a href="https://h2oai.github.io/db-benchmark/">benchmark here</a>.</p>
+<p><em>update 2021-03-14: Benchmarks age poorly, Polars now has the fastest join algorithm in the benchmark</em></p>
+<div style="max-width: 60%">
+<figure><img src="../../../../../img/post-34-polars/db-benchmark-join-5GB.png"/><figcaption>
+            <h4>Join benchmark summary</h4>
+        </figcaption>
+</figure>
+
+<figure><img src="../../../../../img/post-34-polars/db-benchmark-gb-simple-5GB.png"/><figcaption>
+            <h4>Groupby benchmark summary (basic questions)</h4>
+        </figcaption>
+</figure>
+
+<figure><img src="../../../../../img/post-34-polars/db-benchmark-gb-adv-5GB.png"/><figcaption>
+            <h4>Groupby benchmark summary (advanced questions)</h4>
+        </figcaption>
+</figure>
+
+</div>
+<h2 id="2-know-your-hardware">2. Know your hardware</h2>
+<p>If you want to design for optimal performance you cannot ignore hardware. There are cases where algorithmic complexity doesn&rsquo;t give you a good intuition of the real performance due to hardware-related issues like cache hierarchies and branch prediction. For instance, up to a certain number of elements (a few 100, depending on the datatype), it is faster to lookup a given element in an array than to look it up in hashmap, whereas the time complexity of those data structures are $ \mathcal{O}(n) $, and $ \mathcal{O}(1) $ respectively.
+This makes design decisions also very temporal, what is a bottleneck in this day, may not be in the future. This is clearly seen in database systems. DB systems from the previous generation like PostgreSQL or MySQL are all row-based volcano models<sup>[1]</sup>, which was an excellent design decision in that era when disks were much slower and RAM was very limited. Nowadays we have fast SSD disks and large amounts of memory available, and wide SIMD registers, we see that columnar databases like cockroachDB, DuckDB are among the best performing DBMSes.</p>
+<h3 id="31-cache-hierarchies">3.1 Cache hierarchies</h3>
+<p>Oversimplifying, RAM comes in two flavors, large and slow or fast and small. For this reason, you have memory caches in a hierarchy. You&rsquo;ve got main memory that&rsquo;s large and slow. And memory you&rsquo;ve used last is stored in L1, L2, L3 cache with more latency respectively. The summation below gives you an idea of the relative latency of the different cache levels:</p>
+<p><strong>Access time in CPU cycles</strong></p>
+<ul>
+<li>CPU register - 1 cycle</li>
+<li>L1 cache - ~1-3 cycles</li>
+<li>L2 cache - ~10 cycles</li>
+<li>L3 cache - ~40 cycles</li>
+<li>Main memory - ~100-300 cycles</li>
+</ul>
+<p>When accessing data sequentially we want to make sure that data is in cache as much as possible, or we could easily have a ~100x performance penalty. Caches are loaded and deleted in cache lines. When we load a single data point, we get a whole cache line, but we also remove a whole cache line. They are typically 64, or 128 bytes long and aligned on 64-byte memory adresses.</p>
+<h3 id="32-prefetching-and-branch-predictions">3.2 Prefetching and branch predictions</h3>
+<p>CPUs prefetch data and instructions to a local cache to reduce the high penalty of memory latency. If you have a tight loop without any branches (if-else-then structures) the CPU has no problem knowing which data to prefetch and can fully utilize <a href="https://en.wikipedia.org/wiki/Instruction_pipelining">instruction pipelines</a>.</p>
+<p>Instruction pipelines hide latency by doing work in parallel. Every CPU instruction goes through a <strong>Fetch, Decode, Execute, Write-back</strong> sequence. Instead of doing these 4 instructions sequentially in a single pipeline, there are multiple pipelines that already pre-fetch (decode, execute, etc.) the next instructions. This increases throughput and hides latency. However, if this process is interrupted, you start with empty pipelines and you have to wait the full latency period for the next instruction. Below we see a visual of instruction pipelines.</p>
+<div style="max-width: 50%"><figure><img src="../../../../../img/post-34-polars/4stage_pipe_line.png"/><figcaption>
+            <h4>4 stage instruction pipeline</h4>
+        </figcaption>
+</figure>
+</div>
+<p>The CPU does its best to predict which conditional jump is taken and speculatively execute that code in advance (i.e. keep the pipelines filled), but if it has mispredicted it must clear that work and we pay the latency price until the pipelines are full again.</p>
+<h3 id="33-simd-instructions">3.3 SIMD instructions</h3>
+<p>Modern processors have SIMD registers (Single Instruction Multiple Data), which operate on whole vectors of data in a single CPU cycle. The vector lane widths vary from 128 bits to 512 bits, and the speedup depends on the width of the registers and the number of bits needed to represent the datatype. These register greatly improve the performance of simple operations if you can fill them fast enough (linear data). A columnar memory format can therefore fully utilize SIMD instructions. Polars and its memory backend Arrow, utilize SIMD to get optimal performance.</p>
+<figure><img src="../../../../../img/post-34-polars/SIMD.svg"/><figcaption>
+            <h4>SISD vs SIMD</h4>
+        </figcaption>
+</figure>
+
+<h2 id="4-arrow-memory-format">4. Arrow memory format</h2>
+<p>Polars is based on the Rust native implementation <a href="https://github.com/apache/arrow">Apache Arrow</a>. Arrow can be seen as middleware software for DBMS, query engines and DataFrame libraries. Arrow provides very cache-coherent data structures and proper missing data handling.</p>
+<p>Let&rsquo;s go through some examples to see what this means.</p>
+<h3 id="41-arrow-numeric-array">4.1 Arrow numeric array</h3>
+<p>An Arrow numeric array consists of a data buffer containing some typed data, e.g. <code>f32</code>, <code>u64</code>, etc. , shown in the figure as an orange colored array. Besides the value data, an Arrow array alwas has a validity buffer. This buffer is a bit array where the bits indicate missing data. Because the missing data is represented by bits there is minimal memory overhead.</p>
+<p>This directly shows a clear advantage over Pandas for instance, where there is no clear distinction between a float <code>NaN</code> and missing data, where they really should represent different things.</p>
+<figure><img src="../../../../../img/post-34-polars/arrow_primitive.svg"/><figcaption>
+            <h4>Arrow numeric array</h4>
+        </figcaption>
+</figure>
+
+<h3 id="41-arrow-string-array">4.1 Arrow string array</h3>
+<p>The figure below shows the memory layout of an Arrow <code>LargeString</code> array. This figure encodes the following array <code>[&quot;foo&quot;, &quot;bar&quot;, &quot;ham&quot;]</code>. The Arrow array consists of a data buffer where all string bytes are concatenated to a single sequential buffer (good for cache coherence!). To be able to find the starting and ending position of a string value there is a separate offset array, and finally, there is the null-bit buffer to indicate missing values.</p>
+<figure><img src="../../../../../img/post-34-polars/arrow_string.svg"/><figcaption>
+            <h4>Arrow large-utf8 array</h4>
+        </figcaption>
+</figure>
+
+<p>Let&rsquo;s compare this with a pandas string array. Pandas strings are actually Python objects, therefore they are boxed (which means there is also memory overhead to encode the type next to the data). Sequential string access in pandas will lead to cache miss after cache miss, because every string value may point to a completely different memory location.</p>
+<figure><img src="../../../../../img/post-34-polars/pandas_string.svg"/><figcaption>
+            <h4>Pandas string array</h4>
+        </figcaption>
+</figure>
+
+<p>For cache coherence, the Arrow representation is a clear winner. However, there is a price. If we want to filter this array or we want to take values based on some index array we need to copy a lot more data around. The pandas string array only holds pointers to the data and can cheaply create a new array with pointers. Arrow string arrays have to copy all the string data, especially when you have large string values this can become a very large overhead. It is also harder to estimate the size of the string data buffer, as this comprises the length of all string values.</p>
+<p>Polars also has a <code>Categorical</code> type which helps you mitigate this problem. Arrow also has a solution for this problem, called the <code>Dictionary</code> type, which is similar to Polars&rsquo; <code>Categorical</code> type.</p>
+<h3 id="43-reference-counted">4.3 Reference counted</h3>
+<p>Arrow buffers are reference counted and immutable. Meaning that copying a DataFrame, Series, Array is almost a no-op, making it very easy to write purely functional code. The same counts for slicing operations, which are only an increment of the reference count and a modification of the offset.</p>
+<h3 id="42-performance-missing-data-and-branching">4.2 Performance: Missing data and branching</h3>
+<p>As we&rsquo;ve seen, the missing data is encoded in a separate buffer. This means we can easily write branchless code by just ignoring the null buffer during an operation. When the operation is finished the null bit buffer is just copied to the new array. When a branch miss would be more expensive than the execution of an operation this is an easy win and used in many operations in Arrow and Polars.</p>
+<h3 id="43-performance-filter-trick">4.3 Performance: filter-trick</h3>
+<p>An operation that has to be done often in a DBMS, is a filter. Based on some predicate (boolean mask) we filter rows. Arrows null bit buffer allow for very fast filtering using a <strong>filter-trick</strong> (unofficially named by me). <em>*Credits to the filter-trick go the Apache Arrow implementation</em>. Note, that this filter-trick often leads to faster filters, but it may not always be the case. If your predicate consists of alternating boolean values e.g. <br>
+<code>[true, false, true, false, ... , true, false]</code> this trick has a slight overhead.</p>
+<p>The core idea of the filter-trick is that we can load the bit array from memory as any integer type we want. Let&rsquo;s say that we load the bit array as an unsigned integer <code>u64</code> then we know that the maximum encoded value is $2^{64}$ (64 consecutive one value in binary), and the minimum encoded value is 0 (64 consecutive 0 values in binary). We can make a table of 64 entries that represent how many consecutive values we can filter and skip. If this integer is in this table we know have many values to filter in very few CPU cycles and can do a <code>memcpy</code> to efficiently copy data. If the integer is not present in the table we have to iterate through the bits one by one and hope for a hit in the following 64 bits we load.</p>
+<figure><img src="../../../../../img/post-34-polars/filter-trick.svg"/><figcaption>
+            <h4>filter-trick</h4>
+        </figcaption>
+</figure>
+
+<p>This filter-trick is used of course in any operation that includes a predicate mask, such as <code>filter</code>, <code>set</code>, and <code>zip</code>.</p>
+<h2 id="5-parallelization">5. Parallelization</h2>
+<p>With the plateauing of CPU clock speeds and the end of Moore&rsquo;s law in sight, the free lunch <sup>[2]</sup> is over. Single-threaded performance isn&rsquo;t going to increase much anymore. To mitigate this, almost all hardware nowadays has multiple cores. My laptop has 12 logical cores, so there is a tremendous potential for parallelization. Polars is written to exploit parallelism as much as possible.</p>
+<h3 id="51-embarrasingly-parallel">5.1 Embarrasingly parallel</h3>
+<p>The best parallelization is of course where is no need for communication and there are no data dependencies. Polars utilizes this kind of parallelism as much as possible.</p>
+<p>This is for instance the case if we do an aggregation on the columns in a DataFrame. All columns can be aggregated on in parallel.</p>
+<p>Another embarrassingly parallel algorithm in Polars in the apply-phase in a groupy-operation.</p>
+<figure><img src="../../../../../img/post-34-polars/split-apply-combine-par.svg"/><figcaption>
+            <h4>Embarrassingly parallel apply phase</h4>
+        </figcaption>
+</figure>
+
+<h3 id="52-parallel-hashing">5.2 Parallel hashing</h3>
+<p>Hashing is the core of many operations in a DataFrame library, a groupby-operation creates a hash table with the group index pointers, and a join operation needs a hash table to find the tuples mapping the rows of the left to the right DataFrame.</p>
+<h4 id="521-expensive-synchronization">5.2.1 Expensive synchronization</h4>
+<p>In both operations, we cannot simply split the data among the threads. There is no guarantee that all the same keys would end up in the same hash table on the same thread. Therefore we would need an extra synchronization-phase where we build a new hashtable. This principle is shown in the figure below for 2 threads.</p>
+<figure><img src="../../../../../img/post-34-polars/naive-hash.svg"/><figcaption>
+            <h4>Expensive synchronization</h4>
+        </figcaption>
+</figure>
+
+<h4 id="522-expensive-locking">5.2.2 Expensive locking</h4>
+<p>Another option that is found too expensive is hashing the data on separate threads and have a single hash table in a <code>mutex</code>. As you can imagine, thread contention is very high in this algorithm and the parallelism doesn&rsquo;t really pay of.</p>
+<figure><img src="../../../../../img/post-34-polars/lock-hash.svg"/><figcaption>
+            <h4>Expensive locking</h4>
+        </figcaption>
+</figure>
+
+<h4 id="522-lock-free-hashing">5.2.2 Lock-free hashing</h4>
+<p>Instead of the before mentioned approaches, Polars uses a lock-free hashing algorithm. This approach does do more work than the previous <em>Expensive locking</em> approach, but this work is done in parallel and all threads are guaranteed to not have to wait on any other thread. Every thread computes the hashes of the keys, but depending on the outcome of the hash, it will determine if that key belongs to the hash table of that thread. This is simply determined by the <code>hash value % thread number</code>. Due to this simple trick, we know that every threaded hash table has unique keys and we can simply combine the pointers of the hash tables on the main thread.</p>
+<figure><img src="../../../../../img/post-34-polars/lock-free-hash.svg"/><figcaption>
+            <h4>Lock-free hashing</h4>
+        </figcaption>
+</figure>
+
+<h2 id="6-query-optimization-less-is-more">6. Query optimization: Less is more</h2>
+<p>The best performance gains are simply not doing any work at all. Polars consists of two public APIs, one that is eager, procedural programming, and one that is lazy declarative programming. I would recommend using the lazy API as much as possible when dealing with performance-critical code.</p>
+<p>The declarative DSL allows Polars to analyze a logical plan of your query and it can apply several optimization/ heuristics such that your query can be executed by just doing less work. If you want to read more about the optimizations that are done to the query plan, there is a <a href="https://ritchie46.github.io/polars-book/lazy_polars/predicate_pushdown.html">section with examples in the polars book</a>.</p>
+<h2 id="7-and-more">7. And more</h2>
+<p>This post only highlighted a few of the performance related designs in the Polars and Arrow library. Other things that are implemented are for instance:</p>
+<ul>
+<li>Ad hoc partitioning (map-reduce like groupby&rsquo;s)</li>
+<li><a href="https://www.cockroachlabs.com/blog/vectorized-hash-joiner/">Vectorized hashing</a> <sup>[3]</sup> (Tipped by <a href="https://github.com/Dandandan">Daniël Heres</a>).</li>
+<li>Using table statistics to choose fast paths</li>
+<li>And much more..</li>
+</ul>
+<p>Now the &ldquo;hello world&rdquo; is officially out there, I may highlight those other subjecst in later posts. Check out <a href="https://github.com/ritchie46/polars">polars on github</a>, and if you have any remarks, feature requests, etc. let me know!</p>
+<h2 id="references">References</h2>
+<p>  [1] Graefe G.. Volcano (1994) <em>an extensible and parallel query evaluation system.</em> <a href="https://paperhub.s3.amazonaws.com/dace52a42c07f7f8348b08dc2b186061.pdf">IEEE Trans. Knowl. Data Eng.</a><br>
+  [2] Herb Sutter (2005) <em>The Free Lunch Is Over: A Fundamental Turn Toward Concurrency in Software</em> <a href="http://www.gotw.ca/publications/concurrency-ddj.htm">Weblog</a>
+  [3] Angela Chang: CockroachDB (2019) <em>40x faster hash joiner with vectorized execution</em> <a href="https://www.cockroachlabs.com/blog/vectorized-hash-joiner/">Weblog</a></p>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+    TeX: { equationNumbers: { autoNumber: "AMS" } }
+  });
+  </script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

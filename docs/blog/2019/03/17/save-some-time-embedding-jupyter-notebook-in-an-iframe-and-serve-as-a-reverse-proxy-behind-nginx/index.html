@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Save some time: Embedding jupyter notebook in an iframe and serve as a reverse proxy behind NGINX - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2019/03/17/save-some-time-embedding-jupyter-notebook-in-an-iframe-and-serve-as-a-reverse-proxy-behind-nginx/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-22-embedding-jupyter/crossroads.jpg" />
+
+
+<title>Save some time: Embedding jupyter notebook in an iframe and serve as a reverse proxy behind NGINX | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Save some time: Embedding jupyter notebook in an iframe and serve as a reverse proxy behind NGINX</h1>
+    <h2 class="subtitle is-5">March 17, 2019 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/save-some-time">save-some-time</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/web">web</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+</div>
+
+    
+    <div class="content">
+      <figure><img src="../../../../../img/post-22-embedding-jupyter/crossroads.jpg"/>
+</figure>
+
+<br>
+Embedding Jupyter notebook/ lab on your website can be done by embedding it in an iframe. However, it takes some configurational quirks to get it done. For my purpose, I also needed to offload validation to another service on the backend. Both the validation server as the jupyter notebook server were proxied behind an NGINX server. Here is the configuration.
+<h2 id="nginx-setup">NGINX setup</h2>
+<p>In the configuration, we set two upstream servers. One is the actual jupyter notebook server and one is the validation server. The <code>/notebook</code> endpoint is exposed to the web. The <code>/auth</code> endpoint is only internally visible and is used for incoming request authentication.</p>
+<p>Normally an NGINX reverse proxy server uses the HTTP protocol. However jupyter
+notebook requires a websocket connection to work properly. By setting the <strong>Upgrade</strong> and the <strong>Connection</strong> header we can create a websocket tunnel between client and server. We also want this connection to remain open. Therefore we set <code>proxy_read_timeout</code> to a large value.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>http {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    upstream notebook {
+</span></span><span style="display:flex;"><span>        # The notebook server
+</span></span><span style="display:flex;"><span>        server 127.0.0.1:8888;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    upstream auth-server {
+</span></span><span style="display:flex;"><span>        # whatever authentication method your setup requires
+</span></span><span style="display:flex;"><span>        server 127.0.0.1:8000;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    server {
+</span></span><span style="display:flex;"><span>        listen 80;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        location /notebook {
+</span></span><span style="display:flex;"><span>            # validate the request with the /auth endpoint
+</span></span><span style="display:flex;"><span>            auth_request       /auth;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            # Allow iframe inbedding from this parent &lt;your-website.com&gt;
+</span></span><span style="display:flex;"><span>            add_header Content-Security-Policy &#34;frame-ancestors http://&lt;your-website.com&gt;:80&#34;;
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>            # websocket proxy
+</span></span><span style="display:flex;"><span>            proxy_http_version 1.1;
+</span></span><span style="display:flex;"><span>            proxy_redirect off;
+</span></span><span style="display:flex;"><span>            proxy_buffering off;
+</span></span><span style="display:flex;"><span>            proxy_set_header Upgrade $http_upgrade;
+</span></span><span style="display:flex;"><span>            proxy_set_header Connection &#34;upgrade&#34;;
+</span></span><span style="display:flex;"><span>            proxy_read_timeout 86400;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            proxy_pass         http://notebook;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        location = /auth {
+</span></span><span style="display:flex;"><span>            internal;
+</span></span><span style="display:flex;"><span>            proxy_pass                http://auth-server/;
+</span></span><span style="display:flex;"><span>            # body content not needed
+</span></span><span style="display:flex;"><span>            proxy_pass_request_body   off;
+</span></span><span style="display:flex;"><span>            proxy_set_header          Content-Length &#34;&#34;;
+</span></span><span style="display:flex;"><span>            proxy_set_header          X-Original-URI $request_uri;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><h2 id="jupyter">Jupyter</h2>
+<p>Below is the configuration of <code>jupyter_notebook_config.py</code> shown. The important part for embedding the notebook in the iframe is <code>c.NotebookApp.tornado_settings</code>. Here you set URL of the iframe&rsquo;s parent, i.e. your website.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>c<span style="color:#f92672">.</span>NotebookApp<span style="color:#f92672">.</span>port <span style="color:#f92672">=</span> <span style="color:#ae81ff">8888</span>
+</span></span><span style="display:flex;"><span>c<span style="color:#f92672">.</span>NotebookApp<span style="color:#f92672">.</span>token <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## The IP address the notebook server will listen on.</span>
+</span></span><span style="display:flex;"><span>c<span style="color:#f92672">.</span>NotebookApp<span style="color:#f92672">.</span>ip <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;*&#39;</span>
+</span></span><span style="display:flex;"><span>c<span style="color:#f92672">.</span>NotebookApp<span style="color:#f92672">.</span>base_url <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;notebook&#39;</span>
+</span></span><span style="display:flex;"><span>c<span style="color:#f92672">.</span>NotebookApp<span style="color:#f92672">.</span>allow_origin <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;*&#39;</span>
+</span></span><span style="display:flex;"><span>c<span style="color:#f92672">.</span>NotebookApp<span style="color:#f92672">.</span>open_browser <span style="color:#f92672">=</span> <span style="color:#66d9ef">False</span>
+</span></span></code></pre></div><h2 id="html">HTML</h2>
+<p>Finally, you need to point the iframe to the proper endpoint and you are all set.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-HTML" data-lang="HTML"><span style="display:flex;"><span>&lt;<span style="color:#f92672">h1</span>&gt;Welcome to my cool website&lt;/<span style="color:#f92672">h1</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">iframe</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/notebook&#34;</span>&gt;&lt;/<span style="color:#f92672">iframe</span>&gt;
+</span></span></code></pre></div><h2 id="save-some-time">Save some time</h2>
+<p><strong>Save some time</strong> posts are short write ups with the intention to, well, save you some time. The content can be anything that has cost me more time it should have.</p>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

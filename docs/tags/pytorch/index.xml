@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>pytorch on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/pytorch/</link>
+    <description>Recent content in pytorch on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Tue, 12 Nov 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/pytorch/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Another normalizing flow: Inverse Autoregressive Flows</title>
+      <link>https://www.ritchievink.com/blog/2019/11/12/another-normalizing-flow-inverse-autoregressive-flows/</link>
+      <pubDate>Tue, 12 Nov 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/11/12/another-normalizing-flow-inverse-autoregressive-flows/</guid>
+      <description>This post we will explore a type of normalizing flow called **Inverse Autoregressive Flow**. A composition (flow) of transformations, while preserving the constraints of a probability distribution (normalizing), can help us obtain highly correlated variational distributions. Don&amp;rsquo;t repeat yourself
+If what was mentioned in the previous lines didn&amp;rsquo;t ring a bell, do first read these posts: variational inference and normalizing flows. This post could really be seen as an extension of the latter.</description>
+    </item>
+    
+    <item>
+      <title>Generative Adversarial Networks in Pytorch: The distribution of Art</title>
+      <link>https://www.ritchievink.com/blog/2018/07/16/generative-adversarial-networks-in-pytorch-the-distribution-of-art/</link>
+      <pubDate>Mon, 16 Jul 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/07/16/generative-adversarial-networks-in-pytorch-the-distribution-of-art/</guid>
+      <description>Generative adversarial networks seem to be able to generate amazing stuff. I wanted to do a small project with GANs and in the process create something fancy for on the wall. Therefore I tried to train a GAN on a dataset of art paintings. This post I&amp;rsquo;ll explore if I&amp;rsquo;ll succeed in getting a full hd new Picasso on the wall. The pictures above give you a glimplse of some of the results from the model.</description>
+    </item>
+    
+  </channel>
+</rss>

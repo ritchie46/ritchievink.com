@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>bayesian on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/bayesian/</link>
+    <description>Recent content in bayesian on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Tue, 12 Nov 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/bayesian/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Another normalizing flow: Inverse Autoregressive Flows</title>
+      <link>https://www.ritchievink.com/blog/2019/11/12/another-normalizing-flow-inverse-autoregressive-flows/</link>
+      <pubDate>Tue, 12 Nov 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/11/12/another-normalizing-flow-inverse-autoregressive-flows/</guid>
+      <description>This post we will explore a type of normalizing flow called **Inverse Autoregressive Flow**. A composition (flow) of transformations, while preserving the constraints of a probability distribution (normalizing), can help us obtain highly correlated variational distributions. Don&amp;rsquo;t repeat yourself
+If what was mentioned in the previous lines didn&amp;rsquo;t ring a bell, do first read these posts: variational inference and normalizing flows. This post could really be seen as an extension of the latter.</description>
+    </item>
+    
+    <item>
+      <title>Sculpting distributions with Normalizing Flows</title>
+      <link>https://www.ritchievink.com/blog/2019/10/11/sculpting-distributions-with-normalizing-flows/</link>
+      <pubDate>Fri, 11 Oct 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/10/11/sculpting-distributions-with-normalizing-flows/</guid>
+      <description>Last posts we&amp;rsquo;ve investigated Bayesian inference through variational inference (post 1/post 2). In Bayesian inference, we often define models with some unknown model parameters $Z$, or latent stochastic variables $Z$. Given this model and some observed data points $D = \{ D_1, D_2, \dots, D_n \} $, we are interested in the true posterior distribution $P(Z|D)$. This posterior is often intractable and the general idea was to forgo the quest of obtaining the true posterior, but to accept that we are bounded to some easily parameterizable approximate posteriors $^*Q(z)$, which we called variational distributions.</description>
+    </item>
+    
+    <item>
+      <title>Variational inference from scratch</title>
+      <link>https://www.ritchievink.com/blog/2019/09/16/variational-inference-from-scratch/</link>
+      <pubDate>Mon, 16 Sep 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/09/16/variational-inference-from-scratch/</guid>
+      <description>In the posts Expectation Maximization and Bayesian inference; How we are able to chase the Posterior, we laid the mathematical foundation of variational inference. This post we will continue on that foundation and implement variational inference in Pytorch. If you are not familiar with the basis, I&amp;rsquo;d recommend reading these posts to get you up to speed.
+This post we&amp;rsquo;ll model a probablistic layer as output layer of a neural network.</description>
+    </item>
+    
+    <item>
+      <title>Algorithm Breakdown: Bayesian Optimization</title>
+      <link>https://www.ritchievink.com/blog/2019/08/25/algorithm-breakdown-bayesian-optimization/</link>
+      <pubDate>Sun, 25 Aug 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/08/25/algorithm-breakdown-bayesian-optimization/</guid>
+      <description>Not that long ago I wrote an introduction post on Gaussian Processes (GP&amp;rsquo;s), a regression technique where we condition a Gaussian prior distribution over functions on observed data. GP&amp;rsquo;s can model any function that is possible within a given prior distribution. And we don&amp;rsquo;t get a function $f$, we get a whole posterior distribution of functions $P(f|X)$.
+This of course, sounds very cool and all, but there is no free lunch.</description>
+    </item>
+    
+    <item>
+      <title>Bayesian inference; How we are able to chase the Posterior</title>
+      <link>https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/</link>
+      <pubDate>Mon, 10 Jun 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/</guid>
+      <description>Bayesian modeling! Every introduction on that topic starts with a quick conclusion that finding the posterior distribution often is computationally intractable. Last post I looked at Expectation Maximization, which is a solution of this computational intractability for a set of models. However, for most models, it isn&amp;rsquo;t. This post I will take a formal definition of the problem (As I&amp;rsquo;ve skipped that in the Expectation Maximization post) and we&amp;rsquo;ll look at two solutions that help us tackle this problem; Markov Chain Monte Carlo and Variational Inference.</description>
+    </item>
+    
+    <item>
+      <title>Algorithm Breakdown: Expectation Maximization</title>
+      <link>https://www.ritchievink.com/blog/2019/05/24/algorithm-breakdown-expectation-maximization/</link>
+      <pubDate>Fri, 24 May 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/05/24/algorithm-breakdown-expectation-maximization/</guid>
+      <description>I wanted to learn something about variational inference, a technique used to approximate the posterior distribution in Bayesian modeling. However, during my research, I bounced on quite some mathematics that led me to another optimization technique called Expectation Maximization. I believe the theory behind this algorithm is a stepping stone to the mathematics behind variational inference. So we tackle the problems one problem at a time!
+The first part of this post will focus on Gaussian Mixture Models, as expectation maximization is the standard optimization algorithm for these models.</description>
+    </item>
+    
+    <item>
+      <title>An intuitive introduction to Gaussian processes</title>
+      <link>https://www.ritchievink.com/blog/2019/02/01/an-intuitive-introduction-to-gaussian-processes/</link>
+      <pubDate>Fri, 01 Feb 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/02/01/an-intuitive-introduction-to-gaussian-processes/</guid>
+      <description>Christopher Fonnesbeck did a talk about Bayesian Non-parametric Models for Data Science using PyMC3 on PyCon 2018. In this talk, he glanced over Bayes&amp;rsquo; modeling, the neat properties of Gaussian distributions and then quickly turned to the application of Gaussian Processes, a distribution over infinite functions. Wait, but what?! How does a Gaussian represent a function? I did not understand how, but the promise of what these Gaussian Processes representing a distribution over nonlinear and nonparametric functions really intrigued me and therefore turned into a new subject for a post.</description>
+    </item>
+    
+    <item>
+      <title>Build Facebook&#39;s Prophet in PyMC3; Bayesian time series analyis with Generalized Additive Models</title>
+      <link>https://www.ritchievink.com/blog/2018/10/09/build-facebooks-prophet-in-pymc3-bayesian-time-series-analyis-with-generalized-additive-models/</link>
+      <pubDate>Tue, 09 Oct 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/10/09/build-facebooks-prophet-in-pymc3-bayesian-time-series-analyis-with-generalized-additive-models/</guid>
+      <description>Last [Algorithm Breakdown](https://www.ritchievink.com/blog/2018/09/26/algorithm-breakdown-ar-ma-and-arima-models/) we build an ARIMA model from scratch and discussed the use cases of that kind of models. ARIMA models are great when you have got stationary data and when you want to predict a few time steps into the future. A lot of business data, being generated by human processes, have got weekly and yearly seasonalities (we for instance, seem work to less in weekends and holidays) and show peaks at certain events.</description>
+    </item>
+    
+    <item>
+      <title>Clustering data with Dirichlet Mixtures in Edward and Pymc3</title>
+      <link>https://www.ritchievink.com/blog/2018/06/05/clustering-data-with-dirichlet-mixtures-in-edward-and-pymc3/</link>
+      <pubDate>Tue, 05 Jun 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/06/05/clustering-data-with-dirichlet-mixtures-in-edward-and-pymc3/</guid>
+      <description>Last post I&amp;rsquo;ve described the Affinity Propagation algorithm. The reason why I wrote about this algorithm was because I was interested in clustering data points without specifying k, i.e. the number of clusters present in the data.
+This post continues with the same fascination, however now we take a generative approach. In other words, we are going to examine which models could have generated the observed data. Through bayesian inference we hope to find the hidden (latent) distributions that most likely generated the data points.</description>
+    </item>
+    
+  </channel>
+</rss>

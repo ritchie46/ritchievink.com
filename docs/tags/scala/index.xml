@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>scala on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/scala/</link>
+    <description>Recent content in scala on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Mon, 27 Nov 2017 16:14:21 +0100</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/scala/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Implementing a Support Vector Machine in Scala</title>
+      <link>https://www.ritchievink.com/blog/2017/11/27/implementing-a-support-vector-machine-in-scala/</link>
+      <pubDate>Mon, 27 Nov 2017 16:14:21 +0100</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/11/27/implementing-a-support-vector-machine-in-scala/</guid>
+      <description>This post describes the implementation of a linear support vector machine classifier (SVM) in Scala. Scala is a functional programming language that supports functional programming to a far extend. Because I am exploring Scala at the moment and I like the challenge of functional programming, the SVM will be implemented in a functional manner. We are going to test the SVM on two classes from the Iris dataset.
+Linear Support Vector Machine intuition Support Vector Machines are binary classifiers.</description>
+    </item>
+    
+  </channel>
+</rss>

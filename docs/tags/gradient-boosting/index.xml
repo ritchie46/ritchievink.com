@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>gradient boosting on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/gradient-boosting/</link>
+    <description>Recent content in gradient boosting on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Mon, 19 Nov 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/gradient-boosting/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Algorithm breakdown: Why do we call it Gradient Boosting?</title>
+      <link>https://www.ritchievink.com/blog/2018/11/19/algorithm-breakdown-why-do-we-call-it-gradient-boosting/</link>
+      <pubDate>Mon, 19 Nov 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/11/19/algorithm-breakdown-why-do-we-call-it-gradient-boosting/</guid>
+      <description>We were making a training at work about ensemble models. When we were discussing different techniques like bagging, boosting, and stacking, we also came on the subject of gradient boosting. Intuitively, gradient boosting, by training on the residuals made sense. However, the name gradient boosting did not right away. This post we are exploring the name of gradient boosting and of course also the model itself!
+Intuition Single decision tree Gradient boosting is often used as an optimization technique for decision trees.</description>
+    </item>
+    
+  </channel>
+</rss>

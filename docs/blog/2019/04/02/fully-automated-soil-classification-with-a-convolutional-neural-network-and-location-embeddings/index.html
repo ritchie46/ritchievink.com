@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Fully automated soil classification with a Convolutional Neural Network and Location embeddings - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2019/04/02/fully-automated-soil-classification-with-a-convolutional-neural-network-and-location-embeddings/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/soil-classification/header2.jpg" />
+
+
+<title>Fully automated soil classification with a Convolutional Neural Network and Location embeddings | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Fully automated soil classification with a Convolutional Neural Network and Location embeddings</h1>
+    <h2 class="subtitle is-5">April 2, 2019 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/engineering">engineering</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+</div>
+
+    
+    <div class="content">
+      <figure><img src="../../../../../img/soil-classification/header2.jpg"/>
+</figure>
+
+<br>
+<p>Soil classification is, in practice, a human process. A geotechnical engineer interprets results from a <a href="https://en.wikipedia.org/wiki/Cone_penetration_test">Cone Penetration Test</a> and comes up with a plausible depiction of the existing soil layers. These interpretations will often be used throughout a project and are input for many following calculations.</p>
+<p>Just as the poliovirus, the process of manually mapping data from $x$ to $y$, belongs to the list of things that humanity tries to eradicate from earth.</p>
+<h2 id="first-few-iterations">First few iterations</h2>
+<p>Automatic soil classification algorithms do exist. The defacto standard is <a href="https://www.cpt-robertson.com/publications/">Robertson et al. (1990) Soil Classification Using The Cone Penetration Test</a>. The classifications resulting from their work, often aren&rsquo;t satisfactory for engineering purposes in the Netherlands. This is due to two reasons.</p>
+<ul>
+<li>The classifications under/ over-represent a certain class (Peat/ Silt)</li>
+<li>Engineers want aggregated layers and the Robertson classifications are per measured layer.</li>
+</ul>
+<p><em>The last point, isn&rsquo;t criticism of the Robertson classification algorithm, as classification and aggregation are two separate tasks.</em></p>
+<p>If we want to obtain automated classifications that add more value in practice, we need to focus on the points above. So our solution should be able to map input data to a soil distribution and secondly detect changes in the data that represent soil layers.</p>
+<h2 id="data-driven-iteration">Data-driven iteration</h2>
+<p>I believe that a data-driven approach can yield better results than the empirical research-based approach. But to do so we need labeled data. As I don&rsquo;t have a laboratory nor thousands of hand made labels, I chose to obtain a dataset by querying a database for CPT&rsquo;s and bore-hole data within 6 meters apart. Any CPT and bore-hole that are less than 6 meters apart are assumed to be from the same soil. The 6 meters cut-of is chosen arbitrarily.
+The resulting <strong>dataset has got flawed labels</strong>, but by scraping large quantities of data we hope to approximate the real soil distribution and make the flaws negligible.</p>
+<p>For this project, I had roughly 49,000 CPTs and 40,000 boreholes, from which <strong>1,800 pairs</strong> met the condition of being less than 6 meters apart.</p>
+<h2 id="cone-penetration-tests">Cone penetration tests</h2>
+<p>Cone penetration tests are in situ procedures where a steel bar with a cone is pressed into the ground at a constant speed. During the soil penetration, different things are measured at the cone of the penetration bar.</p>
+<p>Shown below is a typical graph resulting from a cone penetration test. Typically two lines are drawn, the <strong>qc</strong> values and the <strong>Fr</strong> values. These can be interpreted as</p>
+<ul>
+<li><strong>qc:</strong> Resistance measured at the tip of the cone.</li>
+<li><strong>Fs:</strong> Friction measured at the cone. The friction is normalized by $\frac{1}{q_c} \cdot 100$, resulting in $R_f$ as these are heavily correlated.</li>
+</ul>
+<img src="../../../../../img/soil-classification/cpt-plot2.png" height=550px>
+<figcaption>
+        <h4>Example cpt</h4>
+</figcaption>
+<h2 id="decision-factors">Decision factors</h2>
+<p>Machine learning is often beneficial with high dimensional data. In this problem, the amount of data dimensions is relatively low. And when training powerful ML models, like Neural Networks (Multi Layer Perceptron architecture) or Gradient Boosting Trees, out of the box on this data, we see comparable results. The results are quite reasonable, but they don&rsquo;t reflect the decision factor of a geotechnical engineer.</p>
+<p>A huge part of the decision making is based on the location where the
+CPT is taken. And when a CPT, for instance, is taken at sea, they can tell by the curve of the line that a certain layer consists of seashells.</p>
+<p>If we want a model to be able to take the same decision factors into account as a human does, it needs to be able to make decision based on the same information.</p>
+<h2 id="model-architecture">Model architecture</h2>
+<p>For this reason, I&rsquo;ve chosen a Neural Network architecture with <strong>convolutional layers</strong> that can apply feature extraction on the input signal. Secondly, the model was enhanced with <strong>location-based embeddings</strong>. This way the model could learn it&rsquo;s own location embeddings and could learn the probabilities of soil conditional on a certain location. Finally, most of the bore-hole data show that layers concist of multiple volumic parts of soil types. Therefore we should
+predict the total soil distribution per layer. These adaptations have led to better results than the approaches based on only the <strong>qc</strong> and <strong>Fr</strong> values.</p>
+<p>Below is shown a result of the model. The model predicts the soil distribution over the depth. Qualitatively the predictions of the model seem very reasonable and align with a geotechnical mapping. Later in the post, we will make a quantitative evaluation.</p>
+<figure><img src="../../../../../img/soil-classification/example_prediction.png"/><figcaption>
+            <h4>Example prediction</h4>
+        </figcaption>
+</figure>
+
+<h2 id="location-embeddings">Location embeddings</h2>
+<p>From the 1800 pairs, 48 location clusters were created by applying K-means on the location data.</p>
+<p>In the figure below, the locations of the clusters are mapped on the map of the Netherlands. Sadly the dataset isn&rsquo;t sufficiently large to fill the entire Netherlands, but it is a good start!</p>
+<figure><img src="../../../../../img/soil-classification/cluster-map.png"/><figcaption>
+            <h4>Location clusters</h4>
+        </figcaption>
+</figure>
+
+<p>The colors represent a similarity measure between the clusters based on the cosine similarity. Clusters close to each other on the color scale are likely to have similar soil distributions.</p>
+<p>Right now the clusters locations and sizes are random. In the future, we could use some domain knowledge to ensure the clusters represent only one soil bias. This is probably beneficial for the model&rsquo;s results. The cool thing is that the model has learned biases for every location only determined by the dataset. Location <strong>23</strong> and location <strong>32</strong> for instance, are very similar. Which is very likely as both pieces of land are <a href="https://en.wikipedia.org/wiki/Flevoland">reclaimed from the
+sea</a>.</p>
+<h3 id="location-bias">Location bias</h3>
+<p>Besides comparing the clusters by similarity, we can also run inference for the embeddings by nullifying the features. Intuitively this can be regarded as the soil classification you should expect if you don&rsquo;t know anything, but the location. <em>(This is not entirely true, as the model is not trained on the true distribution due to heavily imbalanced classes.)</em></p>
+<figure><img src="../../../../../img/soil-classification/bias-locations.png"/><figcaption>
+            <h4>Biases per location</h4>
+        </figcaption>
+</figure>
+
+<p>This is quite powerful. During inference, we can decide to use the cluster bias, or if we have our own prior believes about the soil conditions, we could decide to use a different bias.</p>
+<h2 id="metrics">Metrics</h2>
+<p>Often when training a machine learning model we have ground truth labels being binary <strong>True</strong> or <strong>False</strong>, i.e. $y \in {0, 1}$.</p>
+<img src="../../../../../img/soil-classification/babydog.jpeg" style="float: left;"/>
+<img src="../../../../../img/soil-classification/babydoglabel.png" style="margin-left: 16px;" />
+<p>The labels in the image below could, for instance, be a baby, a dog, and a car. In the ground truth labels, we don&rsquo;t say that the image contains 65% dog, 20% car and 15% baby.</p>
+<p>The soil labels are actually distributions. Every layer contains different volumic percentages of soil types, but the sum of all volumes adds up to 1.</p>
+<figure><img src="../../../../../img/soil-classification/soildi.png"/>
+</figure>
+
+<h3 id="training-metric">Training metric</h3>
+<h4 id="cross-entropy">Cross Entropy</h4>
+<p>Classification models are often trained by minimizing cross entropy.</p>
+<p>$$ H(P, Q) = -\sum_{x \in X} {P(x) \cdot log(Q(x))}$$</p>
+<p>In this loss function, it is assumed that that only one index in the ground truth distribution $p=1$, i.e. the labels are one hot encoded. As we&rsquo;ve just seen, this is not the case for the soil distributions.</p>
+<h4 id="kullback-leibler-divergence">Kullback-Leibler divergence</h4>
+<p>A better metric is the KL-divergence. With this, we actually compare the divergence between two probability distributions.</p>
+<p>$$ H(P, Q) = -\sum_{x \in X} {P(x) \cdot log( \frac{Q(x)}{P(x)} )}$$</p>
+<h4 id="wasserstein-distance">Wasserstein distance</h4>
+<p>The best metric I&rsquo;ve tried for this problem is the <a href="https://en.wikipedia.org/wiki/Wasserstein_metric">Wasserstein distance</a> also being called the <strong>Earth mover&rsquo;s metric</strong>. For formality, the definition is shown below.</p>
+<p>$$ EMD(P, Q) = \frac{\sum_{i=1}^m \sum_{j=1}^m f_{i,j}d_{i, j}} {\sum_{i=1}^m \sum_{j=1}^n f_{i,j}} $$</p>
+<p>where $ D = [d_{i, j}]$ is the distance between $p_i$ and $q_j$, and $F=[f_{i, j}]$ the flow between $p_i$ and $q_j$ that minimizes the overall costs of moving $Q$ to $P$.</p>
+<p>$$ \text{min} \sum_{i=1}^m \sum_{j=1}^n f_{i, j} d_{i, j}$$</p>
+<p>I&rsquo;ve actually used the <a href="https://arxiv.org/abs/1611.05916">Squared Earth Mover&rsquo;s Distance-based Loss for Training Deep Neural Networks from Le Hou, Chen-Ping Ye and Dimitris Samaras</a></p>
+<p>This metric makes the most sense in this use case as different soil types have different similarities. This is best explained with an example.</p>
+<figure><img src="../../../../../img/soil-classification/distance-compare.png"/><figcaption>
+            <h4>Outcomes of KL-divergence compared to the Wasserstein distance.</h4>
+        </figcaption>
+</figure>
+
+<p>In the figure above, we see the outcomes of the KL-divergence and the Wasserstein distance. The KL-divergence only compares the probabilities of the separate classes, but not the shape of the distributions. The KL-divergence outcomes are therefore equal for both predictions. This does not represent what we really want. I believe that assigning volume probability to peat is worse than assigning volume probability to sand when the most volume should be assigned to gravel. By training on the
+Wasserstein distance we learn the model the order of preference between separate classes.</p>
+<h3 id="validation-metrics">Validation metrics</h3>
+<p>Comparing the outputs of the model, optimized by KL-divergence and Wasserstein distance, with Robertson is quite hard. Robertson does not predict a soil distribution, but assigns ambiguous names to soil layers, e.g. <em>&lsquo;Silt mixtures: clayey silt &amp; silty clay&rsquo;</em> and <em>&lsquo;Sand mixtures: silty sand &amp; sandy silt&rsquo;</em>. To be able to make a comparison these, classification were transformed to a soil class $\{G, S, L, C, P\}$.</p>
+<h4 id="the-bad">The bad</h4>
+<p>A naive way of doing validation is by looking at precision and recall scores by transforming the probability distributions to main soil classes by $\text{argmax}\{P(x)\}$.</p>
+<p><strong>F1 scores (higher is better)</strong></p>
+<table>
+<thead>
+<tr>
+<th>Soil Type</th>
+<th>Support</th>
+<th>Robertson F1</th>
+<th>KL-divergence F1</th>
+<th>Wasserstein F1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gravel</td>
+<td>3731</td>
+<td>0.15</td>
+<td>0.15</td>
+<td>0.10</td>
+</tr>
+<tr>
+<td>Sand</td>
+<td>137998</td>
+<td>0.86</td>
+<td>0.83</td>
+<td>0.85</td>
+</tr>
+<tr>
+<td>Loam</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Clay</td>
+<td>91523</td>
+<td>0.64</td>
+<td>0.70</td>
+<td>0.67</td>
+</tr>
+<tr>
+<td>Peat</td>
+<td>21398</td>
+<td>0.37</td>
+<td>0.57</td>
+<td>0.74</td>
+</tr>
+</tbody>
+</table>
+<p>This comparison is of course really bad as we are wasting a lot of information if we reduce a distribution to a number by taking the mode. If we look at the loam soil type, we can clearly see how bad it is. Because loam almost always is a subtype in soil layers it will never come out as the main soil, making it look that no model can predict this class.</p>
+<h4 id="the-good">The good</h4>
+<p>Below we show the error distributions. Because we are talking about probabilities, these distributions show us our error margins. In the plots, we also show the Mean Absolute Error (MAE), per soil type, so we can make a proper comparison. We show the absolute errors on two subsets of the test set.</p>
+<ul>
+<li>A subset where the true distribution has non zero probability for that class. Can intuitively be regarded as <strong>recall</strong>.</li>
+<li>A subset where the models assigns a significant probability to that class $P(y) \gt 0.025$. Can intuitively be regarded as precision.</li>
+</ul>
+<figure><img src="../../../../../img/soil-classification/precisionbased.png"/><figcaption>
+            <h4>Precision based absolute errors (lower is better)</h4>
+        </figcaption>
+</figure>
+
+<figure><img src="../../../../../img/soil-classification/recallbased.png"/><figcaption>
+            <h4>Recall based absolute errors</h4>
+        </figcaption>
+</figure>
+
+<p>Now we can clearly see how the models are performing. When looking at the precision based results, we, for instance, see that most of Robertson&rsquo;s loam and gravel classifications are wrong, and for peat, a classifcation is wrong ~50% of the time. Due to this sensitivity to Loam, Robertson&rsquo;s recall based error is much lower. Further, we see, that the KL-divergence model does best for the soil types loam, clay, and peat. For the soil types gravel and sand, the Wasserstein model shows the least
+errors and has a slightly lower error rate for peat at the recall subset. These plots are way more informative than the main soil based f1 scores. We do see that both models outperform Robertson on the soil classification task.</p>
+<h2 id="grouping">Grouping</h2>
+<p>The second challenge was creating aggregated layers. Engineers don&rsquo;t want too small layers in there FEM software, as that messes up the mesh. And often they&rsquo;d need to write a report on the soil conditions and don&rsquo;t feel much for reporting my output of ~750 soil layers.</p>
+<h3 id="gaussian-signal">Gaussian signal</h3>
+<p>For the grouping, we assume the cpt signal $X_t$ coming from a Gaussian distribution.</p>
+<p>$$ X_t| \mu, \sigma \sim N(\mu, \sigma)$$</p>
+<figure><img src="../../../../../img/soil-classification/gs_signal.png"/><figcaption>
+            <h4>Gaussian signal</h4>
+        </figcaption>
+</figure>
+
+<p>Now the likelihood of this signal is determined by</p>
+<p>$$ \mathcal{L}(X_t, \mu, \sigma) = \prod_{t=1}^{n}P(x_t | \mu, \sigma)$$</p>
+<h3 id="changepoint">Changepoint</h3>
+<p>Now we assume the signal below.
+The likelihood of those signals coming from two Gaussians, separated by changepoint $\tau$, is higher than the likelihood of the whole signal coming from one Gaussian.</p>
+<p>$$ [\mathcal{L}(x_{1:\tau}) + \mathcal{L}(x_{\tau:n})] &gt; \mathcal{L}(x_{1:n})  $$</p>
+<figure><img src="../../../../../img/soil-classification/changepoint_1.png"/><figcaption>
+            <h4>Two Gaussian signals with changepoint $\tau$</h4>
+        </figcaption>
+</figure>
+
+<h3 id="optimization-problem">Optimization problem</h3>
+<p>This observation can be turned into an optimization problem. We search for the minimal negative likelihood by adding new changepoints $\tau_i$
+for every point $k$ in the signal. To prevent having changepoints at every data point, we introduce a penalty $\lambda$.</p>
+<p>$$ \min_{k, \tau}{ \sum_{i=1}^{k+1}[-\mathcal{L}(x_{\tau_{i-1} : \tau_i})] + \lambda } $$</p>
+<h2 id="final-results">Final results</h2>
+<p>Below we see some inference results on the test data.</p>
+<img src="../../../../../img/soil-classification/prediction.png">
+<p>Below it is also clearly visible that the dataset contains flawed labels. Both models correctly identify the sand layer,
+where the labels show (wrongly) otherwise.</p>
+<figure><img src="../../../../../img/soil-classification/prediction_2.png"/><figcaption>
+            <h4>Prediction where the test set is wrongly labeled.</h4>
+        </figcaption>
+</figure>
+
+<p>And finally, an example of the predictions with grouping applied. The cool thing is we can tweak the grouping algorithm.
+By nudging $\lambda$ we can choose to have more layers (and have more information) or group more with fewer layers as a result.
+The grouping prediction below is made with the Wasserstein based model.</p>
+<figure><img src="../../../../../img/soil-classification/grouping.png"/><figcaption>
+            <h4>Prediction with grouping applied.</h4>
+        </figcaption>
+</figure>
+
+<h2 id="last-words">Last words</h2>
+<p>This model has been in the pipeline for quite some long time. I&rsquo;ve been working on it on and off.
+Every now and then I had an idea, and tried it with renewed energy. At the moment I&rsquo;m helping <a href="https://www.cruxbv.nl/home">CruxBV</a>
+with their quest to automation. As a geotechnical firm, they really are benefited by automated soil classification.
+This encouraged me to finish the work I&rsquo;ve done on the model and put it in production in their landscape.</p>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  });
+  </script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

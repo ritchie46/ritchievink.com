@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Generative Adversarial Networks in Pytorch: The distribution of Art - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2018/07/16/generative-adversarial-networks-in-pytorch-the-distribution-of-art/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-16-gan_art/result.jpg" />
+
+
+<title>Generative Adversarial Networks in Pytorch: The distribution of Art | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Generative Adversarial Networks in Pytorch: The distribution of Art</h1>
+    <h2 class="subtitle is-5">July 16, 2018 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/pytorch">pytorch</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/deep-learning">deep learning</a>
+    
+</div>
+
+    
+    <div class="content">
+      <figure><img src="../../../../../img/post-16-gan_art/result.jpg"/>
+</figure>
+
+<p>Generative adversarial networks seem to be able to generate amazing stuff. I wanted to do a small project with GANs and in the process create something fancy for on the wall. Therefore I tried to train a GAN on a dataset of art paintings. This post I&rsquo;ll explore if I&rsquo;ll succeed in getting a full hd new Picasso on the wall. The pictures above give you a glimplse of some of the results from the model.</p>
+<h2 id="generative-adversarial-networks">Generative Adversarial Networks</h2>
+<p>So what are those GANs actually? These networks are a different approach to monolithic neural networks. GANs are influenced by game theory. They consist of two networks, which compete with each other. One network, called the Discriminator, tries to identify the authenticity of an image. Another network, called the Generator, tries to fool the Discriminator by generating false images. The two networks are in an arms race and when this arms race is fruitful they will have learned to produce images that were not available to them in the dataset. The image below gives a visual explanation of what GANs are.</p>
+<figure><img src="../../../../../img/post-16-gan_art/gan.png"/><figcaption>
+            <h4>Generative Adversial networks</h4>
+        </figcaption>
+</figure>
+
+<p>You see that we feed the Generator random noise. We sample this random noise from a normal distribution. We hope that through the magic of backpropagation the Generator will become a network that is able to transform this normal distribution to the actual distribution of the dataset.</p>
+<p>That is right, <strong>the actual distribution of the dataset.</strong>
+Unlike models used for classification that model $P(class | data)$, GANs are able to learn and maximize $P(data)$  However GANs are notorious for being hard to train and instead of learning the latent distribution of a dataset they often learn just a small section of the hidden distribution or end up oscillating between only a few images during training.</p>
+<h2 id="art-data">Art data</h2>
+<p><a href="https://www.kaggle.com/c/painter-by-numbers">Kaggle</a> has a dataset containing the works of various painters. Shown below is an excerpt of the set. For the final dataset I&rsquo;ve downloaded <strong>train_1.zip</strong> - <strong>train_6.zip</strong>.</p>
+<figure><img src="../../../../../img/post-16-gan_art/montage.png"/><figcaption>
+            <h4>Some images from the dataset</h4>
+        </figcaption>
+</figure>
+
+<h2 id="model">Model</h2>
+<p>For this project I&rsquo;ve used an architecture call Deep Convolutional Generative Adversarial Networks (DCGANs). The model is trained in Pytorch. The code is is included in this post.
+For the model to work, first import some dependencies.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch.nn <span style="color:#66d9ef">as</span> nn
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch.utils.data
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch.nn.functional <span style="color:#66d9ef">as</span> F
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> os
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> torchvision <span style="color:#f92672">import</span> datasets, transforms
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> PIL <span style="color:#f92672">import</span> Image
+</span></span></code></pre></div><h3 id="discriminator">Discriminator</h3>
+<p>In this network the Discriminator is very much like any other deep convolutional network. It takes images as input and uses several feature extraction layers and finaly a fully connected layer to produce an output. The feature extraction layer is comprised of:</p>
+<ul>
+<li>Convolutional layer with 4x4 filters, a stride of 2 and a padding of 1 (downscaling an image by a factor 2).</li>
+<li>Batch normalization layer.</li>
+<li>Leaky relu activation.</li>
+</ul>
+<p>The Discriminator outputs a Sigmoid activation where a threshold of 0.5 dictates the image being real or false.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Discriminator</span>(nn<span style="color:#f92672">.</span>Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.2</span>):
+</span></span><span style="display:flex;"><span>        super(Discriminator, self)<span style="color:#f92672">.</span>__init__()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        kernel_size <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>        padding <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>        stride <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>net <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Sequential(
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Conv2d(<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">128</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Conv2d(<span style="color:#ae81ff">128</span>, <span style="color:#ae81ff">256</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>BatchNorm2d(<span style="color:#ae81ff">256</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Conv2d(<span style="color:#ae81ff">256</span>, <span style="color:#ae81ff">512</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>BatchNorm2d(<span style="color:#ae81ff">512</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Conv2d(<span style="color:#ae81ff">512</span>, <span style="color:#ae81ff">512</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>BatchNorm2d(<span style="color:#ae81ff">512</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Conv2d(<span style="color:#ae81ff">512</span>, <span style="color:#ae81ff">512</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>BatchNorm2d(<span style="color:#ae81ff">512</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Conv2d(<span style="color:#ae81ff">512</span>, <span style="color:#ae81ff">1024</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>BatchNorm2d(<span style="color:#ae81ff">1024</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>output <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Linear(<span style="color:#ae81ff">4</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">4</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">forward</span>(self, x):
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>net(x)
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>reshape(x, (<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">4</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">4</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span>))
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>output(x)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>training:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> x
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> F<span style="color:#f92672">.</span>sigmoid(x)
+</span></span></code></pre></div><h3 id="generator">Generator</h3>
+<p>The Generator is almost symmetrical to the Discriminator. But instead of convolutional layers that reduce the dimensionality of the image is upscaled using a transposed convolution. This convolution looks like this:</p>
+<figure><img src="../../../../../img/post-16-gan_art/transpc.gif"/><figcaption>
+            <h4>Transposed convolution. Input is blue, output is green.</h4>
+        </figcaption>
+</figure>
+
+<p>The layers of the Generator are:</p>
+<ul>
+<li>Batch normalization layer</li>
+<li>Leaky relu activation</li>
+<li>Transposed convolutional layer with 4x4 filters, a stride of 2 and a padding of 1 (upscaling an image by a factor of 2)</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Generator</span>(nn<span style="color:#f92672">.</span>Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, input_size<span style="color:#f92672">=</span><span style="color:#ae81ff">200</span>, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.2</span>):
+</span></span><span style="display:flex;"><span>        super(Generator, self)<span style="color:#f92672">.</span>__init__()       
+</span></span><span style="display:flex;"><span>        kernel_size <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>        padding <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>        stride <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>input <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Linear(input_size, <span style="color:#ae81ff">4</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">4</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span>)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>net <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Sequential(
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>BatchNorm2d(<span style="color:#ae81ff">1024</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>ConvTranspose2d(<span style="color:#ae81ff">1024</span>, <span style="color:#ae81ff">512</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>BatchNorm2d(<span style="color:#ae81ff">512</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>ConvTranspose2d(<span style="color:#ae81ff">512</span>, <span style="color:#ae81ff">512</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>BatchNorm2d(<span style="color:#ae81ff">512</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>ConvTranspose2d(<span style="color:#ae81ff">512</span>, <span style="color:#ae81ff">512</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>BatchNorm2d(<span style="color:#ae81ff">512</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>ConvTranspose2d(<span style="color:#ae81ff">512</span>, <span style="color:#ae81ff">256</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>BatchNorm2d(<span style="color:#ae81ff">256</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>ConvTranspose2d(<span style="color:#ae81ff">256</span>, <span style="color:#ae81ff">128</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>BatchNorm2d(<span style="color:#ae81ff">128</span>),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>LeakyReLU(alpha),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>ConvTranspose2d(<span style="color:#ae81ff">128</span>, <span style="color:#ae81ff">3</span>, kernel_size, stride, padding),
+</span></span><span style="display:flex;"><span>            nn<span style="color:#f92672">.</span>Tanh()
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">forward</span>(self, z):
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>input(z)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>net(x<span style="color:#f92672">.</span>view(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1024</span>, <span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">4</span>))
+</span></span></code></pre></div><p>The output of the Generator is ran through a Tanh activation, squashing the output between -1 and 1. When we want to gaze at the creations in astonishment we rescale the output to integer values between 0 and 254 (RGB color values).</p>
+<h2 id="preprocessing-the-data">Preprocessing the data</h2>
+<p>The Discriminator is the only network that will perceive the real world art images. The images need to be rescaled to values between -1 and 1 to match the output of the Generator.
+For this we utilize some nice helper objects and functions from Pytorch.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ImageFolderEX</span>(datasets<span style="color:#f92672">.</span>ImageFolder):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __getitem__(self, index):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_img</span>(index):
+</span></span><span style="display:flex;"><span>            path, label <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>imgs[index]
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>                img <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>loader(os<span style="color:#f92672">.</span>path<span style="color:#f92672">.</span>join(self<span style="color:#f92672">.</span>root, path))
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">except</span>:
+</span></span><span style="display:flex;"><span>                img <span style="color:#f92672">=</span> get_img(index <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> img
+</span></span><span style="display:flex;"><span>        img <span style="color:#f92672">=</span> get_img(index)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>transform(img) <span style="color:#f92672">*</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>  <span style="color:#75715e"># rescale 0 - 1 to -1 - 1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>trans <span style="color:#f92672">=</span> transforms<span style="color:#f92672">.</span>Compose([
+</span></span><span style="display:flex;"><span>    transforms<span style="color:#f92672">.</span>Resize((<span style="color:#ae81ff">256</span>, <span style="color:#ae81ff">256</span>), interpolation<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>), 
+</span></span><span style="display:flex;"><span>    transforms<span style="color:#f92672">.</span>ToTensor(), <span style="color:#75715e"># implicitly normalizes the input to values between 0 - 1.</span>
+</span></span><span style="display:flex;"><span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># example showing how to use this helper object. </span>
+</span></span><span style="display:flex;"><span>data <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>utils<span style="color:#f92672">.</span>data<span style="color:#f92672">.</span>DataLoader(ImageFolderEX(<span style="color:#e6db74">&#39;.&#39;</span>, trans), 
+</span></span><span style="display:flex;"><span>	batch_size<span style="color:#f92672">=</span><span style="color:#ae81ff">64</span>, shuffle<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, drop_last<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, num_workers<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>x <span style="color:#f92672">=</span> next(iter(data))
+</span></span></code></pre></div><h2 id="training">Training</h2>
+<p>There are various tactics for stabilizing GAN training. The tricks I used to stabilize the learning of the networks are:</p>
+<ul>
+<li>Sampling the random input vector $z$ from a Gaussian instead of a Uniform distribution.</li>
+<li>Construct different mini-batches for real and fake data (i.e. not shuffling the real and fake in one mini-batch).</li>
+<li>Soft labels for the Discriminator (preventing the discriminator to get too strong) <a href="https://arxiv.org/abs/1606.03498">Salimans et. al. 2016</a>.</li>
+<li>Occasionally swap the labels for the Discriminator (preventing the discriminator to get too strong).</li>
+<li>Use Adam hyperparameters as described by <a href="https://arxiv.org/abs/1511.06434">See Radford et. al. 2015</a>.</li>
+</ul>
+<p>Those stabilizing tricks are implemented in the different training functions for the Generator and the Discriminator.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">train_dis</span>(dis, gen, x):
+</span></span><span style="display:flex;"><span>    z <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>normal(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, (batch_size, <span style="color:#ae81ff">200</span>)), dtype<span style="color:#f92672">=</span>torch<span style="color:#f92672">.</span>float32)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> next(gen<span style="color:#f92672">.</span>parameters())<span style="color:#f92672">.</span>is_cuda:
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> x<span style="color:#f92672">.</span>cuda()
+</span></span><span style="display:flex;"><span>        z <span style="color:#f92672">=</span> z<span style="color:#f92672">.</span>cuda()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    dis<span style="color:#f92672">.</span>zero_grad()
+</span></span><span style="display:flex;"><span>    y_real_pred <span style="color:#f92672">=</span> dis(x)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    idx <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>uniform(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, y_real_pred<span style="color:#f92672">.</span>shape)
+</span></span><span style="display:flex;"><span>    idx <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>argwhere(idx <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0.03</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># swap some labels and smooth the labels</span>
+</span></span><span style="display:flex;"><span>    ones <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>ones(y_real_pred<span style="color:#f92672">.</span>shape) <span style="color:#f92672">+</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>uniform(<span style="color:#f92672">-</span><span style="color:#ae81ff">0.1</span>, <span style="color:#ae81ff">0.1</span>)
+</span></span><span style="display:flex;"><span>    ones[idx] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    zeros <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros(y_real_pred<span style="color:#f92672">.</span>shape) <span style="color:#f92672">+</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>uniform(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0.2</span>)
+</span></span><span style="display:flex;"><span>    zeros[idx] <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    ones <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>from_numpy(ones)<span style="color:#f92672">.</span>float()
+</span></span><span style="display:flex;"><span>    zeros <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>from_numpy(zeros)<span style="color:#f92672">.</span>float()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> next(gen<span style="color:#f92672">.</span>parameters())<span style="color:#f92672">.</span>is_cuda:
+</span></span><span style="display:flex;"><span>        ones <span style="color:#f92672">=</span> ones<span style="color:#f92672">.</span>cuda()
+</span></span><span style="display:flex;"><span>        zeros <span style="color:#f92672">=</span> zeros<span style="color:#f92672">.</span>cuda()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    loss_real <span style="color:#f92672">=</span> F<span style="color:#f92672">.</span>binary_cross_entropy_with_logits(y_real_pred, ones)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    generated <span style="color:#f92672">=</span> gen(z)
+</span></span><span style="display:flex;"><span>    y_fake_pred <span style="color:#f92672">=</span> dis(generated)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    loss_fake <span style="color:#f92672">=</span> F<span style="color:#f92672">.</span>binary_cross_entropy_with_logits(y_fake_pred, zeros)
+</span></span><span style="display:flex;"><span>    loss <span style="color:#f92672">=</span> loss_fake <span style="color:#f92672">+</span> loss_real
+</span></span><span style="display:flex;"><span>    loss<span style="color:#f92672">.</span>backward()
+</span></span><span style="display:flex;"><span>    optimizer_dis<span style="color:#f92672">.</span>step()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> loss
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">train_gen</span>(gen, batch_size):
+</span></span><span style="display:flex;"><span>    z <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>normal(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, (batch_size, <span style="color:#ae81ff">200</span>)), dtype<span style="color:#f92672">=</span>torch<span style="color:#f92672">.</span>float32)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> next(gen<span style="color:#f92672">.</span>parameters())<span style="color:#f92672">.</span>is_cuda:
+</span></span><span style="display:flex;"><span>        z <span style="color:#f92672">=</span> z<span style="color:#f92672">.</span>cuda()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    gen<span style="color:#f92672">.</span>zero_grad()
+</span></span><span style="display:flex;"><span>    generated <span style="color:#f92672">=</span> gen(z)
+</span></span><span style="display:flex;"><span>    y_fake <span style="color:#f92672">=</span> dis(generated)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ones <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>ones_like(y_fake)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> next(gen<span style="color:#f92672">.</span>parameters())<span style="color:#f92672">.</span>is_cuda:
+</span></span><span style="display:flex;"><span>        ones <span style="color:#f92672">=</span> ones<span style="color:#f92672">.</span>cuda()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    loss <span style="color:#f92672">=</span> F<span style="color:#f92672">.</span>binary_cross_entropy_with_logits(y_fake, ones)
+</span></span><span style="display:flex;"><span>    loss<span style="color:#f92672">.</span>backward()
+</span></span><span style="display:flex;"><span>    optimizer_gen<span style="color:#f92672">.</span>step()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> loss, generated
+</span></span></code></pre></div><p>Now with all the models, preprocessing and training functions defined we can start the training loop.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>dis <span style="color:#f92672">=</span> Discriminator()<span style="color:#f92672">.</span>cuda()
+</span></span><span style="display:flex;"><span>gen <span style="color:#f92672">=</span> Generator()<span style="color:#f92672">.</span>cuda()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>lr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0002</span>
+</span></span><span style="display:flex;"><span>beta_1 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span>beta_2 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.999</span>
+</span></span><span style="display:flex;"><span>optimizer_gen <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>optim<span style="color:#f92672">.</span>Adam(gen<span style="color:#f92672">.</span>parameters(), lr, betas<span style="color:#f92672">=</span>(beta_1, beta_2))
+</span></span><span style="display:flex;"><span>optimizer_dis <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>optim<span style="color:#f92672">.</span>Adam(dis<span style="color:#f92672">.</span>parameters(), lr, betas<span style="color:#f92672">=</span>(beta_1, beta_2))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>epochs <span style="color:#f92672">=</span> <span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>batch_size <span style="color:#f92672">=</span> <span style="color:#ae81ff">64</span>
+</span></span><span style="display:flex;"><span>data <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>utils<span style="color:#f92672">.</span>data<span style="color:#f92672">.</span>DataLoader(ImageFolderEX(<span style="color:#e6db74">&#39;.&#39;</span>, trans), 
+</span></span><span style="display:flex;"><span>				   batch_size<span style="color:#f92672">=</span>batch_size, shuffle<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, 
+</span></span><span style="display:flex;"><span>				   drop_last<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, num_workers<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>n <span style="color:#f92672">=</span> len(data)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> epoch <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0</span>, epochs):
+</span></span><span style="display:flex;"><span>    c <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>    n <span style="color:#f92672">=</span> len(data) 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> iter(data): 
+</span></span><span style="display:flex;"><span>        c <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        loss_dis <span style="color:#f92672">=</span> train_dis(dis, gen, x)
+</span></span><span style="display:flex;"><span>        loss_gen, generated <span style="color:#f92672">=</span> train_gen(gen, batch_size)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        global_step <span style="color:#f92672">=</span> epoch <span style="color:#f92672">*</span> n <span style="color:#f92672">+</span> c
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> c <span style="color:#f92672">%</span> <span style="color:#ae81ff">4</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;loss: </span><span style="color:#e6db74">{</span>loss_dis<span style="color:#f92672">.</span>item()<span style="color:#e6db74">}</span><span style="color:#e6db74">, </span><span style="color:#ae81ff">\t</span><span style="color:#e6db74"> </span><span style="color:#e6db74">{</span>loss_gen<span style="color:#f92672">.</span>item()<span style="color:#e6db74">}</span><span style="color:#e6db74"> </span><span style="color:#ae81ff">\t</span><span style="color:#e6db74"> epoch: </span><span style="color:#e6db74">{</span>epoch<span style="color:#e6db74">}</span><span style="color:#e6db74">, </span><span style="color:#ae81ff">\t</span><span style="color:#e6db74"> </span><span style="color:#e6db74">{</span>c<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">{</span>n<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
+</span></span><span style="display:flex;"><span>            
+</span></span></code></pre></div><h2 id="results">Results</h2>
+<p>I&rsquo;ve run two different variations of the GAN architecture described above. One that produces images with a resolution of 256x256 pixels and one that produces 64x64 images. The 256 pixel architecture produced the images shown below.</p>
+<h3 id="256x256-gan">256x256 GAN</h3>
+<p><figure><img src="../../../../../img/post-16-gan_art/out3.png"/>
+</figure>
+
+<figure><img src="../../../../../img/post-16-gan_art/out.png"/><figcaption>
+            <h4>Images produced by the 256x256 GAN.</h4>
+        </figcaption>
+</figure>
+</p>
+<p>This variant was less stable in learning than the 64 pixel variant. The distribution of the images produced by this variant has got a lot less variance than the smaller network. Because of this smaller variance, I had to cherry pick the images at different weight configurations of the network.</p>
+<h3 id="64x64-gan">64x64 GAN</h3>
+<p>With the 64x64 architecture this isn&rsquo;t the case. The network has captured a distribution with a lot more variation in both the images and the pixels.</p>
+<figure><img src="../../../../../img/post-16-gan_art/mntg.png"/><figcaption>
+            <h4>Images produced by the 64x64 GAN.</h4>
+        </figcaption>
+</figure>
+
+<p><a href="https://arxiv.org/abs/1609.04468">T. White et. al.</a> described a way of interpolating the manifold of the Gaussian input we sample. By interpolating the input vectors and thereby following the curve of the manifold we can see how one image morphs in another. This is really cool! The method called slerp (spherical linear interpolation) is defined by:</p>
+<div class="formula-wrap">
+$$ Slerp(q_1, q_2, \mu) = \frac{sin(1 - \mu)\theta}{sin \theta}q_1 + \frac{sin(\mu \theta)}{sin(\theta)}q_2 $$
+</div>
+<p>where</p>
+<ul>
+<li>$\theta$ = angle between the two vectors.</li>
+<li>$\mu$ = interpolation factor between 0 and 1.</li>
+</ul>
+<p>In the visual below we&rsquo;re taking a small trip through the latent space of the 64x64 architecture.</p>
+<div style="text-align: center;">
+<div style="display: inline-block;">
+<figure><img src="../../../../../img/post-16-gan_art/perfect_loop.gif"/><figcaption>
+            <h4>Small trip around the distribution.</h4>
+        </figcaption>
+</figure>
+ 
+</div>
+</div>
+<h2 id="final-words">Final words</h2>
+<p>The generated images produced some really nice colors and shapes and in my opinion both network architectures learned the conditional probability of colors in art painings. Both networks didn&rsquo;t produce any sharp figurative image. I believe that this is harder and needs a more consistent dataset, for instance images containing only painting of flowers.</p>
+<p>My budget for the cloud gpu&rsquo;s has run out, thus sadly my final conclusion is that the generated art on my wall at home won&rsquo;t be in full-hd just yet.</p>
+<h2 id="read-more">Read more?</h2>
+<ul>
+<li><a href="https://www.ritchievink.com/blog/2017/05/12/deep-learning-music-classifier-part-1.-30-seconds-disco/">Classify music</a></li>
+<li><a href="https://www.ritchievink.com/blog/2018/04/12/transfer-learning-with-pytorch-assessing-road-safety-with-computer-vision/">Transfer learning with Pytorch</a></li>
+<li><a href="https://www.ritchievink.com/blog/2017/07/10/programming-a-neural-network-from-scratch/">Program a vanilla neural network</a></li>
+</ul>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  });
+  </script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

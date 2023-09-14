@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>cloud on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/cloud/</link>
+    <description>Recent content in cloud on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Sun, 16 Sep 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/cloud/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Deploy any machine learning model serverless in AWS</title>
+      <link>https://www.ritchievink.com/blog/2018/09/16/deploy-any-machine-learning-model-serverless-in-aws/</link>
+      <pubDate>Sun, 16 Sep 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2018/09/16/deploy-any-machine-learning-model-serverless-in-aws/</guid>
+      <description>When a machine learning model goes into production, it is very likely to be idle most of the time. There are a lot of use cases, where a model only needs to run inference when new data is available. If we do have such a use case and we deploy a model on a server, it will eagerly be checking for new data, only to be disappointed for most of its lifetime and meanwhile you pay for the live time of the server.</description>
+    </item>
+    
+  </channel>
+</rss>

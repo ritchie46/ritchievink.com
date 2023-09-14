@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Algorithm Breakdown: Affinity Propagation - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2018/05/18/algorithm-breakdown-affinity-propagation/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-14-affinity_propagation/fw.jpg" />
+
+
+<title>Algorithm Breakdown: Affinity Propagation | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Algorithm Breakdown: Affinity Propagation</h1>
+    <h2 class="subtitle is-5">May 18, 2018 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/algorithm-breakdown">algorithm breakdown</a>
+    
+</div>
+
+    
+    <div class="content">
+      <figure><img src="../../../../../img/post-14-affinity_propagation/fw.jpg"/>
+</figure>
+
+<p>On a project I worked on at the ANWB (Dutch road side assistence company) we mined driving behavior data. We wanted to know how many persons were likely to drive a certain vehicle on a regular basis. Naturally k-means clustering came to mind. The k-means algorithm finds clusters with the least inertia for a given <code>k</code>.</p>
+<p>A drawback is that often, k is not known. For the question about the numbers of persons driving a car, this isn&rsquo;t that big of a problem as we have a good estimate of what k should be. The number of persons driving on a regular basis would probably be in a range of 1 to 4.</p>
+<p>Nevertheless, this did make me wonder if there were algorithms that would define k for me. This blog post will go through the implementation of a clustering technique called &lsquo;Affinity Propagation&rsquo;. We will implement the algorithm in two ways. In some more readible syntax, to get an idea of what the algorithm is doing. And in a vectorized syntax, to fully utilize the speed advantages of numpy.</p>
+<h2 id="affinity-propagation">Affinity Propagation</h2>
+<p>Affinity Propagation is a clustering method that next to qualitative cluster, also determines the number of clusters, k, for you. Let&rsquo;s walk through the implementation of this algorithm, to see how it works.</p>
+<p>As it is a clustering algorithm, we also give it random data to cluster so it can go crazy with its OCD.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># all the imports needed for this blog</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> itertools <span style="color:#f92672">import</span> cycle
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>n <span style="color:#f92672">=</span> <span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>size <span style="color:#f92672">=</span> (n, <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>seed(<span style="color:#ae81ff">3</span>)
+</span></span><span style="display:flex;"><span>x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>normal(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, size)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">4</span>):
+</span></span><span style="display:flex;"><span>    center <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>rand(<span style="color:#ae81ff">2</span>) <span style="color:#f92672">*</span> <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>append(x, np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>normal(center, <span style="color:#ae81ff">.5</span>, size), axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>            c <span style="color:#f92672">=</span> [c <span style="color:#66d9ef">for</span> s <span style="color:#f92672">in</span> [v <span style="color:#f92672">*</span> n <span style="color:#66d9ef">for</span> v <span style="color:#f92672">in</span> <span style="color:#e6db74">&#39;bgrcmyk&#39;</span>] <span style="color:#66d9ef">for</span> c <span style="color:#f92672">in</span> list(s)]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>            plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;Some clusters in 2d space&#39;</span>)
+</span></span><span style="display:flex;"><span>            plt<span style="color:#f92672">.</span>scatter(x[:, <span style="color:#ae81ff">0</span>], x[:, <span style="color:#ae81ff">1</span>], c<span style="color:#f92672">=</span>c)
+</span></span><span style="display:flex;"><span>            plt<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-14-affinity_propagation/data.png"/>
+</figure>
+
+<p>In Affinity Propagation the data points can be seen as a network where all the data points send messages to all other points. The subject of these messages are the willingness of the points being exemplars. Exemplars are points that explain the other data points &lsquo;best&rsquo; and are the most significant of their cluster. A cluster only has one exemplar. All the data points want to collectively determine which data points are an exemplar for them. These messages are stored in two matrices.</p>
+<ul>
+<li>The &lsquo;responsibility&rsquo; matrix R. In this matrix, $r(i, k)$ reflects how well-suited point $k$ is to be an exemplar for point $i$.</li>
+<li>The &lsquo;availability&rsquo; matrix A. $a(i, k)$ reflects how appropriate it would be for point $i$ to choose point $k$ as its exemplar.</li>
+</ul>
+<p>Both matrices can be interpreted as log probabilities and are thus negative valued.</p>
+<p>Those two matrices actually represent a graph where every data point is connected with all other points. For five data points we could imagine a graph as seen below.</p>
+<figure><img src="../../../../../img/post-14-affinity_propagation/graph.svg"/><figcaption>
+            <h4>Graph of five data points.</h4>
+        </figcaption>
+</figure>
+
+<p>This network can be encoded in a matrix where every index $i, k$ is a connection between two points.</p>
+<div class="formula-wrap">
+$$
+messageGraph =
+\begin{bmatrix}
+i, i   & i, k_1 & \dots & i, k_4 \\
+\vdots & & \ddots \\
+k_4, i & k_4, k_1 & \dots & k_4, k_4\\
+\end{bmatrix}
+$$
+</div>
+<h2 id="similarity">Similarity</h2>
+<p>The algorithm converts through iteration. The first messages sent per iteration, are the responsibilities. These responsibility values are based on a similarity function $s$.</p>
+<p>The similarity function used by the authors is the negative euclidian distance squared.</p>
+<p>$$ s(i, k) = - \lvert\lvert x_i - x_k \rvert\rvert^2 $$</p>
+<p>We can simply implement this similarity function and define a similarity matrix $S$, which is a graph of the similarities between all the points. We also initialize the $R$ and $A$ matrix to zeros.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">similarity</span>(xi, xj):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span>((xi <span style="color:#f92672">-</span> xj)<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)<span style="color:#f92672">.</span>sum()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">create_matrices</span>():
+</span></span><span style="display:flex;"><span>    S <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros((x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>], x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]))
+</span></span><span style="display:flex;"><span>    R <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array(S)
+</span></span><span style="display:flex;"><span>    A <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array(S)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># compute similarity for every data point.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> k <span style="color:#f92672">in</span> range(x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]):
+</span></span><span style="display:flex;"><span>            S[i, k] <span style="color:#f92672">=</span> similarity(x[i], x[k])
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> A, R, S
+</span></span></code></pre></div><h2 id="responsibility">Responsibility</h2>
+<p>The responsibility messages are defined by:</p>
+<div class="formula-wrap">
+$$
+r(i, k) \leftarrow s(i, k) - \max\limits_{k' s.t. k' \neq k}\{ a(i, k') + s(i, k') \} \tag{1.0}
+$$
+</div>
+<p>We could implement this with a nested for loop where we iterate over every row $i$ and then determine the $\max(A + S)$ (of that row) for every index not equal to $k$ or $i$ (The index should not be equal to $i$ as it would be sending messages to itself). The damping factor is just there for nummerical stabilization and can be regarded as a slowly converging learning rate. The authors advised to choose a damping factor within the range of 0.5 to 1.</p>
+<h4> Nested implementation </h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">update_r</span>(damping<span style="color:#f92672">=</span><span style="color:#ae81ff">0.9</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">global</span> R
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> k <span style="color:#f92672">in</span> range(x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]):
+</span></span><span style="display:flex;"><span>            v <span style="color:#f92672">=</span> S[i, :] <span style="color:#f92672">+</span> A[i, :]
+</span></span><span style="display:flex;"><span>            v[k] <span style="color:#f92672">=</span> <span style="color:#f92672">-</span>np<span style="color:#f92672">.</span>inf
+</span></span><span style="display:flex;"><span>            v[i]<span style="color:#f92672">=</span> <span style="color:#f92672">-</span>np<span style="color:#f92672">.</span>inf
+</span></span><span style="display:flex;"><span>            R[i, k] <span style="color:#f92672">=</span> R[i, k] <span style="color:#f92672">*</span> damping <span style="color:#f92672">+</span> (<span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> damping) <span style="color:#f92672">*</span> (S[i, k] <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>max(v))
+</span></span></code></pre></div><p>Iterating over every index with a nested for loop is of course a heavy operation. Let&rsquo;s profile (time) the function and see if we can optimize it by vectorizing the loops.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>A, R, S <span style="color:#f92672">=</span> create_matrices()
+</span></span><span style="display:flex;"><span><span style="color:#f92672">%</span>timeit update_r()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#ae81ff">41</span> ms <span style="color:#960050;background-color:#1e0010">±</span> <span style="color:#ae81ff">1.36</span> ms per loop (mean <span style="color:#960050;background-color:#1e0010">±</span> std<span style="color:#f92672">.</span> dev<span style="color:#f92672">.</span> of <span style="color:#ae81ff">7</span> runs, <span style="color:#ae81ff">10</span> loops each)
+</span></span></code></pre></div><p>Ok, 41 ms is our baseline. That shouldn&rsquo;t be too hard to beat. Note that $ s(i, k) $ in (<strong>eq. 1.0</strong>) is already defined and is equal to our matrix <code>S</code>. The harder part is $\max\limits_{k&rsquo; s.t. k&rsquo; \neq k}{ a(i, k&rsquo;) + s(i, k&rsquo;) }$, but we can make this easier by ignoring the limitations on the max function for a while. Let&rsquo;s first focus on the inner part of the max function.</p>
+<div class="formula-wrap">
+$$ v = a(i, k) + s(i, k) \tag{1.1} $$
+</div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>v <span style="color:#f92672">=</span> S <span style="color:#f92672">+</span> A
+</span></span><span style="display:flex;"><span>rows <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>arange(x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>])
+</span></span></code></pre></div><p>As data points shouldn&rsquo;t send messages to itself, fill the diagonal with negative infinity so it will never be identified as the maximum value.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>np<span style="color:#f92672">.</span>fill_diagonal(v, <span style="color:#f92672">-</span>np<span style="color:#f92672">.</span>inf)
+</span></span></code></pre></div><p>Then we can determine the maximum value for all rows.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>idx_max <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>argmax(v, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>first_max <span style="color:#f92672">=</span> v[rows, idx_max]
+</span></span></code></pre></div><p>Note that allmost all columns in a row have the same maximum row value. This is true for all but the maximum value itself. As the max function iterates over $k&rsquo;$ where $k&rsquo;$ is chosen so that $k&rsquo; \neq k$ The maximum value in a row may point to itself, but must choose the second maximum value. We can implement that by setting the indices where $k&rsquo; = k$ to negative infinity and determine the new maximum value per row.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>v[rows, idx_max] <span style="color:#f92672">=</span> <span style="color:#f92672">-</span>np<span style="color:#f92672">.</span>inf
+</span></span><span style="display:flex;"><span>second_max <span style="color:#f92672">=</span> v[rows, np<span style="color:#f92672">.</span>argmax(v, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)]
+</span></span></code></pre></div><p>The final result for $ \max\limits_{k&rsquo; s.t. k&rsquo; \neq k}{ a(i, k&rsquo;) + s(i, k&rsquo;) } $ can now be determined by broadcasting the maximum value per row to a symmetrical square matrix and replacing the indices holding the maximum value of the matrix $v$ (<strong>eq. 1.1</strong>) with the second maximum value.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>max_matrix <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros_like(R) <span style="color:#f92672">+</span> first_max[:, <span style="color:#66d9ef">None</span>]
+</span></span><span style="display:flex;"><span>max_matrix[rows, idx_max] <span style="color:#f92672">=</span> second_max
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>new_val <span style="color:#f92672">=</span> S <span style="color:#f92672">-</span> max_matrix
+</span></span></code></pre></div><p>Putting it together in one function results in:</p>
+<h4>Vectorized implementation</h4>
+```python
+<p>def update_r(damping=0.9):
+global R
+# For every column k, except for the column with the maximum value the max is the same.
+# So we can subtract the maximum for every row,
+# and only need to do something different for k == argmax</p>
+<pre><code>v = S + A
+rows = np.arange(x.shape[0])
+# We only compare the current point to all other points, 
+# so the diagonal can be filled with -infinity
+np.fill_diagonal(v, -np.inf)
+
+# max values
+idx_max = np.argmax(v, axis=1)
+first_max = v[rows, idx_max]
+
+# Second max values. For every column where k is the max value.
+v[rows, idx_max] = -np.inf
+second_max = v[rows, np.argmax(v, axis=1)]
+
+# Broadcast the maximum value per row over all the columns per row.
+max_matrix = np.zeros_like(R) + first_max[:, None]
+max_matrix[rows, idx_max] = second_max
+
+new_val = S - max_matrix
+
+R = R * damping + (1 - damping) * new_val
+</code></pre>
+<pre tabindex="0"><code>
+If we time this new function implementation we find an average execution time of 76 microseconds, which is more than 500x faster than our original implementation.
+
+```python
+A, R, S = create_matrices()
+%timeit update_r()
+
+75.7 µs ± 674 ns per loop (mean ± std. dev. of 7 runs, 10000 loops each)
+</code></pre><h2 id="availability">Availability</h2>
+<p>The availability messages are defined by the following formulas. For all points not on the diagonal of A (all the messages going from one data point to all other points), the update is equal to the responsibility that point $k$ assigns to itself and the sum of the responsibilities that other data points (except the current point) assign to $k$. Note that, due to the min function, this holds only true for negative values.</p>
+<div class="formula-wrap">
+$$ a(i, k) \leftarrow \min\{0, r(k,k) + \sum\limits_{i' s.t. i' \notin \{i, k\}}{\max\{0, r(i', k)\}} \tag{2.0} $$
+</div>
+<p>For points on the diagonal of A (the availability value that a data point sends to itself), the message value is equal to the sum of all positive responsibility values send to the current data point.</p>
+<div class="formula-wrap">
+$$ a(k, k) \leftarrow \sum\limits_{i' \neq k}\max(0, r(i', k)) \tag{2.1} $$
+</div>
+<p>These two formulas are implemented in the following function.</p>
+<h4>Nested implementation</h4>
+```python
+def update_a(damping=0.9):
+    global A
+    for i in range(x.shape[0]):
+        for k in range(x.shape[0]):
+            a = np.array(R[:, k]) # Select column k
+            # All indices but the diagonal
+            if i != k:
+                a[i] = -np.inf
+                a[k] = - np.inf
+                a[a < 0] = 0
+                A[i, k] = A[i, k] * damping + (1 - damping) * min(0, R[k, k] + a.sum())
+            # The diagonal
+            else:
+                a[k] = -np.inf
+                a[a < 0] = 0
+                A[k, k] = A[k, k] * damping + (1 - damping) * a.sum()
+```
+<p>This function works and is pretty readable. However let&rsquo;s go through the optimization process again and try to vectorize the logic above, exchanging readability for performance in doing so.</p>
+<p>The current execution time is 53 milliseconds.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>A, R, S <span style="color:#f92672">=</span> create_matrices()
+</span></span><span style="display:flex;"><span><span style="color:#f92672">%</span>timeit update_a()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#ae81ff">52.5</span> ms <span style="color:#960050;background-color:#1e0010">±</span> <span style="color:#ae81ff">375</span> µs per loop (mean <span style="color:#960050;background-color:#1e0010">±</span> std<span style="color:#f92672">.</span> dev<span style="color:#f92672">.</span> of <span style="color:#ae81ff">7</span> runs, <span style="color:#ae81ff">10</span> loops each)
+</span></span></code></pre></div><p>First let&rsquo;s focus on the $ \sum\limits_{i&rsquo; s.t. i&rsquo; \notin \{i, k\}}{\max\{0, r(i&rsquo;, k) \}} $ part of <strong>eq. 2.0</strong>.</p>
+<p>We first copy matrix R as we will be modifying this to determine the sum we just mentioned. The sum is only over the positive values, so we can clip the negative values and change them to zero. If we later sum over the whole array, these zero valued indices won&rsquo;t influence the result.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>a <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array(R)
+</span></span><span style="display:flex;"><span>a[v <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>The sum is over all indices $ i&rsquo; $ such that $ i&rsquo; \notin \{i, k\} $.</p>
+<p>The part $i&rsquo; \neq k$ is easy. This means that the diagonal $ r(k, k) $ is not included in the sum.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>np<span style="color:#f92672">.</span>fill_diagonal(a, <span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><p>The part $i&rsquo; \neq i$ is harder, as $i$ is the index the sum iterates over. This means that for every index $i$ the same index is excluded. This is harder to vectorize. However, we can get around this by first including it in the sum, and finally subtracting the value for every index $r(i, k)$. In the code below we also add the $ r(k, k) $. We will have defined the $ r(k,k) + \sum\limits_{i&rsquo; s.t. i&rsquo; \notin \{i, k\}}{\max\{0, r(i&rsquo;, k)\}} $ part of <strong>eq.2.0</strong>.</p>
+<p>These sums are the same for every row in the matrix. The 1D sum vector can be broadcasted to a matrix with the shape of A. Once we have reshaped by broadcasting we subtract positive values we unjustly included in the sum.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># diagonal k, k</span>
+</span></span><span style="display:flex;"><span>k_k_idx <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>arange(x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> a<span style="color:#f92672">.</span>sum(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> a <span style="color:#f92672">+</span> R[k_k_idx, k_k_idx]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>ones(A<span style="color:#f92672">.</span>shape) <span style="color:#f92672">*</span> a <span style="color:#75715e"># reshape to a square matrix</span>
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">-=</span> np<span style="color:#f92672">.</span>clip(R, <span style="color:#ae81ff">0</span>, np<span style="color:#f92672">.</span>inf) <span style="color:#75715e"># subtract the values that should not be included in the sum</span>
+</span></span></code></pre></div><p>In <strong>eq. 2.0</strong> the final result is the minimum of 0 and what we&rsquo;ve just computed. So we can clip the values larger than 0.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># a(i, k)</span>
+</span></span><span style="display:flex;"><span>a[a <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>For <strong>eq. 2.1</strong> vectorizing is slightly easier. We make another copy of R and we note that we again should include only positive values in our sum where $i&rsquo; \neq k$. We can set the diagonal of our copy to zero so it has no influence on the sum and we can clip the negative values to zero.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>np<span style="color:#f92672">.</span>fill_diagonal(w, <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>w[w <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>With all the zeros on the right places we can now compute the sum and add it to the diagonal of a (this is $a(k, k) $).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>a[k_k_idx, k_k_idx] <span style="color:#f92672">=</span> w<span style="color:#f92672">.</span>sum(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>) 
+</span></span></code></pre></div><p>Combining it all in one function we&rsquo;ll get:</p>
+<h4>Vectorized implementation</h4>
+```python
+def update_a(damping=0.9):
+    global A
+<pre><code>k_k_idx = np.arange(x.shape[0])
+# set a(i, k)
+a = np.array(R)
+a[a &lt; 0] = 0
+np.fill_diagonal(a, 0)
+a = a.sum(axis=0) # columnwise sum
+a = a + R[k_k_idx, k_k_idx]
+
+# broadcasting of columns 'r(k, k) + sum(max(0, r(i', k))) to rows.
+a = np.ones(A.shape) * a
+
+# For every column k, subtract the positive value of k. 
+# This value is included in the sum and shouldn't be
+a -= np.clip(R, 0, np.inf)
+a[a &gt; 0] = 0
+
+# set(a(k, k))
+w = np.array(R)
+np.fill_diagonal(w, 0)
+
+w[w &lt; 0] = 0
+
+a[k_k_idx, k_k_idx] = w.sum(axis=0) # column wise sum
+A = A * damping + (1 - damping) * a
+</code></pre>
+<pre tabindex="0"><code>
+This vectorized function has an average execution time of 70 microseconds. This is approximately 590x faster than the nested implementation! Affinity Propagation has a complexity of $O(n^2)$. So with increasing data points the optimization isn&#39;t a luxury.
+
+## Exemplars
+
+The final examplars are chosen by the maximum value of $A + B$.
+
+&lt;div class=&#34;formula-wrap&#34;&gt;
+$$ exemplar(i, k) = \max\{a(i&#39;, k) + b(i&#39;, k)  \} $$
+&lt;/div&gt;
+
+We implement this in a function where we immediatly plot the final clustering result.
+
+```python
+def plot_iteration(A, R):
+    fig = plt.figure(figsize=(12, 6))
+    sol = A + R
+    # every data point i chooses the maximum index k
+    labels = np.argmax(sol, axis=1)
+    exemplars = np.unique(labels)
+    colors = dict(zip(exemplars, cycle(&#39;bgrcmyk&#39;)))
+    
+    for i in range(len(labels)):
+        X = x[i][0]
+        Y = x[i][1]
+        
+        if i in exemplars:
+            exemplar = i
+            edge = &#39;k&#39;
+            ms = 10
+        else:
+            exemplar = labels[i]
+            ms = 3
+            edge = None
+            plt.plot([X, x[exemplar][0]], [Y, x[exemplar][1]], c=colors[exemplar])
+        plt.plot(X, Y, &#39;o&#39;, markersize=ms,  markeredgecolor=edge, c=colors[exemplar])
+        
+
+    plt.title(&#39;Number of exemplars: %s&#39; % len(exemplars))
+    return fig, labels, exemplars
+</code></pre><h2 id="clustering">Clustering</h2>
+<p>Now we have got all set. We can execute this algorithm on our data that we generated earlier. The inputs for this algorithm are:</p>
+<ul>
+<li>The number of iterations. (Which should be choosen so that the exemplars don&rsquo;t change, i.e. convergence is reached.)</li>
+<li>The damping factor. (Could be changed for faster iterations or more nummerical stability.)</li>
+<li>The preference.</li>
+</ul>
+<p>The last input, the preference, is set to the diagonal of the $S$ matrix. This preference value indicates how strongly a data point thinks itself should be an exemplar. In our case, the maximum similarity value is an euclidian distance of 0, which already is the value of the diagonal of $S$. If we choose the leave this value unmodified. We will see almost no clustering as most data points choose to be an exemplar for themselves.</p>
+<figure><img src="../../../../../img/post-14-affinity_propagation/preference_0.gif"/><figcaption>
+            <h4>Clustering if a preference of 0 is chosen for all the data points.</h4>
+        </figcaption>
+</figure>
+
+<p>Just as in the real world, when everybody is just thinking about themselves it doesn&rsquo;t result in all too much concencus. If you haven&rsquo;t got a priori knowledge of the data points it is advised to start with a preference equal to the median of $S$ (approximately -25 in our case). And let&rsquo;s see how we set this preference input and actually do the clustering iterations!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>A, R, S <span style="color:#f92672">=</span> create_matrices()
+</span></span><span style="display:flex;"><span>preference <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>median(S)
+</span></span><span style="display:flex;"><span>np<span style="color:#f92672">.</span>fill_diagonal(S, preference)
+</span></span><span style="display:flex;"><span>damping <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>figures <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>last_sol <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>ones(A<span style="color:#f92672">.</span>shape)
+</span></span><span style="display:flex;"><span>last_exemplars <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>c <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">200</span>):
+</span></span><span style="display:flex;"><span>    update_r(damping)
+</span></span><span style="display:flex;"><span>    update_a(damping)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    sol <span style="color:#f92672">=</span> A <span style="color:#f92672">+</span> R
+</span></span><span style="display:flex;"><span>    exemplars <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>unique(np<span style="color:#f92672">.</span>argmax(sol, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> last_exemplars<span style="color:#f92672">.</span>size <span style="color:#f92672">!=</span> exemplars<span style="color:#f92672">.</span>size <span style="color:#f92672">or</span> np<span style="color:#f92672">.</span>all(last_exemplars <span style="color:#f92672">!=</span> exemplars):
+</span></span><span style="display:flex;"><span>        fig, labels, exemplars <span style="color:#f92672">=</span> plot_iteration(A, R, i)
+</span></span><span style="display:flex;"><span>        figures<span style="color:#f92672">.</span>append(fig)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> np<span style="color:#f92672">.</span>allclose(last_sol, sol):
+</span></span><span style="display:flex;"><span>        print(exemplars, i)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>    last_sol <span style="color:#f92672">=</span> sol
+</span></span><span style="display:flex;"><span>    last_exemplars <span style="color:#f92672">=</span> exemplars
+</span></span></code></pre></div><figure><img src="../../../../../img/post-14-affinity_propagation/preference_median.gif"/><figcaption>
+            <h4>Clustering if a preference of $median(S)$ is chosen for all the data points.</h4>
+        </figcaption>
+</figure>
+
+<p>We see that the algorithm finds one more cluster then defined in our original data set. The original blue cluster is split into two clusters. If we want Affinity Propagation to be less eager in splitting clusters we can set the preference value lower.</p>
+<p>If we choose a value of -70 we will find our original clusters.</p>
+<figure><img src="../../../../../img/post-14-affinity_propagation/preference_-70.gif"/><figcaption>
+            <h4>Clustering if a preference of -70 is chosen for all the data points.</h4>
+        </figcaption>
+</figure>
+
+<p>And if we put this knowledge to the extreme and choose a preference of -1000, meaning that every data point is very likely to choose someother point to be their exemplar we&rsquo;ll only find two clusters.</p>
+<figure><img src="../../../../../img/post-14-affinity_propagation/preference_-1000.gif"/><figcaption>
+            <h4>Clustering if a preference of -1000 is chosen for all the data points.</h4>
+        </figcaption>
+</figure>
+
+<p>We can also give different preference values to certain data points. Below we have set the preference of all data points to $median(S)$ except for the original blue data points in the bottom left corner. These points have a preference of -200, meaning that they rather choose another point as their excemplar.</p>
+<figure><img src="../../../../../img/post-14-affinity_propagation/preference_subset.gif"/><figcaption>
+            <h4>Clustering when a subset has a very low preference.</h4>
+        </figcaption>
+</figure>
+
+<h2 id="summary">Summary</h2>
+<p>This post we dissected the Affinity Propagation algorithm. We&rsquo;ve implemented the message exchanging formulas in a more readible but slower executing code and in a vectorized optimized code. This blog post is based on a jupyter notebook I&rsquo;ve made, which can be found <a href="https://github.com/ritchie46/vanilla-machine-learning/tree/master/clustering">here!: affinity_propagation.ipynb</a></p>
+<p>Wan&rsquo;t to read more about other machine learning algorithms?</p>
+<ul>
+<li><a href="https://www.ritchievink.com/blog/2017/07/10/programming-a-neural-network-from-scratch/">Neural Networks</a></li>
+<li><a href="https://www.ritchievink.com/blog/2017/11/27/implementing-a-support-vector-machine-in-scala/">Support Vector Machines</a></li>
+<li><a href="https://www.ritchievink.com/blog/2018/09/26/algorithm-breakdown-ar-ma-and-arima-models/">ARIMA (time series)</a></li>
+</ul>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  });
+  </script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

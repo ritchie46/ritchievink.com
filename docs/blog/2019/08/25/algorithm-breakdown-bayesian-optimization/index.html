@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Algorithm Breakdown: Bayesian Optimization - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2019/08/25/algorithm-breakdown-bayesian-optimization/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-26/explore-forest.jpg" />
+
+
+<title>Algorithm Breakdown: Bayesian Optimization | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Algorithm Breakdown: Bayesian Optimization</h1>
+    <h2 class="subtitle is-5">August 25, 2019 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/algorithm-breakdown">algorithm breakdown</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/gaussian-processes">gaussian processes</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/bayesian">bayesian</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/optimization">optimization</a>
+    
+</div>
+
+    
+    <div class="content">
+      <figure><img src="../../../../../img/post-26/explore-forest.jpg"/>
+</figure>
+
+<p>Not that long ago I wrote an introduction post on <a href="https://www.ritchievink.com/blog/2019/02/01/an-intuitive-introduction-to-gaussian-processes/">Gaussian Processes</a> (GP&rsquo;s), a regression technique where we condition a Gaussian prior distribution over functions on observed data. GP&rsquo;s can model any function that is possible within a given prior distribution. And we don&rsquo;t get a function $f$, we get a whole posterior distribution of functions $P(f|X)$.</p>
+<p>This of course, sounds very cool and all, but there is no free lunch. GP&rsquo;s have a complexity $\mathcal{O}(N^3)$, where $N$ is the number of data points. GP&rsquo;s work well up to approximately 1000 data points (I should note that there are approximating solutions that scale better). This led me to believe that I wouldn&rsquo;t be using them too much in real-world problems, but luckily I was very wrong!</p>
+<h2 id="bayesian-optimization">Bayesian Optimization</h2>
+<p>This post is about bayesian optimization (BO), an optimization technique, that gains more tractions over the past few years, as its being used to search for optimal hyperparameters in neural networks. BO is actually a useful optimization algorithm for any black-box function that is costly to evaluate. Black box, in this sense, means that we observe only the (noisy) outputs of the function and not more information that could be to our advantage (i.e. first- or second-order derivatives).
+By &lsquo;costly&rsquo;, we mean that the function evaluations are on a certain budget. There are resources required to evaluate the function. These resources are often time or money.</p>
+<p>Some examples where bayesian optimization can be useful are:</p>
+<ul>
+<li>Hyperparameter search for machine learning</li>
+<li>Parameter search for physics models</li>
+<li>Calibration of environmental models</li>
+<li>Increasing conversion rates</li>
+</ul>
+<p>These subjects are time-consuming, have a large parameter space, and the implementations are &lsquo;black-box&rsquo; as we can&rsquo;t compute derivatives.</p>
+<p>Some examples where you shouldn&rsquo;t use Bayesian Optimization:</p>
+<ul>
+<li>Curve fitting</li>
+<li>Linear programming</li>
+</ul>
+<p>For these kinds of problems, there are better optimization algorithms that can, for instance, take advantage of the shape of the function&rsquo;s codomain (convex problems).</p>
+<p>This post we are going to implement a Bayesian Optimization algorithm in Python and while doing so we are going to explore some properties of the algorithm.</p>
+<h2 id="why-gaussian-processes">Why Gaussian Processes?</h2>
+<p>Bayesian optimization is thus used to model unknown, time-consuming to evaluate, non-convex, black-box functions $f$. Let&rsquo;s think for a moment about some of the properties we would want for such a model.</p>
+<p><strong>Exploration</strong></p>
+<p>Most models fit in a frequentist manner and lead to a point estimate of the parameters that best fit the function. Once we&rsquo;ve fitted a model on $f(x)$, it is hard to get a sense of the uncertainty of our model. We want to have a notion of uncertainty because we don&rsquo;t want to explore a space where we are very certain and we already know what the outcome will be. This would be a waste of our limited budget. So we want to be able to do exploration and for that, we need to know the uncertainty, i.e. we need Bayesian models. On to the second requirement!</p>
+<p><strong>Versatility</strong></p>
+<p>As BO is useful for any black-box function (which can have any output shape), we do need a versatile model to be able to approximate the unknown black-box function. For this reason, we can&rsquo;t use linear or polynomial regression as we restrict our model to a certain function family. Gaussian Processes fit this requirement. We can just set a prior distribution over functions and with a kernel, we can restrict (or not) the family of possible functions as much as we want.</p>
+<p>The limiting scalability properties of GP&rsquo;s now actually don&rsquo;t matter as the function evaluations are on a limiting budget. Every new data point is costly, so we&rsquo;ll stay well below 1000 data points!</p>
+<h2 id="the-algorithm">The algorithm</h2>
+<p>Below the BO algorithm is shown in pseudo-code. Later we will implement in Python.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Place prior over f.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Define an acquisition function that given a posterior 
+</span></span><span style="display:flex;"><span>distribution determines new sample locations.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Evaluate n random samples of f.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>while i &lt; budget do:
+</span></span><span style="display:flex;"><span>   Determine posterior distribution conditioned on the current samples of f.
+</span></span><span style="display:flex;"><span>   
+</span></span><span style="display:flex;"><span>   Find new parameters X_i by maximizing the acquisition function.
+</span></span><span style="display:flex;"><span>   
+</span></span><span style="display:flex;"><span>   Evaluate f(X_i) and store output.
+</span></span><span style="display:flex;"><span>   
+</span></span><span style="display:flex;"><span>   Increment i.
+</span></span></code></pre></div><h2 id="expected-improvement">Expected Improvement</h2>
+<p>In the pseudo-code example we define an <strong>acquisition function</strong>. The acquisition function can be any function that reflects the location we want to evaluate next. A function that is often used is called Expected Improvement;</p>
+<p>$$\text{EI}(x) = \mathbb{E}\max(f(x^*) - f(x^+), 0)$$</p>
+<p>Where $x^*$ are the proposal parameters, and $x^+$ are the current highest evaluated parameters. This expectation has a closed form solution defined by;</p>
+<p>$$\text{EI}(x) = \delta \Phi(Z) + \sigma(x^*) \phi(Z)$$</p>
+<p>Where $\delta = \mu(x^*) - f(x^+)$ and</p>
+<div>$$Z = \begin{cases}
+    \frac{\delta}{\sigma(x^*)},& \text{if } \sigma(x^*) > 0 \\
+    0,              & \text{otherwise}
+\end{cases}$$</div>
+<p>Note that $\Phi$ and $\phi$ are the <strong>CDF</strong> and <strong>PDF</strong> of a unit Gaussian distribution, respectively.</p>
+<p>See this blog post for the <a href="http://ash-aldujaili.github.io/blog/2018/02/01/ei/">derivation</a>.</p>
+<p>In Python we can easily implement this acquisition function.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># our imports for today</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> GPy
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> stats
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> optimize
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> tqdm <span style="color:#f92672">import</span> tqdm
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> functools <span style="color:#f92672">import</span> partial
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">expected_improvement</span>(f, y_current, x_proposed):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Return E(max(f_proposed - f_current), 0)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Parameters
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    ----------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    f : GP predict function
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    y_current : float
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Current best evaluation f(x+)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    x_proposed : np.array
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Proposal parameters. Shape: (1, 1)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Returns
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    -------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    expected_improvement : float
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        E(max(f_proposed - f_current), 0)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    mu, var <span style="color:#f92672">=</span> f(x_proposed)
+</span></span><span style="display:flex;"><span>    std <span style="color:#f92672">=</span> var <span style="color:#f92672">**</span> <span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span>    delta <span style="color:#f92672">=</span> mu <span style="color:#f92672">-</span> y_current
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># x / inf = 0</span>
+</span></span><span style="display:flex;"><span>    std[std <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>inf
+</span></span><span style="display:flex;"><span>    z <span style="color:#f92672">=</span> delta <span style="color:#f92672">/</span> std
+</span></span><span style="display:flex;"><span>    unit_norm <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> delta <span style="color:#f92672">*</span> unit_norm<span style="color:#f92672">.</span>cdf(z) <span style="color:#f92672">+</span> std <span style="color:#f92672">*</span> unit_norm<span style="color:#f92672">.</span>pdf(z)
+</span></span></code></pre></div><h2 id="bayesian-optimization-implementation">Bayesian Optimization Implementation</h2>
+<p>Below we will define the BO algorithm from scratch, except for the Gaussian Processes. For the GP&rsquo;s we&rsquo;ll use <a href="https://sheffieldml.github.io/GPy/">GPy by SheffieldML</a>. If you want to a quick tutorial on how to implement a GP in GPy, take a look at this <a href="https://github.com/ritchie46/vanilla-machine-learning/blob/master/gaussian_processes/GPy.ipynb">jupyter notebook</a>. In the directory above there are more implementations, such as a <a href="https://github.com/ritchie46/vanilla-machine-learning/blob/master/gaussian_processes/gaussian-processes.ipynb">GP from scratch</a> and a GP in <a href="https://github.com/ritchie46/vanilla-machine-learning/blob/master/gaussian_processes/pymc3.ipynb">PymC3</a>.</p>
+<h3 id="utility-functions">Utility functions</h3>
+<p>Besides an <code>expected_improvement</code> function, we&rsquo;ll define another utility function for selecting hyperparameters at a given hyperparameter range at random.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">select_hyperparams_random</span>(param_ranges):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Select hyperparameters at random.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Parameters
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    ----------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    param_ranges : dict
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Named parameter ranges.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Example:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            &#39;foo&#39;: {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                &#39;range&#39;: [1, 10],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                &#39;type&#39;: &#39;float&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            &#39;bar&#39;: {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                &#39;range&#39;: [10, 1000],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                &#39;type&#39;: &#39;int&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Returns
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    -------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    selection : dict
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Randomly selected hyperparameters within given boundaries.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Example:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        {&#39;foo&#39;: 4.213, &#39;bar&#39;: 935}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    selection <span style="color:#f92672">=</span> {}
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> k <span style="color:#f92672">in</span> param_ranges:
+</span></span><span style="display:flex;"><span>        val <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>choice(np<span style="color:#f92672">.</span>linspace(<span style="color:#f92672">*</span>param_ranges[k][<span style="color:#e6db74">&#34;range&#34;</span>], num<span style="color:#f92672">=</span><span style="color:#ae81ff">100</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        dtype <span style="color:#f92672">=</span> param_ranges[k][<span style="color:#e6db74">&#34;type&#34;</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> dtype <span style="color:#f92672">is</span> <span style="color:#e6db74">&#34;int&#34;</span>:
+</span></span><span style="display:flex;"><span>            val <span style="color:#f92672">=</span> int(val)
+</span></span><span style="display:flex;"><span>        selection[k] <span style="color:#f92672">=</span> val
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> selection
+</span></span></code></pre></div><p>See the docstring for the input and outputs given by this function.</p>
+<h3 id="bayesian-optimization-class">Bayesian Optimization class</h3>
+<p>These are all the utility functions we need. Now we can implement the whole Bayesian Optimization model. For reading purposed the whole implementation is shown at once. Below the code snippet, we&rsquo;ll go through some methods of this class to get an understanding of what we are doing.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">BayesOpt</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(
+</span></span><span style="display:flex;"><span>        self, param_ranges, f, random_trials<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>, optimization_trials<span style="color:#f92672">=</span><span style="color:#ae81ff">20</span>, kernel<span style="color:#f92672">=</span><span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>    ):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Parameters
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        ----------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        param_ranges : dict
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        f : function
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            black box function to evaluate
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        random_trials : int
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            Number of random trials to run before optimization starts
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        optimization_trials : int
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            Number of optimization trials to run.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            Together with the random_trials this is the total budget
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        kernel: GPy.kern.src.kern.Kern
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            GPy kernel for the Gaussian Process.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            If None given, RBF kernel is used
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>param_ranges <span style="color:#f92672">=</span> param_ranges
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>f <span style="color:#f92672">=</span> f
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>random_trials <span style="color:#f92672">=</span> random_trials
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>optimization_trials <span style="color:#f92672">=</span> optimization_trials
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>n_trials <span style="color:#f92672">=</span> random_trials <span style="color:#f92672">+</span> optimization_trials
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros((self<span style="color:#f92672">.</span>n_trials, len(param_ranges)))
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>y <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros((self<span style="color:#f92672">.</span>n_trials, <span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> kernel <span style="color:#f92672">is</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>kernel <span style="color:#f92672">=</span> GPy<span style="color:#f92672">.</span>kern<span style="color:#f92672">.</span>RBF(
+</span></span><span style="display:flex;"><span>                input_dim<span style="color:#f92672">=</span>self<span style="color:#f92672">.</span>x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>], variance<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, lengthscale<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>            )
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>kernel <span style="color:#f92672">=</span> kernel
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>gp <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>bounds <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([pr[<span style="color:#e6db74">&#34;range&#34;</span>] <span style="color:#66d9ef">for</span> pr <span style="color:#f92672">in</span> param_ranges<span style="color:#f92672">.</span>values()])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@property</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">best_params</span>(self):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Select best parameters.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Returns
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        -------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        best_parameters : dict
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>_prepare_kwargs(self<span style="color:#f92672">.</span>x[self<span style="color:#f92672">.</span>y<span style="color:#f92672">.</span>argmax()])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fit</span>(self):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>_random_search()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>_bayesian_search()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_random_search</span>(self):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Run the random trials budget
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Starting </span><span style="color:#e6db74">{</span>self<span style="color:#f92672">.</span>random_trials<span style="color:#e6db74">}</span><span style="color:#e6db74"> random trials...&#34;</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> tqdm(range(self<span style="color:#f92672">.</span>random_trials)):
+</span></span><span style="display:flex;"><span>            hp <span style="color:#f92672">=</span> select_hyperparams_random(self<span style="color:#f92672">.</span>param_ranges)
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>x[i] <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array(list(hp<span style="color:#f92672">.</span>values()))
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>y[i] <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>f(hp)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_bayesian_search</span>(self):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Run the Bayesian Optimization budget
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Starting </span><span style="color:#e6db74">{</span>self<span style="color:#f92672">.</span>optimization_trials<span style="color:#e6db74">}</span><span style="color:#e6db74"> optimization trials...&#34;</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> tqdm(
+</span></span><span style="display:flex;"><span>            range(self<span style="color:#f92672">.</span>random_trials, self<span style="color:#f92672">.</span>random_trials <span style="color:#f92672">+</span> self<span style="color:#f92672">.</span>optimization_trials)
+</span></span><span style="display:flex;"><span>        ):
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>x[i], self<span style="color:#f92672">.</span>y[i] <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_single_iter()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_single_iter</span>(self):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Fit a GP and retrieve and evaluate a new
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        parameter proposal.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Returns
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        -------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        out : tuple[np.array[flt], np.array[flt]]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            (x, f(x))
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>_fit_gp()
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_new_proposal()
+</span></span><span style="display:flex;"><span>        y <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>f(self<span style="color:#f92672">.</span>_prepare_kwargs(x))
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> x, y
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_fit_gp</span>(self, noise_var<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Fit a GP on the currently observed data points.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Parameters
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        ----------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        noise_var : flt
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            GPY argmument noise_var
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        mask <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>x<span style="color:#f92672">.</span>sum(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>gp <span style="color:#f92672">=</span> GPy<span style="color:#f92672">.</span>models<span style="color:#f92672">.</span>GPRegression(
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>x[mask],
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>y[mask],
+</span></span><span style="display:flex;"><span>            normalizer<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>,
+</span></span><span style="display:flex;"><span>            kernel<span style="color:#f92672">=</span>self<span style="color:#f92672">.</span>kernel,
+</span></span><span style="display:flex;"><span>            noise_var<span style="color:#f92672">=</span>noise_var,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>gp<span style="color:#f92672">.</span>optimize()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_new_proposal</span>(self, n<span style="color:#f92672">=</span><span style="color:#ae81ff">25</span>):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Get a new parameter proposal by maximizing
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        the acquisition function.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Parameters
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        ----------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        n : int
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            Number of retries.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            Each new retry the optimization is
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            started in another parameter location.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            This improves the chance of finding a global optimum.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Returns
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        -------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        proposal : dict
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            Example:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">           {&#39;foo&#39;: 4.213, &#39;bar&#39;: 935}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">f</span>(x):
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span>expected_improvement(
+</span></span><span style="display:flex;"><span>                f<span style="color:#f92672">=</span>self<span style="color:#f92672">.</span>gp<span style="color:#f92672">.</span>predict, y_current<span style="color:#f92672">=</span>self<span style="color:#f92672">.</span>y<span style="color:#f92672">.</span>max(), x_proposed<span style="color:#f92672">=</span>x[<span style="color:#66d9ef">None</span>, :]
+</span></span><span style="display:flex;"><span>            )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        x0 <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>uniform(
+</span></span><span style="display:flex;"><span>            low<span style="color:#f92672">=</span>self<span style="color:#f92672">.</span>bounds[:, <span style="color:#ae81ff">0</span>], high<span style="color:#f92672">=</span>self<span style="color:#f92672">.</span>bounds[:, <span style="color:#ae81ff">1</span>], size<span style="color:#f92672">=</span>(n, self<span style="color:#f92672">.</span>x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        proposal <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>        best_ei <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>inf
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> x0_ <span style="color:#f92672">in</span> x0:
+</span></span><span style="display:flex;"><span>            res <span style="color:#f92672">=</span> optimize<span style="color:#f92672">.</span>minimize(f, x0_, bounds<span style="color:#f92672">=</span>self<span style="color:#f92672">.</span>bounds)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> res<span style="color:#f92672">.</span>success <span style="color:#f92672">and</span> res<span style="color:#f92672">.</span>fun <span style="color:#f92672">&lt;</span> best_ei:
+</span></span><span style="display:flex;"><span>                best_ei <span style="color:#f92672">=</span> res<span style="color:#f92672">.</span>fun
+</span></span><span style="display:flex;"><span>                proposal <span style="color:#f92672">=</span> res<span style="color:#f92672">.</span>x
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> np<span style="color:#f92672">.</span>isnan(res<span style="color:#f92672">.</span>fun):
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">ValueError</span>(<span style="color:#e6db74">&#34;NaN within bounds&#34;</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> proposal
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_prepare_kwargs</span>(self, x):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Create a dictionary with named parameters
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        and the proper python types.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Parameters
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        ----------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        x : np.array
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            Example:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            [4.213, 935.03]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Returns
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        -------
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        hyperparameters : dict
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            Example:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            {&#39;foo&#39;: 4.213, &#39;bar&#39;: 935}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># create hyper parameter dict</span>
+</span></span><span style="display:flex;"><span>        hp <span style="color:#f92672">=</span> dict(zip(self<span style="color:#f92672">.</span>param_ranges<span style="color:#f92672">.</span>keys(), x))
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># cast values</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> k <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>param_ranges:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>param_ranges[k][<span style="color:#e6db74">&#34;type&#34;</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;int&#34;</span>:
+</span></span><span style="display:flex;"><span>                hp[k] <span style="color:#f92672">=</span> int(hp[k])
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">elif</span> self<span style="color:#f92672">.</span>param_ranges[k][<span style="color:#e6db74">&#34;type&#34;</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;float&#34;</span>:
+</span></span><span style="display:flex;"><span>                hp[k] <span style="color:#f92672">=</span> float(hp[k])
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">ValueError</span>(<span style="color:#e6db74">&#34;Parameter type not known&#34;</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> hp
+</span></span></code></pre></div><p>I will go through some of the methods. Not all as most will be self-explanatory (I hope).</p>
+<h3 id="__init__self"><code>__init__(self)</code></h3>
+<p>Here we instantiate the <code>BayesOpt</code> model. We&rsquo;ll set some attributes we&rsquo;ll need for the model. It is important to note that we pass <code>f</code> here. This is the black box function we want to approximate. Furthermore, we set the number of <code>random_trials</code> and <code>optimization_trials</code> here. The sum of those is the total budget of function evaluations we may use.</p>
+<h3 id="__single_iterself"><code>__single_iter(self)</code></h3>
+<p>This is the method where we do a single Bayesian Optimization iteration. It consists of training a GP on the data points we&rsquo;ve observed thus far. Then we pass this GP to the acquisition function and obtain a new parameter proposal by maximizing the acquisition function. With this new proposal $x^*$ we evaluate $f(x^*)$ and save the results.</p>
+<h3 id="_new_proposalself-n"><code>_new_proposal(self, n)</code></h3>
+<p>In this method, we actually maximize the $EI(x)$ function. We&rsquo;ll use <code>scipy</code> for that, but many optimization algorithms can be used for this (don&rsquo;t use Bayesian Optimization though, recursion induced stack-overflow ;) ). Note that we pass <code>n</code> as a parameter. This dictates how many times we should restart the optimization algorithm that maximizes $EI(x)$ from a different (random) starting point. This is to reduce the chance of proposing a solution that is a local optimum.</p>
+<p>Okay, that was it. Now let&rsquo;s take this baby for a spin!</p>
+<h2 id="1d-examples">1D examples</h2>
+<p>Let&rsquo;s start with an example in 1D. This will give us a good feeling of how Bayesian Optimization uses GP&rsquo;s and the acquisition function for exploration.</p>
+<p>First we generate a multi model function over a range $(0, 10)$.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">10</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">func</span>(x):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>sin(<span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> x) <span style="color:#f92672">+</span> (x <span style="color:#f92672">/</span> <span style="color:#ae81ff">3</span>)<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">-</span> x <span style="color:#f92672">+</span> <span style="color:#ae81ff">50</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">4</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;A unknown function $f$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;$x$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;$f(x)$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, func(x))
+</span></span></code></pre></div><figure><img src="../../../../../img/post-26/blackboxfunc.png"/>
+</figure>
+
+<p>Then we define the boundaries of the input and the evaluation function.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">evaluate_params</span>(hyperparams):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> func(<span style="color:#f92672">**</span>hyperparams)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>param_ranges <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;x&#39;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;range&#39;</span>: [<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">10</span>],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;type&#39;</span>: <span style="color:#e6db74">&#39;float&#39;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>With these we can instantiate the <code>BayesOpt</code> class. We set at least 2 random trials otherwise it is impossible to fit a Gaussian Process.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>seed(<span style="color:#ae81ff">3</span>)
+</span></span><span style="display:flex;"><span>bo <span style="color:#f92672">=</span> BayesOpt(param_ranges, evaluate_params, random_trials<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>)
+</span></span></code></pre></div><p>Next we take 8 optimization iterations and plot the fitted GP (left) and $EI(x)$ over our domain $(0, 10)$ (right). We also plot the trials we already have observed. The random trials in red, and the trials that we took during the optimization in green. Finally, we plot the the new proposal point for the next iteration. This is the dashed vertical line.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>bo<span style="color:#f92672">.</span>_random_search()
+</span></span><span style="display:flex;"><span>bo<span style="color:#f92672">.</span>_fit_gp()
+</span></span><span style="display:flex;"><span>new_proposal <span style="color:#f92672">=</span> bo<span style="color:#f92672">.</span>_new_proposal()
+</span></span><span style="display:flex;"><span>x_, y_ <span style="color:#f92672">=</span> bo<span style="color:#f92672">.</span>_single_iter(new_proposal)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">10</span>):
+</span></span><span style="display:flex;"><span>    new_proposal <span style="color:#f92672">=</span> bo<span style="color:#f92672">.</span>_new_proposal()
+</span></span><span style="display:flex;"><span>    ei <span style="color:#f92672">=</span> expected_improvement(
+</span></span><span style="display:flex;"><span>        f<span style="color:#f92672">=</span>bo<span style="color:#f92672">.</span>gp<span style="color:#f92672">.</span>predict, y_current<span style="color:#f92672">=</span>bo<span style="color:#f92672">.</span>y<span style="color:#f92672">.</span>max(), x_proposed<span style="color:#f92672">=</span>x[:, <span style="color:#66d9ef">None</span>]
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    x_, y_ <span style="color:#f92672">=</span> bo<span style="color:#f92672">.</span>_single_iter(new_proposal)
+</span></span><span style="display:flex;"><span>    bo<span style="color:#f92672">.</span>x[i], bo<span style="color:#f92672">.</span>y[i] <span style="color:#f92672">=</span> x_, y_
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    quants <span style="color:#f92672">=</span> bo<span style="color:#f92672">.</span>gp<span style="color:#f92672">.</span>predict_quantiles(x[:, <span style="color:#66d9ef">None</span>], quantiles<span style="color:#f92672">=</span>(<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">90</span>))
+</span></span><span style="display:flex;"><span>    mu, var <span style="color:#f92672">=</span> bo<span style="color:#f92672">.</span>gp<span style="color:#f92672">.</span>predict(x[:, <span style="color:#66d9ef">None</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">20</span>, <span style="color:#ae81ff">4</span>))
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>suptitle(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Iteration </span><span style="color:#e6db74">{</span>i <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>subplot(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;$f(x^*)$&#34;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>plot(x, mu, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;C0&#34;</span>, label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Mean&#34;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>fill_between(
+</span></span><span style="display:flex;"><span>        x,
+</span></span><span style="display:flex;"><span>        quants[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>flatten(),
+</span></span><span style="display:flex;"><span>        quants[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>flatten(),
+</span></span><span style="display:flex;"><span>        alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.15</span>,
+</span></span><span style="display:flex;"><span>        edgecolor<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;C1&#34;</span>,
+</span></span><span style="display:flex;"><span>        label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Confidence&#34;</span>,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>scatter(
+</span></span><span style="display:flex;"><span>        bo<span style="color:#f92672">.</span>x[: bo<span style="color:#f92672">.</span>random_trials],
+</span></span><span style="display:flex;"><span>        bo<span style="color:#f92672">.</span>y[: bo<span style="color:#f92672">.</span>random_trials],
+</span></span><span style="display:flex;"><span>        color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;r&#34;</span>,
+</span></span><span style="display:flex;"><span>        label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;random trials&#34;</span>,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>xlim(x<span style="color:#f92672">.</span>min() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>, x<span style="color:#f92672">.</span>max() <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    mask <span style="color:#f92672">=</span> bo<span style="color:#f92672">.</span>x<span style="color:#f92672">.</span>sum(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>scatter(
+</span></span><span style="display:flex;"><span>        bo<span style="color:#f92672">.</span>x[mask][bo<span style="color:#f92672">.</span>random_trials : <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>],
+</span></span><span style="display:flex;"><span>        bo<span style="color:#f92672">.</span>y[mask][bo<span style="color:#f92672">.</span>random_trials : <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>],
+</span></span><span style="display:flex;"><span>        color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;g&#34;</span>,
+</span></span><span style="display:flex;"><span>        label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;BO trials&#34;</span>,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>legend()
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>subplot(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;$EI(x)$&#34;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>plot(x, ei, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;C1&#34;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>vlines(new_proposal, <span style="color:#ae81ff">0</span>, ei<span style="color:#f92672">.</span>max(), linestyle<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;--&#34;</span>, label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;New proposal&#34;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>xlim(x<span style="color:#f92672">.</span>min() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>, x<span style="color:#f92672">.</span>max() <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>legend()
+</span></span></code></pre></div><p><figure><img src="../../../../../img/post-26/iteration.png"/>
+</figure>
+
+<figure><img src="../../../../../img/post-26/iteration2.png"/>
+</figure>
+
+<figure><img src="../../../../../img/post-26/iteration3.png"/>
+</figure>
+
+<figure><img src="../../../../../img/post-26/iteration4.png"/>
+</figure>
+
+<figure><img src="../../../../../img/post-26/iteration5.png"/>
+</figure>
+
+<figure><img src="../../../../../img/post-26/iteration6.png"/>
+</figure>
+
+<figure><img src="../../../../../img/post-26/iteration7.png"/>
+</figure>
+
+<figure><img src="../../../../../img/post-26/iteration8.png"/><figcaption>
+            <h4>Explore the uncertainty by maximizing $EI(x)$</h4>
+        </figcaption>
+</figure>
+</p>
+<p>What is interesting to note, is that $EI(x)$ is not high in area&rsquo;s we&rsquo;ve already observed, It really favors unobserved areas that maximize the probability of increasing $f(x)$, hence Expected Improvement. If we continue the optimization we will be certain over the whole range $f(x)$ and $EI(x)$ will be close to zero for the whole range. Which reflects what we want, as we have a limited budget, there is no use in testing something we know the outcome of. The exploration characteristics of $EI(x)$ can clearly be seen in the figure below, which depicts the relation between $\delta = \mu(x^*) - f(x^+)$ and $\sigma(x^*)$.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>delta <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>sigma <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)[::<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># get a square grid w/ the delta and sigma inputs</span>
+</span></span><span style="display:flex;"><span>dd, ss <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>meshgrid(delta, sigma)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># this is just the EI function</span>
+</span></span><span style="display:flex;"><span>z <span style="color:#f92672">=</span> dd <span style="color:#f92672">/</span> ss
+</span></span><span style="display:flex;"><span>unit_norm <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm()
+</span></span><span style="display:flex;"><span>ei <span style="color:#f92672">=</span> dd <span style="color:#f92672">*</span> unit_norm<span style="color:#f92672">.</span>cdf(z) <span style="color:#f92672">+</span> ss <span style="color:#f92672">*</span> unit_norm<span style="color:#f92672">.</span>pdf(z)
+</span></span><span style="display:flex;"><span>ei[np<span style="color:#f92672">.</span>isnan(ei)] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">7</span>, <span style="color:#ae81ff">7</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;$EI(x)$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>contourf(delta, sigma, ei)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;$\delta$&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;$\sigma(x^*)$&#39;</span>)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-26/EI.png"/><figcaption>
+            <h4>Exploration characteristics of $EI(x)$. $EI(x)$ is high where both the uncertainty $\sigma(x^*)$ and the improvement $\delta$ are high.</h4>
+        </figcaption>
+</figure>
+
+<p>We can also observe that our proposal algorithm isn&rsquo;t perfect, as the proposal of the first iteration is a local optimum. This isn&rsquo;t too worrying as that point would probably a global optimum in a later iteration and it helps the GP with extra data points.</p>
+<h2 id="higher-dimensions">Higher dimensions</h2>
+<p>Bayesian optimization is of course not limited to 1D input. In <a href="https://github.com/ritchie46/vanilla-machine-learning/blob/master/bayesian/bayesian_optimization/bayesopt_water_accumulation.ipynb">this notebook</a> I have an example of how we could use Bayesian Optimization to find more optimal solutions for a structural engineering problem. For an introduction to the problem, you can check <a href="https://www.ritchievink.com/blog/2017/08/23/a-nonlinear-water-accumulation-analysis-in-python/">this post</a>.</p>
+<h2 id="a-word-about-kernels">A word about kernels</h2>
+<p>Kernels restrict the prior distribution of functions. A standard kernel is the Radius Basis Function kernel (RBF), which results in &lsquo;smooth&rsquo; functions. It ensures that values, that are relatively close in the domain of $f$ are also relatively close in the codomain $f(x)$. This isn&rsquo;t always a sensible default. In a step function, for instance, we have huge steps at a small change of $x$.</p>
+<p>Kernels can also be combined, where multiplying can be seen as an <strong>AND</strong> operation and addition as an <strong>OR</strong> operation. There are a lot of kernels with different properties. I&rsquo;d recommend taking a look at <a href="https://www.cs.toronto.edu/~duvenaud/cookbook/">this kernel cookbook</a> to get a concise overview.</p>
+<h2 id="further-reading-and-implementations">Further reading and Implementations</h2>
+<p>This post we looked at how Bayesian Optimization can be used to optmize black box models. We&rsquo;ve implemented BO in Python using GPy for the Gaussian Processes, and we&rsquo;ve seen how Expected Improvement leads to exploring uncertain areas in of our black box function&rsquo;s output.</p>
+<p>Want to read more about Bayesian Optimization? Take a look at the following posts/ papers:</p>
+<ul>
+<li><a href="https://research.fb.com/wp-content/uploads/2018/08/Constrained-Bayesian-Optimization-with-Noisy-Experiments.pdf">Constrained Bayesian Optimization with NoisyExperiments (Letham et al.)</a></li>
+<li><a href="http://krasserm.github.io/2018/03/21/bayesian-optimization/">Excellent blog post by Martin Krasser</a></li>
+<li><a href="https://arxiv.org/abs/1807.02811">A Tutorial on Bayesian Optmization (Peter Frazier)</a></li>
+</ul>
+<p>Some implementations of Bayesian Optimization are:</p>
+<ul>
+<li><a href="https://github.com/SheffieldML/GPyOpt">GPyOpt (from the makers of GPy</a></li>
+<li><a href="https://ax.dev/">Ax.dev (They use GPytorch for GP fitting)</a></li>
+<li><a href="https://www.automl.org/automl/bohb/">Robust and Efficient Hyperparameter Optimization at Scale</a></li>
+</ul>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  });
+  </script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

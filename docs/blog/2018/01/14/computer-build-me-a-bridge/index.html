@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Computer build me a bridge - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2018/01/14/computer-build-me-a-bridge/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-12-ga-bridge/cb2.jpg" />
+
+
+<title>Computer build me a bridge | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Computer build me a bridge</h1>
+    <h2 class="subtitle is-5">January 14, 2018 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/engineering">engineering</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+</div>
+
+    
+    <div class="content">
+      <p>In earlier posts I&rsquo;ve analyzed simple structures with a Python fem package called <a href="https://github.com/ritchie46/anaStruct">anaStruct</a>. And in this <a href="https://www.ritchievink.com/blog/2017/08/23/a-nonlinear-water-accumulation-analysis-in-python/">post</a> I&rsquo;ve used anaStruct to analyze a very non linear roof ponding problem.</p>
+<p>Modelling a structure in Python may seem cumbersome in relation to some programs that offer a graphical user interface. For simple structures this may well be the case. However now we&rsquo;ve got a simple way to programmatically model 2D structures, I was wondering if we could let a computer model these structures for us.</p>
+<p>I&rsquo;ve set the goal of building (sub) optimal bridges by letting a model determine the optimal solutions. During this process I&rsquo;ve first tried Reinforcement Learning and had limited success with that approach. A technique that had more succes, and turned out to be much simpler, was Genetic Algorithms (GA). This post describes how we can let a computer find (sub) optimal solutions for our problem.</p>
+<h1 id="genetic-algorithms">Genetic Algorithms</h1>
+<p>Before going to the bridges let&rsquo;s first look at the genetic algorithms model. This is actually a sort of hill climbing algorithm that tries to find the optimal solution by random changes.</p>
+<h2 id="fitness">Fitness</h2>
+<p>The height of the hill is described with a fitness function. If we would compare this with Darwin&rsquo;s survival of the fittest, the fitness function would map your DNA to the probability of you:</p>
+<ol>
+<li>Living long enough to reproduce.</li>
+<li>Convincing the other sex to have coitis with you.</li>
+</ol>
+<p>This guy would have a fitness score of over 9000:</p>
+
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube.com/embed/owGykVbfgUE" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+
+<br>
+<br>
+<p>And this guy would have a score of 1:</p>
+
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+  <iframe src="https://www.youtube.com/embed/_9umwdE8VoY?t=19s%20_" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" allowfullscreen title="YouTube Video"></iframe>
+</div>
+
+<br>
+Because he misses his shot, he does get a point though.
+<p>The fitness function can be anything. It is a function that outputs positive numbers. The output of the function should be higher if the result is more optimal or closer to our desired behaviour. When you want to build a brigdge the fitness function could for instance relate to:</p>
+<ul>
+<li>Is the structure in equillibrium (does it not collapse).</li>
+<li>Amount of elements used (We probably don&rsquo;t want to spent high material costs).</li>
+<li>Amount of deflection.</li>
+</ul>
+<h2 id="dna">DNA</h2>
+<p>The input of the fitness function is DNA. For humans DNA has 4 possible letter states. For the DNA of the bridge we are going to use only 2 states, on or off. We can think of the DNA as a long sequence of binary values. Every index of the sequence belongs to an element on a grid. Such an element is a beam/ rod in the bridge and can be either on or off. If it is on, the element will be build. If it is off, it won&rsquo;t. Simple right!</p>
+<p>Let&rsquo;s make it more visual with a small example. The figure below shows a grid containing possible locations to place an element. Dashed lines mean that there can be an element, but it isn&rsquo;t build yet. The element locations are numbered from one to eleven.</p>
+<figure><img src="../../../../../img/post-12-ga-bridge/empty_grid.svg"/><figcaption>
+            <h4>Empty grid.</h4>
+        </figcaption>
+</figure>
+
+<p>The DNA string belonging to this grid of empty elements is an array of eleven zeros. The figure below shows:</p>
+<ul>
+<li>On the first row:  the DNA sequence.</li>
+<li>On the second row: the corresponding beam of the DNA state.</li>
+</ul>
+<figure><img src="../../../../../img/post-12-ga-bridge/empty_dna.svg"/><figcaption>
+            <h4>DNA sequence belonging to the empty grid.</h4>
+        </figcaption>
+</figure>
+
+<p>If we randomly change some DNA values from zero to one, we activate the element and the element will be build on the grid. The figure below shows the grid and the corresponding DNA when beam number 3, 7 and 10 are activated.</p>
+<figure><img src="../../../../../img/post-12-ga-bridge/active_grid.svg"/><figcaption>
+            <h4>Grid with activated elements.</h4>
+        </figcaption>
+</figure>
+
+<p>The DNA belonging to this grid is shown below.
+<figure><img src="../../../../../img/post-12-ga-bridge/active_dna.svg"/><figcaption>
+            <h4>DNA sequence belonging to the grid with activated elements.</h4>
+        </figcaption>
+</figure>
+</p>
+<h1 id="optimization">Optimization</h1>
+<p>This is how the DNA sequence will compare to the eventual bridge. In the first generation the DNA will be randomly generated. The probability that a random generated sequence will yield a high fitness score is very low, therefore we will generate an entire population of DNA.</p>
+<p>We can compute the fitness score for the entire population and determine which DNA sequences build better bridges than others. The first generation probably won&rsquo;t contain any optimal structures. Therefore we want to be able to change the DNA randomly whilst maintaining the DNA parts that lead to a high fitness score.
+Genetic Algorithms are able to do so via selection, crossover, and mutation.</p>
+<h2 id="selection">Selection</h2>
+<p>When the fitness of a generations population is determined, we select parents that may exchange DNA. There are different strategies for selecting parents. The chance of a parent being selected can for instance be proportional to their fitness score. However, when we would have a distribution with a fitness score as shown below, a selection procedure that is proportional to the fitness score would lead to a population with almost all the DNA coming from the first 2 parents.</p>
+<figure><img src="../../../../../img/post-12-ga-bridge/fitness_score.svg"/><figcaption>
+            <h4>Probability of being selected proportional to the fitness score.</h4>
+        </figcaption>
+</figure>
+
+<p>Having all the DNA coming only from a few parents, and thus having little variation in the population increases the chance of getting stuck on local maxima. In order to maintain a healthy population, the chance of being selected will be proportional the rank of the parent instead of the fitness score.</p>
+<p>The figure below shows the selection probability being equal to the rank of the parent. We can see that the next generation will have most DNA coming from the highest scoring parent, but the low scoring parents will also contribute a significant part in the gene pool.</p>
+<figure><img src="../../../../../img/post-12-ga-bridge/rank_score.svg"/><figcaption>
+            <h4>Probability of being selected proportional to the rank of the parent.</h4>
+        </figcaption>
+</figure>
+
+<h2 id="crossover">Crossover</h2>
+<p>After the selection process has succeeded (ergo you had pretty good dance moves, you didn&rsquo;t stutter and you also don&rsquo;t know how it has happened, but now you&rsquo;re in the other persons bed) the exchange of DNA takes place, Crossover!</p>
+<p>Crossover can be done by combining the two DNA arrays randomly. This DNA exchange process can be done on various ways (random, the first part of the sequence, the last part of the sequence, etc.). The method I&rsquo;ve used was letting a percentage of the selected parents exchange their DNA completely random.</p>
+<p>The figure below shows how a DNA exchange could look if we randomly swap DNA parts.</p>
+<figure><img src="../../../../../img/post-12-ga-bridge/Crossover.svg"/><figcaption>
+            <h4>Random crossover strategy.</h4>
+        </figcaption>
+</figure>
+
+<h2 id="mutation">Mutation</h2>
+<p>In alignment with what I&rsquo;ve learned in high school biology, during the copying of DNA there is a chance of random mutation.
+This random mutation makes it possible to explore new DNA states that aren&rsquo;t available the gene pool of the population.</p>
+<h2 id="eat-sleep-mate-repeat">Eat, sleep, mate, repeat</h2>
+<p>These were all the steps needed for a genetic algorithm. The fitness, selection, crossover, and mutation steps will be repeated until it yields a satisfactory result, or the model is stuck on its (local) optimum.</p>
+<h1 id="bridge-explorations">Bridge explorations</h1>
+<p>The ideas above are reduced to code. <a href="https://github.com/ritchie46/computer-build-me-a-bridge/blob/master/example_blog_post.py">Here you can find the script on Github.</a>
+You can run different configurations by specifying:</p>
+<ul>
+<li>grid size</li>
+<li>stiffness</li>
+<li>support conditions</li>
+<li>unit to add in the fitness score (deflection, bending moment, axial force)</li>
+<li>population size</li>
+<li>crossover percentage</li>
+<li>mutation percentage</li>
+</ul>
+<p>These are quite some parameters to tune. Quite logically, I&rsquo;ve noticed that the fitness score is very &lsquo;sensitive&rsquo;. If it is ill defined, you will find structures that wouldn&rsquo;t seem to make any sense, but if you regard it with the goal of maximizing that fitness score it does. In other words the maximum fitness, doesn&rsquo;t always correspond with what you&rsquo;ve had in mind.</p>
+<p>The fitness score in the script is comprised of a score for:</p>
+<ul>
+<li>the amount of elements used (less is better)</li>
+<li>the amount of deflection or force (less is better)</li>
+<li>the length of the bridge (more is better)</li>
+</ul>
+<p>The bridges are build symmetrically. Inspired by nature, we can save precious DNA chains by making the bridges mirror symmetrical. The DNA holds the information of the left side of the bridge, the right side is its mirror image. For every bridge, the supports are placed on the most outer nodes. The weight of the elements isn&rsquo;t taken into account. The only force that applies on the bridge is a force of 100 kN, placed in the center of the structure on the most top node.</p>
+<p>If you play with the script, you can set the bending stifness low to simulate a truss structure. The nodes don&rsquo;t completely simulate hinges. I haven&rsquo;t found a proper way to implement second order displacements in 2D FEM. If you know how, please let me know!</p>
+<p>In the examples below are animated gif images shown. You can start and pause them anytime by clicking on the image. The animation shows best performing (i.e. highest fitness score) DNA string in the population over multiple generations. When the animation has finished, the final structure is shown.</p>
+<h2 id="bridge-grid--10x1">Bridge (grid = 10x1)</h2>
+<p>Ok, let&rsquo;s see what such a genetic algorithm comes up with! Shown below is the best result for a grid of 10x1, 10 units of length in the x direction and 1 unit of length in the y direction.</p>
+<p>The examples below are implemented with a low bending stifness, The bridge can thus be regarded as truss structure and is only capable of bearing axial forces.</p>
+<p><em>Result on a 10x1 grid and two hinged supports.</em>
+<img data-gifffer="/img/post-12-ga-bridge/grid-10-1-fixed.gif" /></p>
+<p>We can see that it looses quite some elements. It also build triangular shapes. As there is no bending capacity and the grid isn&rsquo;t high enough to build a compression arch, or tension rope, this seem the only valid way to get a stiff structure. The tension rods that are normally in the bottom of a bending beam, don&rsquo;t go all the way to the supports, contrary to what I was expecting. This is probably a better structure, regarding this fitness setting, because the supports are hinged on both sides, making it possible to build a compression arch. Let&rsquo;s see the results if we change hinged support to a roller support.</p>
+<p><em>Result on a 10x1 grid and a roller support.</em>
+<img data-gifffer="/img/post-12-ga-bridge/grid-10-1-roll-1.gif" /></p>
+<p>Ok, now it built a totally different truss bridge. Now the ratio of decreasing the deflection leads to a higher fitness score than reducing the amount of elements. Let&rsquo;s reduce the fitness score of the deflection by a factor 0.5.</p>
+<p><em>Result on a 10x1 grid, a roller support and modified fitness score.</em>
+<img data-gifffer="/img/post-12-ga-bridge/grid-10-1-roll-2.gif"/></p>
+<p>Cool! A genetic algorithm has the same knowledge regarding bridges as I had after structural mechanics 101. This interaction showed that you really need to hand tune the fitness function in order to get results that are in line with what you had in mind.</p>
+<h2 id="some-more-examples">Some more examples</h2>
+<p>What cool is, is that you really see the influence of the supports in the structures that are made. With two hinged supports you would suspect some sort of compression arch, or if you flip it a tension arch/ rope. Below you see a result of structure really exploiting the concept of compression. Note that there aren&rsquo;t second order effects like buckling, thus with this fitness score, this structure is valid.</p>
+<p><em>Compression arch on a 4x3 grid</em>
+<img data-gifffer="/img/post-12-ga-bridge/grid-4-3.gif"/></p>
+<p><em>Compression arch on a 10x5 grid</em>
+<img data-gifffer="/img/post-12-ga-bridge/compr-arch-2.gif"/></p>
+<p>If we change support condition from a hinged support fixed the x direction, to a roller support, this compression arch concept doesn&rsquo;t work anymore. Building the same kind of structure, would lead to high stresses and relatively large deflections, lowering the fitness score.</p>
+<p>In structural mechanics 201 I learned the solution to that problem. It seems the best bridge of the population also did. It builds the same kind of bridge as the shown in the animation above, but because the bearings cannot support the arch thrust, it builds a tension rod (the horizontal elements on the bottom).</p>
+<p><em>Tension rod on a 10x5 grid</em>
+<img data-gifffer="/img/post-12-ga-bridge/tension-rod.gif"/></p>
+<script type="text/javascript" src="../../../../../js/gifffer.min.js"></script>
+<p>The examples above all were made with very low bending stiffness, simulating truss structures. If we run the same grid with a high bending stiffness, we don&rsquo;t need any triangles to get a stiff structure. The algorithm finds the same conclusions, as is shown in the animation below. And here it also finds the solution to the arch thruss problem by applying a tension rod.</p>
+<p><em>Tension rods with bending stiff elements on a 10x5 grid</em>
+<img data-gifffer="/img/post-12-ga-bridge/tension-rod-2.gif"/></p>
+<h1 id="conclusion">Conclusion</h1>
+<p>Genetic algorithms are a fun way of exploring parameter spaces based on a fitness score. The examples I&rsquo;ve show above were all generated while optimizing a fitness score based on the amount of deflection and the number of elements. We could optimize for other thing too, as the fitness function is something we define. If we can describe our problem properly in a fitness function, a genetic algorithm can explore parameter space for us.</p>
+<p>The drawback of this method is that every time we define a new grid, bending stiffness, support condition, or any other constraint, the algorithm requires quite some compute in order to find a (optimal) solution.</p>
+<p>What we really want is a model that maps from these constraints to bridge configurations. Such a model only needs to train once, and can later instantly map constraints to bridge configurations. As I mentioned in the beginning of the post, I&rsquo;ve tried this with a reinforcement learning approach, but didn&rsquo;t had very much success. Maybe genetic algorithm can also be a solution to that problem?</p>
+<script type="text/javascript">
+window.onload = function() {
+  Gifffer();
+}
+</script>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

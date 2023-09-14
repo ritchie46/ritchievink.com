@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Algorithm Breakdown: Expectation Maximization - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2019/05/24/algorithm-breakdown-expectation-maximization/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-24-em/grand_canyon.jpg" />
+
+
+<title>Algorithm Breakdown: Expectation Maximization | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Algorithm Breakdown: Expectation Maximization</h1>
+    <h2 class="subtitle is-5">May 24, 2019 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/clustering">clustering</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/bayesian">bayesian</a>
+    
+</div>
+
+    
+    <div class="content">
+      <p><figure><img src="../../../../../img/post-24-em/grand_canyon.jpg"/>
+</figure>
+
+<br>
+I wanted to learn something about variational inference, a technique used to approximate the posterior distribution in Bayesian modeling. However, during my research, I bounced on quite some mathematics that led me to another optimization technique called Expectation Maximization. I believe the theory behind this algorithm is a stepping stone to the mathematics behind variational inference. So we tackle the problems one problem at a time!</p>
+<p>The first part of this post will focus on Gaussian Mixture Models, as expectation maximization is the standard optimization algorithm for these models. The second part of the post, we will focus on a broader view on expectation maximization, and we will get the mathematical intuition of what we are optimizing.</p>
+<h2 id="gaussian-mixture-model">Gaussian Mixture Model</h2>
+<p>The schoolbook example of Expectation Maximization starts with a Gaussian Mixture model. Below we will go through the definition of a GMM in 1D, but note that this will generalize to ND. Gaussian Mixtures help with the following clustering problem. Assume a generative process where $X$ is an observed random variable.</p>
+<p>$$ z_i \sim Multionomial(\phi) $$
+$$ x_i|z_i \sim N(\mu_k, \sigma_k^2) $$</p>
+<p>$x_i$ is sampled from two different Gaussians. $z_i$ is an unobserved variable that determines from which Gaussian is sampled. Note that in this 1D case, the Multinomial distribution is the Bernoulli distribution. The parameter $\phi_j$ gives $p(z_i = j)$. We could generate this data in Python as follows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> stats
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>seed(<span style="color:#ae81ff">654</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Draw samples from two Gaussian w.p. z_i ~ Bernoulli(phi)</span>
+</span></span><span style="display:flex;"><span>generative_m <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([stats<span style="color:#f92672">.</span>norm(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">1</span>), stats<span style="color:#f92672">.</span>norm(<span style="color:#ae81ff">5</span>, <span style="color:#ae81ff">1.8</span>)])
+</span></span><span style="display:flex;"><span>z_i <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>bernoulli(<span style="color:#ae81ff">0.75</span>)<span style="color:#f92672">.</span>rvs(<span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>x_i <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([g<span style="color:#f92672">.</span>rvs() <span style="color:#66d9ef">for</span> g <span style="color:#f92672">in</span> generative_m[z_i]])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># plot generated data and the latent distributions</span>
+</span></span><span style="display:flex;"><span>x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#f92672">-</span><span style="color:#ae81ff">5</span>, <span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">150</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, generative_m[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>pdf(x))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, generative_m[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>pdf(x))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, generative_m[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>pdf(x) <span style="color:#f92672">+</span> generative_m[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>pdf(x), lw<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, ls<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;-.&#39;</span>, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>fill_betweenx(generative_m[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>pdf(x), x, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.1</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>fill_betweenx(generative_m[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>pdf(x), x, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.1</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>vlines(x_i, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0.01</span>, color<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>array([<span style="color:#e6db74">&#39;C0&#39;</span>, <span style="color:#e6db74">&#39;C1&#39;</span>])[z_i])
+</span></span></code></pre></div><figure><img src="../../../../../img/post-24-em/gmm-example.png"/><figcaption>
+            <h4>Generative process Gaussian Mixture Models.</h4>
+        </figcaption>
+</figure>
+
+<p>The picture above clearly depicts the generative process of a Gaussian Mixture model. The dashed line shows $p(x_i; \theta)$. The blue Gaussian shows $p(x_i|z_i=1; \theta)$, and the orange Gaussian shows $p(x_i|z_i=2; \theta)$. Note that $\theta$ are the distribution parameters, $\mu$, $\sigma$ and $\phi$.</p>
+<p>If $Z$ was an observed variable we would know that all data points would come from two Gaussians and for each single data point we could tell from which Gaussian it has originated.</p>
+<figure><img src="../../../../../img/post-24-em/gmm_z_observed.png"/><figcaption>
+            <h4>$X$ and $Z$ are observed.</h4>
+        </figcaption>
+</figure>
+
+<p>In such a case we could model the joint distribution $p(x_i, z_i) = p(x_i| z_i) p(z_i)$ (i.e. fit the Gaussians) by applying maximum likelihood estimation. However, in an unsupervised case $Z$ is latent and all we observe is $X$.</p>
+<figure><img src="../../../../../img/post-24-em/gmm_z_unobserved.png"/><figcaption>
+            <h4>$X$ is observed</h4>
+        </figcaption>
+</figure>
+
+<p>With observing only $X$, it has become a lot harder to determine $p(x_i, z_i)$, as we are not sure by which Gaussian $x_i$ is produced.</p>
+<h1 id="expectation-maximization-in-gmm">Expectation Maximization in GMM</h1>
+<p>The log-likelihood of the model is defined below, but as $Z$ is unobserved, the log-likelihood function has no closed form for the maximum likelihood.</p>
+<p>$$\ell(\theta) = \sum_{i=1}^n \text{log} p(x_i; \theta)$$</p>
+<p>$$\ell(\theta) = \sum_{i=1}^n \text{log} \sum_{k=1}^K p(x_i| z_k; \theta) p(z_k; \theta)$$</p>
+<p>Because of this, we will use an optimization algorithm called Expectation Maximization, where we guess $Z$ and iteratively try to maximize the log-likelihood.</p>
+<h2 id="e-step">E-step</h2>
+<p>Given a set of initialized chosen (or updated) parameters we determine $w_{ij}$ for each data point.</p>
+<p>$$ w_{ij} := p(z_i = j|x_i; \theta)$$</p>
+<p>Asking the questions, what is the likelihood of data point $x_i$, being assigned to Gaussian $j$.</p>
+<h2 id="m-step">M-step</h2>
+<p>Now we are going to optimize the parameters by applying an algorithmic step, quite similar to K-means, but now we are weighing them with the likelihoods $w_{ij}$. In K-means, we have a hard cut off, and determine the new means from the data points assigned to the cluster from the previous iteration. Now we will use all the data points for determining the new mean, but we scale them.</p>
+<p>$$ \phi_j := \frac{1}{n}\sum_{i=1}^n w_{ij} $$
+$$ \mu_j := \frac{\sum_{i=1}^nw_{ij} x_i} {\sum_{i=1}^nw_{ij}} $$
+$$ \sigma_j :=  \sqrt{\frac{\sum_{i=1}^nw_{ij}(x_i - \mu_j)^2} {\sum_{i=1}^nw_{ij}}}  $$</p>
+<p>If we iterate the E-M steps, we hope to converge to maximum likelihood. (The log-likelihood function, is multi-modal so we could get stuck in a local optimum)</p>
+<h2 id="python-example">Python example</h2>
+<p>Below we have implemented the algorithm in Python.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EM</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, k):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>k <span style="color:#f92672">=</span> k
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>mu <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>std <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>ones(k)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>w_ij <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>phi <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>ones(k) <span style="color:#f92672">/</span> k
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">expectation_step</span>(self, x):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> z_i <span style="color:#f92672">in</span> range(self<span style="color:#f92672">.</span>k):
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>w_ij[z_i] <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm(self<span style="color:#f92672">.</span>mu[z_i], self<span style="color:#f92672">.</span>std[z_i])<span style="color:#f92672">.</span>pdf(x) <span style="color:#f92672">*</span> self<span style="color:#f92672">.</span>phi[z_i]
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e"># normalize zo that marginalizing z would lead to p = 1</span>
+</span></span><span style="display:flex;"><span>	self<span style="color:#f92672">.</span>w_ij <span style="color:#f92672">/=</span> self<span style="color:#f92672">.</span>w_ij<span style="color:#f92672">.</span>sum(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">maximization_step</span>(self, x):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>phi <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>w_ij<span style="color:#f92672">.</span>mean(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>std <span style="color:#f92672">=</span> ((self<span style="color:#f92672">.</span>w_ij <span style="color:#f92672">*</span> (x <span style="color:#f92672">-</span> self<span style="color:#f92672">.</span>mu[:, <span style="color:#66d9ef">None</span>])<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)<span style="color:#f92672">.</span>sum(<span style="color:#ae81ff">1</span>) <span style="color:#f92672">/</span> self<span style="color:#f92672">.</span>w_ij<span style="color:#f92672">.</span>sum(<span style="color:#ae81ff">1</span>))<span style="color:#f92672">**</span><span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>mu <span style="color:#f92672">=</span> (self<span style="color:#f92672">.</span>w_ij <span style="color:#f92672">*</span> x)<span style="color:#f92672">.</span>sum(<span style="color:#ae81ff">1</span>) <span style="color:#f92672">/</span> self<span style="color:#f92672">.</span>w_ij<span style="color:#f92672">.</span>sum(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fit</span>(self, x):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>mu <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>uniform(x<span style="color:#f92672">.</span>min(), x<span style="color:#f92672">.</span>max(), size<span style="color:#f92672">=</span>self<span style="color:#f92672">.</span>k)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>w_ij <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros((self<span style="color:#f92672">.</span>k, x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        last_mu <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>ones(self<span style="color:#f92672">.</span>k) <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>inf
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">while</span> <span style="color:#f92672">~</span>np<span style="color:#f92672">.</span>all(np<span style="color:#f92672">.</span>isclose(self<span style="color:#f92672">.</span>mu, last_mu)):
+</span></span><span style="display:flex;"><span>            last_mu <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>mu
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>expectation_step(x)
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>maximization_step(x)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>m <span style="color:#f92672">=</span> EM(<span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>m<span style="color:#f92672">.</span>fit(x_i)
+</span></span></code></pre></div><p>We can examine the final fit by reparameterizing the two Gaussians once the algorithm has converged.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fitted_m <span style="color:#f92672">=</span> [stats<span style="color:#f92672">.</span>norm(mu, std) <span style="color:#66d9ef">for</span> mu, std <span style="color:#f92672">in</span> zip(m<span style="color:#f92672">.</span>mu, m<span style="color:#f92672">.</span>std)]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>vlines(x_i, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0.01</span>, color<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>array([<span style="color:#e6db74">&#39;C0&#39;</span>, <span style="color:#e6db74">&#39;C1&#39;</span>])[z_i])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, fitted_m[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>pdf(x))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, fitted_m[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>pdf(x))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, generative_m[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>pdf(x), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>, lw<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, ls<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;-.&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, generative_m[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>pdf(x), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>, lw<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, ls<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;-.&#39;</span>)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-24-em/fitted_gmm.png"/><figcaption>
+            <h4>Optimized Gaussian Mixture Model.</h4>
+        </figcaption>
+</figure>
+
+<p>As we can see. We have a reasonable fit. The black dashed lines show the original data generating Gaussians. The blue and the orange Gaussians are the result of our parameter search.</p>
+<h1 id="general-expectation-maximization">General Expectation Maximization</h1>
+<p>Above we&rsquo;ve shown EM in relation to GMMs. However, EM can be applied in a more general sense to a wider range of algorithms. We noted earlier that we cannot optimize the log-likelihood directly because we haven&rsquo;t observed $Z$. It turns out that we can find a lower bound to the log-likelihood function, which we can optimize.</p>
+<p>In the figure below, we see the intuition behind optimizing a lower bound on the log-likelihood. A lower bound $g$ of $f$ exists if $g(x) \leq f(x)$ for all $x$ in its domain.</p>
+<figure><img src="../../../../../img/post-24-em/lower_bound_functions.png"/><figcaption>
+            <h4>Iteratively maximizing a lower bound of $\ell(\theta)$.</h4>
+        </figcaption>
+</figure>
+
+<h2 id="jensens-inequality">Jensen&rsquo;s inequality</h2>
+<p>How do we obtain a lower bound function of the log-likelihood? Jensen&rsquo;s inequality theorem states that for every strictly concave function $f$ (i.e. $f^{\prime\prime} &lt; 0$ for the whole domain range $x$) applied on a random variable $X$:</p>
+<p><strong>Jensen&rsquo;s inequality:</strong>
+$$ E[f(X)] \leq f(E[X]) $$</p>
+<p>This inequality will be an equality if and only if $X = E[X]$ with probability 1. In other words, if $X$ is a constant.</p>
+<p><strong>Jensen&rsquo;s equality:</strong>
+$$ E[f(X)] = f(E[X]) \text{ iff } X = E[X]$$</p>
+<p>Below we&rsquo;ll get some intuition for the theorem. We define a range of $x := (0, 15)$, take $\log$ as our function $f(x)$ and compute the <strong>lhs</strong> and <strong>rhs</strong> of Jensens inequality. For plotting purposes, the theorem is applied on the full range $(0, 15)$, where we would normally apply it to samples from a probability distribution.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">15</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;Log(x) is concave&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x, np<span style="color:#f92672">.</span>log(x))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>annotate(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$f(x)$&#39;</span>, (<span style="color:#ae81ff">13</span>, np<span style="color:#f92672">.</span>log(<span style="color:#ae81ff">13</span>) <span style="color:#f92672">+</span> <span style="color:#ae81ff">0.1</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>hlines(np<span style="color:#f92672">.</span>log(np<span style="color:#f92672">.</span>mean(x)), <span style="color:#ae81ff">0</span>, np<span style="color:#f92672">.</span>mean(x), linestyles<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;-.&#39;</span>, lw<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>annotate(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$f(E[x])$&#39;</span>, (<span style="color:#ae81ff">0</span>, np<span style="color:#f92672">.</span>log(np<span style="color:#f92672">.</span>mean(x)) <span style="color:#f92672">+</span> <span style="color:#ae81ff">0.1</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>hlines(np<span style="color:#f92672">.</span>mean(np<span style="color:#f92672">.</span>log(x)), <span style="color:#ae81ff">0</span>, np<span style="color:#f92672">.</span>exp(np<span style="color:#f92672">.</span>mean(np<span style="color:#f92672">.</span>log(x))), linestyles<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;-.&#39;</span>, lw<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>annotate(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#39;$E[f(x)])$&#39;</span>, (<span style="color:#ae81ff">0</span>, np<span style="color:#f92672">.</span>mean(np<span style="color:#f92672">.</span>log(x)) <span style="color:#f92672">-</span> <span style="color:#ae81ff">0.15</span>))
+</span></span></code></pre></div><figure><img src="../../../../../img/post-24-em/jensens.png"/><figcaption>
+            <h4>Jensen&#39;s inequality applied on $(0, 15)$.</h4>
+        </figcaption>
+</figure>
+
+<h2 id="evidence-lower-bound-elbo">Evidence Lower Bound ELBO</h2>
+<p>Now we are going to define a lower bound function on the evidence $p(x)$. This marginal likelihood over $Z$ is often intractable, as we need to integrate over all possible values of $z_i$ to compute it.</p>
+<p>Recall that we try to optimize the evidence $p(X; \theta)$ under the current guess of the parameters $\theta$.</p>
+<p>$$ \ell(\theta) = p(X; \theta) = \sum_{i=1}^n \log p(x_i; \theta)$$</p>
+<p>As we assume a latent variable $Z$ which we haven&rsquo;t observed, we can rewrite it including $z_i$ (which is marginalized out).</p>
+<p>$$  \ell(\theta) = \sum_{i=1}^n\log\sum_{z_i}p(x_i, z_i; \theta)$$</p>
+<p>Now we can multiply the equation above with an arbitrary distribution over $Z$, $\frac{Q(z)}{Q(z)}=1$.</p>
+<p>$$ \ell(\theta) = \sum_{i=1}^n\log\sum_{z_i} Q(z_i)  \frac{p(x_i, z_i; \theta)} {Q(z_i)}$$</p>
+<p>Now note that expectation of a random variable $X$ is defined as $E[X] = \sum_{i=1}^n p(x_i)x_i$. Which means we can rewrite the log-likelihood as</p>
+<p>$$ \ell(\theta)  = \sum_{i=1}^n\log E_{z \sim Q}[\frac{p(x_i, z; \theta)} {Q(z)}]$$</p>
+<p>As the $\log$ function is a concave function, we can apply Jensen&rsquo;s inequality to the right-hand side of the equation. Note that we put the $\log$ <strong>inside the expectation</strong>.</p>
+<p>$$ \sum_{i=1}^n\log E_{z \sim Q}[\frac{p(x_i, z; \theta)} {Q(z)}] \geq \underbrace{\sum_{i=1}^n E_{z \sim Q}[ \log \frac{p(x_i, z; \theta)} {Q(z)}]}_{\text{lower bound of }\ell(\theta) = p(x; \theta)}$$</p>
+<p>Now we continue with this <strong>lower bound</strong> of $p(X; \theta)$ and unpack the <strong>expectation</strong> in the summation form.</p>
+<p>$$ \ell(\theta) \geq \sum_{i=1}^n\log\sum_{z_i} Q(z_i) \log  \frac{p(x_i, z_i; \theta)} {Q(z_i)}$$</p>
+<p>The equation above holds true for every distribution we choose for $Q(z)$, but ideally, we choose a distribution that leads to a lower bound that is close to the log-likelihood function. It turns out we can choose a distribution that will make the lower bound equal to $p(X; \theta)$. This is due to the fact that Jensen&rsquo;s inequality holds to equality <strong>if and only if</strong> $X = E[X]$, i.e. $X$ is <strong>constant</strong>. Where $X$, in this case, is part inside the $\log$ function; $ \frac{p(x_i, z_i; \theta)} {Q(z_i)}$.</p>
+<p>Therefore we must choose a distribution of $Q(z)$ that leads to:</p>
+<p>$$ \frac{p(x_i, z_i; \theta)}{Q(z_i)} = 1$$</p>
+<p>Which means that</p>
+<p>$$ p(x_i, z_i; \theta) \propto Q(z_i) $$</p>
+<p>And because $Q(z)$ is a probability distribution, it must integrate to one; $\sum_{z_i}Q(z_i) = 1$. So ideally we want to take the joint distribution $p(x_i, z_i ; \theta)$ and transform it so that it is proportional to itself, but also sums to 1 over all values of $z_i$. It turns out we can find that by normalizing the joint distribution.</p>
+<p>$$ \sum_{z_i} \frac{p(x_i, z_i; \theta)}{\sum_{z_i} p(x_i, z_i; \theta)} = 1 $$</p>
+<p>We can rewrite the equation inside the summation to a conditional probability.</p>
+<p>$$ Q(z_i) = \frac{p(x_i, z_i; \theta)}{\sum_{z_i} p(x_i, z_i; \theta)} $$</p>
+<p>$$ Q(z_i) = \frac{p(x_i, z_i; \theta)}{p(x_i; \theta)} $$</p>
+<p>$$ Q(z_i) = p(z_i | x_i; \theta)$$</p>
+<p>And that leaves us with the final form of lower bound on the log-likelihood (<strong>ELBO</strong>).</p>
+<p>$$ \log p(x; \theta) \geq \text{ELBO}(x; Q, \theta) $$</p>
+<h3 id="relation-to-expectation-maximization">Relation to Expectation Maximization</h3>
+<p>In the section above, we&rsquo;ve found a lower bound on the log-likelihood for the current values of $\theta$ and $Q(z)$. And our goal is to optimize $\theta$ so that we maximize the log-likelihood $\log p(x; \theta)$. Because we cannot optimize this function directly we try to optimize its lower bound $\sum_{i=1}^n\log\sum_{z_i} Q(z_i) \log ( \frac{p(x_i, z_i; \theta)} {Q(z_i)}) $.</p>
+<p>This lower bound was equal to the log-likelihood if we choose $Q(z) = p(z|x; \theta)$. On the current parameters $\theta_t$ and $Q(z)$, we optimize to $\theta_{t+1}$. However, once we do the optimization step, Jensen&rsquo;s equality doesn&rsquo;t hold anymore, as $Q(z)$ is still parameterized on the previous parameter step $\theta_t$. For these reasons we optimize in two steps;</p>
+<ul>
+<li>The <strong>Expectation</strong> step: Under current parameters $\theta_t$, find $Q(z) = p(z| x; \theta_t)$</li>
+<li>The <strong>Maximization</strong> step: With $Q(z; \theta_t)$, optimize the lower bound of the log-likelihood: $\underset{\theta}{\arg\max}\text{ELBO}(x; Q, \theta)$ so that we obtain $\theta_{t+1}$.</li>
+</ul>
+<p>Which is exactly what we did in our earlier Gaussian Mixture example. We set $w_{ij} := p(z_i = j|x_i; \theta, \phi)$, and then we used $w_{ij}$ to find $\theta_{t+1}$, and thus increasing the log-likelihood.</p>
+<h2 id="further-readings">Further readings</h2>
+<p>In an earlier post, we also took a look at <a href="https://www.ritchievink.com/blog/2018/06/05/clustering-data-with-dirichlet-mixtures-in-edward-and-pymc3/">Gaussian Mixture Models</a>. In the example in this post, <strong>k</strong> was a hyperparameter of the algorithm. In <a href="https://www.ritchievink.com/blog/2018/06/05/clustering-data-with-dirichlet-mixtures-in-edward-and-pymc3/">the post about Dirichlet Mixtures</a>, we don&rsquo;t specify <strong>k</strong>, but we use Dirichlet processes to inferr <strong>k</strong>, which means that we do non parametric clustering!</p>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  });
+  </script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

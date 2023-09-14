@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Algorithm Breakdown: AR, MA and ARIMA models - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2018/09/26/algorithm-breakdown-ar-ma-and-arima-models/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-18-arima/random-walk.jpg" />
+
+
+<title>Algorithm Breakdown: AR, MA and ARIMA models | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Algorithm Breakdown: AR, MA and ARIMA models</h1>
+    <h2 class="subtitle is-5">September 26, 2018 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/algorithm-breakdown">algorithm breakdown</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/time-series">time series</a>
+    
+</div>
+
+    
+    <div class="content">
+      <figure><img src="../../../../../img/post-18-arima/random-walk.jpg"/>
+</figure>
+
+<p>Time series are a quite unique topic within machine learning. In a lot of problems the dependent variable $y$, i.e. the thing we want to predict is dependent on very clear inputs, such as pixels of an image, words in a sentence, the properties of a persons buying behavior, etc. In time series these indepent variables are often not known. For instance, in stock markets, we don&rsquo;t have a clear independent
+set of variables where we can fit a model on. Are stock markets dependent on the properties of a company, or the properties of a country, or are they dependent on the sentiment in the news? Surely we can try to find a relation between those independent variables and stock market results, and maybe we are able to find some good models that map those relations. Point is that those relations are not very clear, nor is the independent data easily obtainable.</p>
+<p>A common approach to model time series is to regard the label at current time step $X_{t}$ as a variable dependent on previous time steps $X_{t-k}$. We thus analyze the time series on nothing more than the time series.</p>
+<p>One of the most used models when handling time series are ARIMA models. In this post, we&rsquo;ll explore how these models are defined and we are going to develop such a model in Python with nothing else but the numpy package.</p>
+<h2 id="stochastic-series">Stochastic series</h2>
+<p>ARIMA models are actually a combination of two, (or three if you count differencing as a model) processes that are able to generate series data. Those two models are based on an Auto Regressive (AR) process and a Moving Average process. Both AR and MA processes are stochastic processes. Stochastic means that the values come from a random probability distribution, which can be analyzed statistically but may not be predicted precisely. In other words, both processes have some
+uncertainty.</p>
+<h2 id="white-noise">White noise</h2>
+<p>Let&rsquo;s look at a very simple stochastic process called white noise. White noise can be drawn from many kinds of distributions. Here we draw from an univariate Gaussian.</p>
+<p>$$ \epsilon \sim N(0, 1) $$</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># fix some imports</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> seaborn <span style="color:#66d9ef">as</span> sns
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> scipy
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>n <span style="color:#f92672">=</span> <span style="color:#ae81ff">500</span>
+</span></span><span style="display:flex;"><span>fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>, figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">6</span>), gridspec_kw<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;width_ratios&#39;</span>:[<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">1</span>]})
+</span></span><span style="display:flex;"><span>eps <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>normal(size<span style="color:#f92672">=</span>n)
+</span></span><span style="display:flex;"><span>ax[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(eps)
+</span></span><span style="display:flex;"><span>sns<span style="color:#f92672">.</span>distplot(eps, ax<span style="color:#f92672">=</span>ax[<span style="color:#ae81ff">1</span>])
+</span></span></code></pre></div><figure><img src="../../../../../img/post-18-arima/white-noise.png"/><figcaption>
+            <h4>White noise signal.</h4>
+        </figcaption>
+</figure>
+
+<p>This process is completely random, though we are able to infer some properties from this series. By making a plot of the distribution we can assume that these variables come from a single normal distribution with zero mean and unit variance. Our best guess for any new variables value would be the value 0. A better model for this process doesn&rsquo;t exist as every new draw from the distribution is completely random and independent of the previous values. White noise is actually something we want
+to see on the residuals after we&rsquo;ve defined a model. If the residuals follow a white noise pattern, we can be certain that we&rsquo;ve declared all the possible variance.</p>
+<h2 id="ma-process">MA process</h2>
+<p>A moving average process is actually based on this white noise. It is defined as a weighted average of the previous white noise values.</p>
+<p>$$ X_t = \mu + \epsilon_t + \sum_{i=1}^{q}{\theta_i \epsilon_{t-i}} $$</p>
+<p>Where $\theta$ are the parameters of the process and $q$ is the order of the process. With order we mean how many time steps $q$ we should include in the weighted average.</p>
+<p>Let&rsquo;s simulate an MA process. For every time step $t$ we take the $\epsilon$ values up to $q$ time steps back. First, we create a function that given an 1D array creates a 2D array with rows that look $q$ indices back.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">lag_view</span>(x, order):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    For every value X_i create a row that lags k values: [X_i-1, X_i-2, ... X_i-k]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    y <span style="color:#f92672">=</span> x<span style="color:#f92672">.</span>copy()
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Create features by shifting the window of `order` size by one step.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># This results in a 2D array [[t1, t2, t3], [t2, t3, t4], ... [t_k-2, t_k-1, t_k]]</span>
+</span></span><span style="display:flex;"><span>    x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([y[<span style="color:#f92672">-</span>(i <span style="color:#f92672">+</span> order):][:order] <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(y<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>])])
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Reverse the array as we started at the end and remove duplicates.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Note that we truncate the features [order -1:] and the labels [order]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># This is the shifting of the features with one time step compared to the labels</span>
+</span></span><span style="display:flex;"><span>    x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>stack(x)[::<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>][order <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>: <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>    y <span style="color:#f92672">=</span> y[order:]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> x, y
+</span></span></code></pre></div><p>In the function above we create that 2D matrix. We also truncate the input and output array so that all rows have lagging values. If we call this function on an array ranging from 0 to 10, with order 3, we get the following output.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>&gt;&gt;&gt; lag_view(np.arange(10), 3)[0]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>array([[0, 1, 2],
+</span></span><span style="display:flex;"><span>       [1, 2, 3],
+</span></span><span style="display:flex;"><span>       [2, 3, 4],
+</span></span><span style="display:flex;"><span>       [3, 4, 5],
+</span></span><span style="display:flex;"><span>       [4, 5, 6],
+</span></span><span style="display:flex;"><span>       [5, 6, 7],
+</span></span><span style="display:flex;"><span>       [6, 7, 8]])
+</span></span></code></pre></div><p>Now we are able to easily take a look at different lags back in time. Let&rsquo;s simulate three different MA processes with order $q=1$, $q=6$, and $q=11$.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">ma_process</span>(eps, theta):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Creates an MA(q) process with a zero mean (mean not included in implementation).
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param eps: (array) White noise signal.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param theta: (array/ list) Parameters of the process.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># reverse the order of theta as Xt, Xt-1, Xt-k in an array is Xt-k, Xt-1, Xt.</span>
+</span></span><span style="display:flex;"><span>    theta <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([<span style="color:#ae81ff">1</span>] <span style="color:#f92672">+</span> list(theta))[::<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>][:, <span style="color:#66d9ef">None</span>]
+</span></span><span style="display:flex;"><span>    eps_q, _ <span style="color:#f92672">=</span> lag_view(eps, len(theta))
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> eps_q <span style="color:#f92672">@</span> theta
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">18</span>, <span style="color:#ae81ff">4</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">3</span>))
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> <span style="color:#ae81ff">310</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">11</span>, <span style="color:#ae81ff">5</span>):
+</span></span><span style="display:flex;"><span>    a <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    theta <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>uniform(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, size<span style="color:#f92672">=</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>subplot(a)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$ = </span><span style="color:#e6db74">{</span>theta<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>plot(ma_process(eps, theta))
+</span></span></code></pre></div><figure><img src="../../../../../img/post-18-arima/ma-signal.png"/><figcaption>
+            <h4>MA processes from different orders.</h4>
+        </figcaption>
+</figure>
+
+<p>Note that I&rsquo;ve chosen positive values for $\theta$ which isn&rsquo;t required. An MA process can have both positive and negative values for $\theta$. In the plots above can be seen that when the order of <strong>MA(q)</strong> increases, the values are longer correlated with previous values. Actually, because the process is a weighted average of the $\epsilon$ values until lag $q$, the correlation drops after this lag. Based on this property we can make an educated guess on about order of an <strong>MA(q)</strong> process. This is great because it is very hard to infer the order by looking at the plots directly.</p>
+<h2 id="autocorrelation">Autocorrelation</h2>
+<p>When a value $X_t$ is correlated with a previous value $X_{t-k}$, this is called autocorrelation. The autocorrelation function is defined as:</p>
+<p>$$ACF(X_t, X_{t-k}) = \frac{E[(X_t - \mu_t)(X_{t-k} - \mu_{t-k})]}{\sigma_t \sigma_{t-k}}$$</p>
+<p>Numerically we can approximate it by determining the correlation between different arrays, namely $X_t$ and array $X_{t-k}$. By doing so, we do need to truncate both arrays by $k$ elements in order to maintain an equal length.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">pearson_correlation</span>(x, y):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>mean((x <span style="color:#f92672">-</span> x<span style="color:#f92672">.</span>mean()) <span style="color:#f92672">*</span> (y <span style="color:#f92672">-</span> y<span style="color:#f92672">.</span>mean())) <span style="color:#f92672">/</span> (x<span style="color:#f92672">.</span>std() <span style="color:#f92672">*</span> y<span style="color:#f92672">.</span>std())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">acf</span>(x, lag<span style="color:#f92672">=</span><span style="color:#ae81ff">40</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Determine autocorrelation factors.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param x: (array) Time series.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param lag: (int) Number of lags.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>array([<span style="color:#ae81ff">1</span>] <span style="color:#f92672">+</span> [pearson_correlation(x[:<span style="color:#f92672">-</span>i], x[i:]) <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>, lag)])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>lag <span style="color:#f92672">=</span> <span style="color:#ae81ff">40</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create an ma(1) and an ma(2) process.</span>
+</span></span><span style="display:flex;"><span>ma_1 <span style="color:#f92672">=</span> ma_process(eps, [<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>ma_2 <span style="color:#f92672">=</span> ma_process(eps, [<span style="color:#ae81ff">0.2</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">0.3</span>, <span style="color:#ae81ff">0.8</span>])
+</span></span></code></pre></div><p>Above we have created an <strong>MA(1)</strong> and an <strong>MA(2)</strong> process with different weights $\theta$. The weights for the models are:</p>
+<ul>
+<li>MA(1): [1]</li>
+<li>MA(2): [0.2, -0.3, 0.8]</li>
+</ul>
+<p>Below we apply the ACF on both series and we plot the result of both applied functions. We&rsquo;ve also defined a helper function <code>bartletts_formula</code> which we use as a null hypothesis to determine if the correlation coefficients we&rsquo;ve found are significant and not a statistical fluke. With this function, we determine a confidence interval $CI$.</p>
+<p>$$CI = \pm z_{1-\alpha/2} \sqrt{\frac{1+2 \sum_{1 &lt; i&lt; h-1 }^{h-1}r^2_i}{N}} $$</p>
+<p>where $ z_{1-\alpha/2} $ is the quantile function from the normal distribution. Quantile functions are the inverse of the cumulative distribution function and can be called with <code>scipy.stats.norm.ppf</code>. Any values outside of this confidence interval (below plotted in orange) are statistically significant.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">bartletts_formula</span>(acf_array, n):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Computes the Standard Error of an acf with Bartlet&#39;s formula
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Read more at: https://en.wikipedia.org/wiki/Correlogram
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param acf_array: (array) Containing autocorrelation factors
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param n: (int) Length of original time series sequence.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># The first value has autocorrelation with it self. So that values is skipped</span>
+</span></span><span style="display:flex;"><span>    se <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros(len(acf_array) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    se[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> np<span style="color:#f92672">.</span>sqrt(n)
+</span></span><span style="display:flex;"><span>    se[<span style="color:#ae81ff">1</span>:] <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt((<span style="color:#ae81ff">1</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>cumsum(acf_array[<span style="color:#ae81ff">1</span>:<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)) <span style="color:#f92672">/</span> n )
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> se
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">plot_acf</span>(x, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.05</span>, lag<span style="color:#f92672">=</span><span style="color:#ae81ff">40</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param x: (array)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param alpha: (flt) Statistical significance for confidence interval.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :parm lag: (int)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    acf_val <span style="color:#f92672">=</span> acf(x, lag)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">4</span>))
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>vlines(np<span style="color:#f92672">.</span>arange(lag), <span style="color:#ae81ff">0</span>, acf_val)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>scatter(np<span style="color:#f92672">.</span>arange(lag), acf_val, marker<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;o&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;lag&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;autocorrelation&#39;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Determine confidence interval</span>
+</span></span><span style="display:flex;"><span>    ci <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>ppf(<span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> alpha <span style="color:#f92672">/</span> <span style="color:#ae81ff">2.</span>) <span style="color:#f92672">*</span> bartletts_formula(acf_val, len(x))
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>fill_between(np<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">1</span>, ci<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>), <span style="color:#f92672">-</span>ci, ci, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.25</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> array <span style="color:#f92672">in</span> [ma_1, ma_2]:
+</span></span><span style="display:flex;"><span>    plot_acf(array)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-18-arima/acf.png"/>
+</figure>
+
+<p>As we mentioned earlier, these plots help us infer the order of the <strong>MA(q)</strong> model. In both plots we can see a clear cut off in significant values. Both plots start with an autocorrelation of 1. This is the autocorrelation at lag 0. The second value is the autocorrelation at lag 1, the third at lag 2, etc. The first plot, the cut off is after 1 lag and in the second plot the cut off is at lag 3. So in our artificial data set we are able to determine the order of different <strong>MA(q)</strong> models by looking
+at the ACF plot!</p>
+<h2 id="ar-process">AR process</h2>
+<p>In the section above we have seen and simulated an MA process and described the definition of autocorrelation to infer the order of a purely MA process. Now we are going to simulate another series called the Auto Regressive (RA) process. Again we&rsquo;re going to infer the order of the process visually. This time we will be doing that with a Partial AutoCorrelation Function (PACF).</p>
+<p>An <strong>AR(p)</strong> process is defined as:</p>
+<p>$$X_t = c + \epsilon_t \sum_{i=1}^p{\phi_i X_{t-i}} $$</p>
+<p>Now $\phi$ are the parameters of the process and $p$ is the order of the process. Where <strong>MA(q)</strong> is a weighted average over the error terms (white noise), <strong>AR(p)</strong> is a weighted average over the previous values of the series $X_{t-p}$. Note that this process also has a white noise variable, which makes this a stochastic series.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">ar_process</span>(eps, phi):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Creates a AR process with a zero mean.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Reverse the order of phi and add a 1 for current eps_t</span>
+</span></span><span style="display:flex;"><span>    phi <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>r_[<span style="color:#ae81ff">1</span>, phi][::<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] 
+</span></span><span style="display:flex;"><span>    ar <span style="color:#f92672">=</span> eps<span style="color:#f92672">.</span>copy()
+</span></span><span style="display:flex;"><span>    offset <span style="color:#f92672">=</span> len(phi)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(offset, ar<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]):
+</span></span><span style="display:flex;"><span>        ar[i <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> ar[i <span style="color:#f92672">-</span> offset: i] <span style="color:#f92672">@</span> phi
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> ar
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">4</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">3</span>))
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">=</span> <span style="color:#ae81ff">310</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">11</span>, <span style="color:#ae81ff">5</span>):
+</span></span><span style="display:flex;"><span>    a <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    phi <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>normal(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0.1</span>, size<span style="color:#f92672">=</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>subplot(a)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">phi$ = </span><span style="color:#e6db74">{</span>phi<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>plot(ar_process(eps, phi))
+</span></span></code></pre></div><figure><img src="../../../../../img/post-18-arima/ra-signal.png"/><figcaption>
+            <h4>AR processes from different orders.</h4>
+        </figcaption>
+</figure>
+
+<p>Below we create three new <strong>(AR(p)</strong> processes and plot the ACF of these series.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plot_acf(ar_process(eps, [<span style="color:#ae81ff">0.3</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">0.3</span>, <span style="color:#ae81ff">0.5</span>]))
+</span></span><span style="display:flex;"><span>plot_acf(ar_process(eps, [<span style="color:#ae81ff">0.5</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">0.1</span>, <span style="color:#ae81ff">0.1</span>]))
+</span></span><span style="display:flex;"><span>plot_acf(ar_process(eps, [<span style="color:#ae81ff">0.2</span>, <span style="color:#ae81ff">0.5</span>, <span style="color:#ae81ff">0.1</span>]))
+</span></span></code></pre></div><figure><img src="../../../../../img/post-18-arima/acf-ar.png"/><figcaption>
+            <h4>The ACF computed from 3 different AR series.</h4>
+        </figcaption>
+</figure>
+
+<p>By analyzing these plots we can tell that the ACF plot of these <strong>AR</strong> processes don&rsquo;t necessarily cut off after lag $p$. In the first plot, we see that the ACF values tail off to zero, the second plot does have significant cut off at lag $p$ and the third plot has a linearly decreasing autocorrelation until lag 14. For the <strong>AR(p)</strong> process, the ACF clearly isn&rsquo;t decisive for determining the order of the process. Actually, for <strong>AR</strong> processes we can use
+another function for inferring the order of the process.</p>
+<h2 id="partial-autocorrelation">Partial autocorrelation</h2>
+<p>The partial autocorrelation function shows the autocorrelation of value $X_t$ and $X_{t-k}$ after the correlation between $X_t$ with the intermediate values $X_{t-1} &hellip; X_{t-k+1}$ explained. Below we&rsquo;ll go through the steps required to determine partial autocorrelation.</p>
+<p>The partial correlation between $X_t$ and $X_{t-k}$ can be determined by training two linear models.</p>
+<p>Let $\hat{X_t}$ and $\hat{X_{t-k}}$ be determined by a Linear Model optimized on $X_{t-1} &hellip; X_{t-(k-1)} $ and parameterized by $\alpha$ and $\beta$.</p>
+<p>$$\hat{X_t} = \alpha_1 X_{t-1} + \alpha_2 X_{t-2} &hellip; \alpha_{k-1} X_{t-(k-1)}$$</p>
+<p>$$\hat{X_{t-k}} = \beta_1 X_{t-1} + \beta_2 X_{t-2} &hellip; \beta_{k-1} X_{t-(k-1)} $$</p>
+<p>The partial correlation is then defined by the Pearson&rsquo;s coefficient of the residuals of both predicted values $\hat{X_t}$ and $\hat{X_{t-k}}$.</p>
+<p>$$ PCAF(X_t, X_{t-k}) = corr((X_t - \hat{X_t}), (X_{t-k} - \hat{X_{t-k}})) $$</p>
+<h3 id="intermezzo-linear-model">Intermezzo: Linear model</h3>
+<p>Above we use a linear model to define the PACF. Later in this post, we are also going to train an ARIMA model, which is linear. So let&rsquo;s quickly define a linear regression model.</p>
+<p>Linear regression is defined by:</p>
+<p>$$ y = \beta X + \epsilon $$</p>
+<p>Where the parameters can be found by ordinary least squares:</p>
+<p>$$ \beta = (X^TX)^{-1}X^Ty $$</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">least_squares</span>(x, y):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>linalg<span style="color:#f92672">.</span>inv((x<span style="color:#f92672">.</span>T <span style="color:#f92672">@</span> x)) <span style="color:#f92672">@</span> (x<span style="color:#f92672">.</span>T <span style="color:#f92672">@</span> y)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">LinearModel</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, fit_intercept<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>fit_intercept <span style="color:#f92672">=</span> fit_intercept
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>beta <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>intercept_ <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>coef_ <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">_prepare_features</span>(self, x):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>fit_intercept:
+</span></span><span style="display:flex;"><span>            x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>hstack((np<span style="color:#f92672">.</span>ones((x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>], <span style="color:#ae81ff">1</span>)), x))
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> x
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fit</span>(self, x, y):
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_prepare_features(x)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>beta <span style="color:#f92672">=</span> least_squares(x, y)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>fit_intercept:
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>intercept_ <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>beta[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>coef_ <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>beta[<span style="color:#ae81ff">1</span>:]
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>coef_ <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>beta
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">predict</span>(self, x):
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>_prepare_features(x)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> x <span style="color:#f92672">@</span> self<span style="color:#f92672">.</span>beta
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fit_predict</span>(self, x, y):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>fit(x, y)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>predict(x)
+</span></span></code></pre></div><p>Above we have defined a scikit-learn stylish class that can perform linear regression. We train by applying the <code>fit</code> method. If we also want to train the model with an intercept, we add ones to the feature matrix. This will result in a constant shift when applying $\beta X$.</p>
+<p>With the short intermezzo in place, we can finally define the partial autocorrelation function and plot the results.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">pacf</span>(x, lag<span style="color:#f92672">=</span><span style="color:#ae81ff">40</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Partial autocorrelation function.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    pacf results in:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        [1, acf_lag_1, pacf_lag_2, pacf_lag_3]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param x: (array)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param lag: (int)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    y <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Partial auto correlation needs intermediate terms.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Therefore we start at index 3</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">3</span>, lag <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span>):
+</span></span><span style="display:flex;"><span>        backshifted <span style="color:#f92672">=</span> lag_view(x, i)[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        xt <span style="color:#f92672">=</span> backshifted[:, <span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>        feat <span style="color:#f92672">=</span> backshifted[:, <span style="color:#ae81ff">1</span>:<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>        xt_hat <span style="color:#f92672">=</span> LinearModel(fit_intercept<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)<span style="color:#f92672">.</span>fit_predict(feat, xt)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        xt_k <span style="color:#f92672">=</span> backshifted[:, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>        xt_k_hat <span style="color:#f92672">=</span> LinearModel(fit_intercept<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)<span style="color:#f92672">.</span>fit_predict(feat, xt_k)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        y<span style="color:#f92672">.</span>append(pearson_correlation(xt <span style="color:#f92672">-</span> xt_hat, xt_k <span style="color:#f92672">-</span> xt_k_hat))
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>array([<span style="color:#ae81ff">1</span>, acf(x, <span style="color:#ae81ff">2</span>)[<span style="color:#ae81ff">1</span>]] <span style="color:#f92672">+</span>  y)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">plot_pacf</span>(x, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.05</span>, lag<span style="color:#f92672">=</span><span style="color:#ae81ff">40</span>, title<span style="color:#f92672">=</span><span style="color:#66d9ef">None</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param x: (array)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :param alpha: (flt) Statistical significance for confidence interval.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    :parm lag: (int)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    pacf_val <span style="color:#f92672">=</span> pacf(x, lag)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">4</span>))
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>vlines(np<span style="color:#f92672">.</span>arange(lag <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>), <span style="color:#ae81ff">0</span>, pacf_val)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>scatter(np<span style="color:#f92672">.</span>arange(lag <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>), pacf_val, marker<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;o&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;lag&#39;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;autocorrelation&#39;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Determine confidence interval</span>
+</span></span><span style="display:flex;"><span>    ci <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>ppf(<span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> alpha <span style="color:#f92672">/</span> <span style="color:#ae81ff">2.</span>) <span style="color:#f92672">*</span> bartletts_formula(pacf_val, len(x))
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>fill_between(np<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">1</span>, ci<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>), <span style="color:#f92672">-</span>ci, ci, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.25</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plot_pacf(ar_process(eps, [<span style="color:#ae81ff">0.3</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">0.3</span>, <span style="color:#ae81ff">0.5</span>]))
+</span></span><span style="display:flex;"><span>plot_pacf(ar_process(eps, [<span style="color:#ae81ff">0.5</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">0.1</span>, <span style="color:#ae81ff">0.1</span>]))
+</span></span><span style="display:flex;"><span>plot_pacf(ar_process(eps, [<span style="color:#ae81ff">0.2</span>, <span style="color:#ae81ff">0.5</span>, <span style="color:#ae81ff">0.1</span>]))
+</span></span></code></pre></div><figure><img src="../../../../../img/post-18-arima/pacf-ar.png"/><figcaption>
+            <h4>The PACF for 3 AR processes.</h4>
+        </figcaption>
+</figure>
+
+<p>Now we see a significant cut off at lag 3 for all 3 processes! We thus are able to infer the order of the processes. The relationship between AR and MA processes and the ACF and PACF plots are one to keep in mind, as they help with inferring the order of a certain series.</p>
+<table>
+<thead>
+<tr>
+<th>:)</th>
+<th>AR(p)</th>
+<th>MA(q)</th>
+<th>ARMA(p, q)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACF</td>
+<td>Tails off</td>
+<td>Cuts off after lag $q$</td>
+<td>Tails off</td>
+</tr>
+<tr>
+<td>PACF</td>
+<td>Cuts off after lag $p$</td>
+<td>Tails off</td>
+<td>Tails off</td>
+</tr>
+</tbody>
+</table>
+<p>In the table above we show this relationship. The <strong>ARMA(p,q)</strong> process is also included in this table. We haven&rsquo;t mentioned this process yet, but this is actutally just a combination of an <strong>AR(p)</strong> and an <strong>MA(q)</strong> series.</p>
+<p>Before we go into this combination of AR and MA processes. We&rsquo;ll go through one last definition, which is Integrated (the I in ARIMA). With that, we&rsquo;ve touched all the parts of an ARIMA model.</p>
+<h2 id="stationary">Stationary</h2>
+<p>An ARMA model requires the data to be stationary, which an ARIMA model does not. A stationary series has a constant mean and a constant variance over time. For the white noise, AR and MA processes we&rsquo;ve defined above, this requirement holds, but for a lot of real-world data this does not. ARIMA models can work with data that isn&rsquo;t stationary, but instead has got a trend. For time series that also have recurring patterns (seasonality), ARIMA models don&rsquo;t work.</p>
+<p>When the data shows a trend, we can remove the trend by differencing time step $X_t$ with $X_{t-1}$. We can difference <strong>n</strong> times until the data is stationary. We can test stationarity with a Dicker Fuller test. How that is done is beyond the scope of this post.</p>
+<p>We can difference a time series by</p>
+<p>$$ \nabla X_t = X_t - X_{t-1} $$</p>
+<p>and simply undo this by taking the sum</p>
+<p>$$ X_t = \nabla X_t + \nabla X_{t-1} $$</p>
+<p>We can easily implement this with two recurring functions.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">difference</span>(x, d<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> d <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> x
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>r_[x[<span style="color:#ae81ff">0</span>], np<span style="color:#f92672">.</span>diff(x)]
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> difference(x, d <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">undo_difference</span>(x, d<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> d <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>cumsum(x)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>cumsum(x)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> undo_difference(x, d <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><h2 id="arima">ARIMA</h2>
+<p>Ok, finally we have discussed (and implemented) all topics we need for defining an ARIMA model. Such a model has hyperparameters p, q and, d.</p>
+<ul>
+<li>p is the order of the AR model</li>
+<li>q is the order of the MA model</li>
+<li>d is the differencing order (how often we difference the data)</li>
+</ul>
+<p>The ARMA and ARIMA combination is defined as</p>
+<p>$$ X_t = c + \epsilon_t + \sum_{i=1}^{p}{\phi_i X_{t - i}} + \sum_{i = 1}^q{\theta_i \epsilon_{t-i}} $$</p>
+<p>We see that the model is based on white noise terms, which we don&rsquo;t know as they come from a completely random process. Therefore we will use a trick for retrieving quasi-white noise terms. First, we will train the <strong>AR(p)</strong> model and then we will take the residuals as $\epsilon_t$ terms. Note that this will lead to an estimation of an <strong>ARIMA</strong> model. We could estimate the error terms $\epsilon$ more accurate by iteratively training the <strong>ARIMA</strong> model whilst updating the residuals every iteration. For
+now, we&rsquo;ll accept the quasi-white noise method. With these white noise terms, we can start modelling the full <strong>ARIMA(q, d, p)</strong> model.</p>
+<p>Below we&rsquo;ve defined the <code>ARIMA</code> class which inherits from <code>LinearModel</code>. Because of this inheritage, we can call the <code>fit</code> and <code>predict</code> methods from the parent with the <code>super</code> function.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ARIMA</span>(LinearModel):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, q, d, p):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        An ARIMA model.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param q: (int) Order of the MA model.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param p: (int) Order of the AR model.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param d: (int) Number of times the data needs to be differenced.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        super()<span style="color:#f92672">.</span>__init__(<span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>p <span style="color:#f92672">=</span> p
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>d <span style="color:#f92672">=</span> d
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>q <span style="color:#f92672">=</span> q
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>ar <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>resid <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">prepare_features</span>(self, x):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>d <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>            x <span style="color:#f92672">=</span> difference(x, self<span style="color:#f92672">.</span>d)
+</span></span><span style="display:flex;"><span>                    
+</span></span><span style="display:flex;"><span>        ar_features <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>        ma_features <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Determine the features and the epsilon terms for the MA process</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>q <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>ar <span style="color:#f92672">is</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>                self<span style="color:#f92672">.</span>ar <span style="color:#f92672">=</span> ARIMA(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, self<span style="color:#f92672">.</span>p)
+</span></span><span style="display:flex;"><span>                self<span style="color:#f92672">.</span>ar<span style="color:#f92672">.</span>fit_predict(x)
+</span></span><span style="display:flex;"><span>            eps <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>ar<span style="color:#f92672">.</span>resid
+</span></span><span style="display:flex;"><span>            eps[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># prepend with zeros as there are no residuals_t-k in the first X_t</span>
+</span></span><span style="display:flex;"><span>            ma_features, _ <span style="color:#f92672">=</span> lag_view(np<span style="color:#f92672">.</span>r_[np<span style="color:#f92672">.</span>zeros(self<span style="color:#f92672">.</span>q), eps], self<span style="color:#f92672">.</span>q)
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Determine the features for the AR process</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>p <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># prepend with zeros as there are no X_t-k in the first X_t</span>
+</span></span><span style="display:flex;"><span>            ar_features <span style="color:#f92672">=</span> lag_view(np<span style="color:#f92672">.</span>r_[np<span style="color:#f92672">.</span>zeros(self<span style="color:#f92672">.</span>p), x], self<span style="color:#f92672">.</span>p)[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>                                
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> ar_features <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#66d9ef">None</span> <span style="color:#f92672">and</span> ma_features <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>            n <span style="color:#f92672">=</span> min(len(ar_features), len(ma_features)) 
+</span></span><span style="display:flex;"><span>            ar_features <span style="color:#f92672">=</span> ar_features[:n]
+</span></span><span style="display:flex;"><span>            ma_features <span style="color:#f92672">=</span> ma_features[:n]
+</span></span><span style="display:flex;"><span>            features <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>hstack((ar_features, ma_features))
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">elif</span> ma_features <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#66d9ef">None</span>: 
+</span></span><span style="display:flex;"><span>            n <span style="color:#f92672">=</span> len(ma_features)
+</span></span><span style="display:flex;"><span>            features <span style="color:#f92672">=</span> ma_features[:n]
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>            n <span style="color:#f92672">=</span> len(ar_features)
+</span></span><span style="display:flex;"><span>            features <span style="color:#f92672">=</span> ar_features[:n]
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> features, x[:n]
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fit</span>(self, x):
+</span></span><span style="display:flex;"><span>        features, x <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>prepare_features(x)
+</span></span><span style="display:flex;"><span>        super()<span style="color:#f92672">.</span>fit(features, x)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> features
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fit_predict</span>(self, x): 
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Fit and transform input
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param x: (array) with time series.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        features <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>fit(x)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>predict(x, prepared<span style="color:#f92672">=</span>(features))
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">predict</span>(self, x, <span style="color:#f92672">**</span>kwargs):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param x: (array)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :kwargs:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            prepared: (tpl) containing the features, eps and x
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        features <span style="color:#f92672">=</span> kwargs<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;prepared&#39;</span>, <span style="color:#66d9ef">None</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> features <span style="color:#f92672">is</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>            features, x <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>prepare_features(x)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        y <span style="color:#f92672">=</span> super()<span style="color:#f92672">.</span>predict(features)
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>resid <span style="color:#f92672">=</span> x <span style="color:#f92672">-</span> y
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>return_output(y)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">return_output</span>(self, x):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>d <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>            x <span style="color:#f92672">=</span> undo_difference(x, self<span style="color:#f92672">.</span>d) 
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> x
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">forecast</span>(self, x, n):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Forecast the time series.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param x: (array) Current time steps.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        :param n: (int) Number of time steps in the future.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        features, x <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>prepare_features(x)
+</span></span><span style="display:flex;"><span>        y <span style="color:#f92672">=</span> super()<span style="color:#f92672">.</span>predict(features)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Append n time steps as zeros. Because the epsilon terms are unknown</span>
+</span></span><span style="display:flex;"><span>        y <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>r_[y, np<span style="color:#f92672">.</span>zeros(n)]
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(n):
+</span></span><span style="display:flex;"><span>            feat <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>r_[y[<span style="color:#f92672">-</span>(self<span style="color:#f92672">.</span>p <span style="color:#f92672">+</span> n) <span style="color:#f92672">+</span> i: <span style="color:#f92672">-</span>n <span style="color:#f92672">+</span> i], np<span style="color:#f92672">.</span>zeros(self<span style="color:#f92672">.</span>q)]
+</span></span><span style="display:flex;"><span>            y[x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> i] <span style="color:#f92672">=</span> super()<span style="color:#f92672">.</span>predict(feat[<span style="color:#66d9ef">None</span>, :])
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>return_output(y)
+</span></span></code></pre></div><p>Ok, let&rsquo;s go through this one! As I&rsquo;ve just mentioned, the <code>ARIMA</code> class inherits from <code>LinearModel</code> so first we initiate the parent and we pass the boolean <code>True</code> so that we also fit an intercept for the model. In the <code>prepare_features</code> method, (note that this one has no _ prefix and thus differs from the parent method) we create the features for the linear regression model. The features comprise of the lagging time steps $X_{t-k}$ with order <strong>q</strong>, which is
+the <strong>AR</strong> part of the model, and of the lagging error terms $\epsilon_{t-k}$, which is the <strong>MA</strong> part of the model. In this method we also train an <strong>AR</strong> model first, so that we can use the residuals of that model as error terms.
+Note that we prepend the $\epsilon$ and the $X$ with $n$ zeros, where $n$ is equal to order <strong>q</strong> and <strong>p</strong> respectively. This is done because there are no values $\epsilon_{t-q}$ and $X_{t-p}$ at time $X_0$. Furthermore, we just implement some methods inspired by scikit-learn naming conventions, e.g. the <code>fit_predict</code>, <code>fit</code> and <code>predict</code> methods.</p>
+<p>We&rsquo;ll discuss the <code>forecast</code> method later. Let&rsquo;s first check how an object of the class is doing by comparing it with <a href="https://www.statsmodels.org/dev/index.html">statsmodels</a> implementation. We will also use test data coming from this library.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>data <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>datasets<span style="color:#f92672">.</span>sunspots<span style="color:#f92672">.</span>load_pandas()<span style="color:#f92672">.</span>data
+</span></span><span style="display:flex;"><span>x <span style="color:#f92672">=</span> data[<span style="color:#e6db74">&#39;SUNACTIVITY&#39;</span>]<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>squeeze()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">16</span>,<span style="color:#ae81ff">4</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;Sunspots&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(x)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-18-arima/sunspots.png"/>
+</figure>
+
+<p>By the look of this data, it seems stationary. The mean and the variance don&rsquo;t seem to be changing over time, so we can infer the first hyperparameter for this model. We don&rsquo;t need to difference so <strong>d</strong> is set to 0.
+Let&rsquo;s make an ACF and a PACF plot.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plot_acf(x)
+</span></span><span style="display:flex;"><span>plot_pacf(x)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-18-arima/acf-sunspots.png"/>
+</figure>
+
+<p>We see that the ACF clearly tails off and that the PACF tails a little bit, but seems to have a sort of cut off at lag 3. Based on this, let&rsquo;s go for an ARIMA model with q=1, d=0, and p=3 and compare the model with the ARIMA implementation of statsmodels.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>q <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>d <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>p <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>m <span style="color:#f92672">=</span> ARIMA(q, d, p)
+</span></span><span style="display:flex;"><span>pred <span style="color:#f92672">=</span> m<span style="color:#f92672">.</span>fit_predict(x)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplot(<span style="color:#ae81ff">111</span>)
+</span></span><span style="display:flex;"><span>ax<span style="color:#f92672">.</span>plot(pred, label<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;forecast&#39;</span>)
+</span></span><span style="display:flex;"><span>ax<span style="color:#f92672">.</span>plot(x, label<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;y&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>legend()
+</span></span></code></pre></div><figure><img src="../../../../../img/post-18-arima/output-arima.png"/>
+</figure>
+
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>results <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>tsa<span style="color:#f92672">.</span>ARIMA(x, (p, d, q))<span style="color:#f92672">.</span>fit()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">6</span>))
+</span></span><span style="display:flex;"><span>ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplot(<span style="color:#ae81ff">111</span>)
+</span></span><span style="display:flex;"><span>pred_sm <span style="color:#f92672">=</span> results<span style="color:#f92672">.</span>plot_predict(ax<span style="color:#f92672">=</span>ax)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-18-arima/output-arima-sm.png"/>
+</figure>
+
+<p>As we can see in the plots above, our ARIMA model has almost the same output as the implementation of statsmodels. There are some differences though. I assume these differences are present due to the fact that statsmodels keeps updating the residuals where we accepted the first residuals based on only the <strong>AR</strong> model.</p>
+<h2 id="forecasting">Forecasting</h2>
+<p>There is one method we haven&rsquo;t discussed, which is the <code>forecast</code> method. In this method we are trying to predict future values. By thinking about how we predict future values, we also see the weaknesses of this model. Because, as long as we have got labeled data points we can compute an error term $\epsilon_t$. However when we are making predictions, we don&rsquo;t know the real data point $X_{t+k}$ and therefore we cannot compute the residuals. This means that after making
+<strong>q</strong> (q being the order of the <strong>MA</strong> model) predictions, the <strong>ARMA</strong> model is only an <strong>AR</strong> model, as $E[\epsilon_{t+k}] = 0$ canceling out the weights of the <strong>MA</strong> model. The remaining <strong>AR</strong> model describes how the time series responds to a shock pushing $X_t$ from the mean value of the series.</p>
+<p>Below we make a forecast of 40 time steps and we can clearly see the models response to the latest shock by tailing of to the mean of the series. This also shows the use case of this kind of model. It should be used for short term predictions. For long term predictions its output is just equal to the mean of the series.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>pred <span style="color:#f92672">=</span> m<span style="color:#f92672">.</span>forecast(x, <span style="color:#ae81ff">40</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>figure(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">12</span>,<span style="color:#ae81ff">4</span>))
+</span></span><span style="display:flex;"><span>ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplot(<span style="color:#ae81ff">111</span>)
+</span></span><span style="display:flex;"><span>ax<span style="color:#f92672">.</span>plot(x)
+</span></span><span style="display:flex;"><span>ax<span style="color:#f92672">.</span>plot(pred)
+</span></span></code></pre></div><figure><img src="../../../../../img/post-18-arima/forecast.png"/><figcaption>
+            <h4>Forecasting with an ARMA model</h4>
+        </figcaption>
+</figure>
+
+<h2 id="last-words">Last words</h2>
+<p>We&rsquo;ve discussed the definition of <strong>AR</strong>, <strong>MA</strong>, and <strong>ARIMA</strong> models in this post as well as the ACF and PACF. We&rsquo;ve also come to the conclusion that these kind of models can only work with stationary data or data with a trend and that they are not suitable for long term forecasting. There is luckely an upgrade of the <strong>ARIMA</strong> model, called <strong>SARIMA</strong>. These models implement an <strong>ARIMA</strong> on p, d, and q and an addtional <strong>ARIMA</strong> on P, D, Q. The additional model works on the same
+time series, but then with a seasonal lag. For instance a seasonal lag of 4 would look like this</p>
+<p>$$ X_{t}, X_{t-4}, X_{t-8} &hellip; X_{t-4k}$$</p>
+<p>With this extension, the model is also more suitable for longer term predictions.</p>
+<p>Do you wan&rsquo;t to read more algorithm breakdowns? Take a look at:</p>
+<ul>
+<li><a href="https://www.ritchievink.com/blog/2017/11/27/implementing-a-support-vector-machine-in-scala/">Support Vector Machines</a></li>
+<li><a href="https://www.ritchievink.com/blog/2018/05/18/algorithm-breakdown-affinity-propagation/">Affinity propagation</a></li>
+<li><a href="https://www.ritchievink.com/blog/2017/07/10/programming-a-neural-network-from-scratch/">Multilayer perceptrons</a></li>
+</ul>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+  });
+  </script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>gaussian processes on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/gaussian-processes/</link>
+    <description>Recent content in gaussian processes on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Sun, 25 Aug 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/gaussian-processes/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Algorithm Breakdown: Bayesian Optimization</title>
+      <link>https://www.ritchievink.com/blog/2019/08/25/algorithm-breakdown-bayesian-optimization/</link>
+      <pubDate>Sun, 25 Aug 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/08/25/algorithm-breakdown-bayesian-optimization/</guid>
+      <description>Not that long ago I wrote an introduction post on Gaussian Processes (GP&amp;rsquo;s), a regression technique where we condition a Gaussian prior distribution over functions on observed data. GP&amp;rsquo;s can model any function that is possible within a given prior distribution. And we don&amp;rsquo;t get a function $f$, we get a whole posterior distribution of functions $P(f|X)$.
+This of course, sounds very cool and all, but there is no free lunch.</description>
+    </item>
+    
+    <item>
+      <title>An intuitive introduction to Gaussian processes</title>
+      <link>https://www.ritchievink.com/blog/2019/02/01/an-intuitive-introduction-to-gaussian-processes/</link>
+      <pubDate>Fri, 01 Feb 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/02/01/an-intuitive-introduction-to-gaussian-processes/</guid>
+      <description>Christopher Fonnesbeck did a talk about Bayesian Non-parametric Models for Data Science using PyMC3 on PyCon 2018. In this talk, he glanced over Bayes&amp;rsquo; modeling, the neat properties of Gaussian distributions and then quickly turned to the application of Gaussian Processes, a distribution over infinite functions. Wait, but what?! How does a Gaussian represent a function? I did not understand how, but the promise of what these Gaussian Processes representing a distribution over nonlinear and nonparametric functions really intrigued me and therefore turned into a new subject for a post.</description>
+    </item>
+    
+  </channel>
+</rss>

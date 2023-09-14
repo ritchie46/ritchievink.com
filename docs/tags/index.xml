@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/</link>
+    <description>Recent content in Tags on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Sun, 28 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>computer science</title>
+      <link>https://www.ritchievink.com/tags/computer-science/</link>
+      <pubDate>Sun, 28 Feb 2021 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/computer-science/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>python</title>
+      <link>https://www.ritchievink.com/tags/python/</link>
+      <pubDate>Sun, 28 Feb 2021 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/python/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>rust</title>
+      <link>https://www.ritchievink.com/tags/rust/</link>
+      <pubDate>Sun, 28 Feb 2021 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/rust/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>machine learning</title>
+      <link>https://www.ritchievink.com/tags/machine-learning/</link>
+      <pubDate>Tue, 07 Apr 2020 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/machine-learning/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>optimization</title>
+      <link>https://www.ritchievink.com/tags/optimization/</link>
+      <pubDate>Tue, 07 Apr 2020 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/optimization/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>bayesian</title>
+      <link>https://www.ritchievink.com/tags/bayesian/</link>
+      <pubDate>Tue, 12 Nov 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/bayesian/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>deep learning</title>
+      <link>https://www.ritchievink.com/tags/deep-learning/</link>
+      <pubDate>Tue, 12 Nov 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/deep-learning/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>pytorch</title>
+      <link>https://www.ritchievink.com/tags/pytorch/</link>
+      <pubDate>Tue, 12 Nov 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/pytorch/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>algorithm breakdown</title>
+      <link>https://www.ritchievink.com/tags/algorithm-breakdown/</link>
+      <pubDate>Mon, 16 Sep 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/algorithm-breakdown/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>gaussian processes</title>
+      <link>https://www.ritchievink.com/tags/gaussian-processes/</link>
+      <pubDate>Sun, 25 Aug 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/gaussian-processes/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>pymc3</title>
+      <link>https://www.ritchievink.com/tags/pymc3/</link>
+      <pubDate>Mon, 10 Jun 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/pymc3/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>pyro</title>
+      <link>https://www.ritchievink.com/tags/pyro/</link>
+      <pubDate>Mon, 10 Jun 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/pyro/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>clustering</title>
+      <link>https://www.ritchievink.com/tags/clustering/</link>
+      <pubDate>Fri, 24 May 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/clustering/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>engineering</title>
+      <link>https://www.ritchievink.com/tags/engineering/</link>
+      <pubDate>Tue, 02 Apr 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/engineering/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>save-some-time</title>
+      <link>https://www.ritchievink.com/tags/save-some-time/</link>
+      <pubDate>Sun, 17 Mar 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/save-some-time/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>web</title>
+      <link>https://www.ritchievink.com/tags/web/</link>
+      <pubDate>Sun, 17 Mar 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/web/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>gradient boosting</title>
+      <link>https://www.ritchievink.com/tags/gradient-boosting/</link>
+      <pubDate>Mon, 19 Nov 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/gradient-boosting/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>time series</title>
+      <link>https://www.ritchievink.com/tags/time-series/</link>
+      <pubDate>Tue, 09 Oct 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/time-series/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>cloud</title>
+      <link>https://www.ritchievink.com/tags/cloud/</link>
+      <pubDate>Sun, 16 Sep 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/cloud/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>edward</title>
+      <link>https://www.ritchievink.com/tags/edward/</link>
+      <pubDate>Tue, 05 Jun 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/edward/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>computer vision</title>
+      <link>https://www.ritchievink.com/tags/computer-vision/</link>
+      <pubDate>Thu, 12 Apr 2018 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/computer-vision/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>scala</title>
+      <link>https://www.ritchievink.com/tags/scala/</link>
+      <pubDate>Mon, 27 Nov 2017 16:14:21 +0100</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/scala/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>fem</title>
+      <link>https://www.ritchievink.com/tags/fem/</link>
+      <pubDate>Wed, 23 Aug 2017 13:07:00 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/fem/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>music</title>
+      <link>https://www.ritchievink.com/tags/music/</link>
+      <pubDate>Sun, 04 Jun 2017 14:08:34 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/music/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>vibrations</title>
+      <link>https://www.ritchievink.com/tags/vibrations/</link>
+      <pubDate>Sun, 07 May 2017 20:27:28 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/tags/vibrations/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

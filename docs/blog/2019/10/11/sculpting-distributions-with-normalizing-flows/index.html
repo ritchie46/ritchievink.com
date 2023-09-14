@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Sculpting distributions with Normalizing Flows - Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/blog/2019/10/11/sculpting-distributions-with-normalizing-flows/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+<meta property="og:image" content="https://www.ritchievink.com/img/post-28-norm-flows/og_image.jpg" />
+
+
+<title>Sculpting distributions with Normalizing Flows | Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../../../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../../../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h1 class="title">Sculpting distributions with Normalizing Flows</h1>
+    <h2 class="subtitle is-5">October 11, 2019 by Ritchie Vink</h2>
+    
+      <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/machine-learning">machine learning</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/bayesian">bayesian</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/optimization">optimization</a>
+    
+</div>
+
+    
+    <div class="content">
+      <p><figure><img src="../../../../../img/post-28-norm-flows/og_image.jpg"/>
+</figure>
+
+<br></p>
+<p>Last posts we&rsquo;ve investigated <strong>Bayesian</strong> inference through <strong>variational inference</strong> (<a href="https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/">post 1</a>/<a href="https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/">post 2</a>). In Bayesian inference, we often define models with some unknown model parameters $Z$, or latent stochastic variables $Z$. Given this model and some observed data points <span>$D = \{ D_1, D_2, \dots, D_n \} $</span>, we are interested in the true posterior distribution $P(Z|D)$.
+This posterior is often intractable and the general idea was to forgo the quest of obtaining the true posterior, but to accept that we are bounded to some <em>easily</em> parameterizable approximate posteriors $^*Q(z)$, which we called <strong>variational distributions</strong>.</p>
+<p>Variational inference has got some very cool advantages compared to <a href="https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/">MCMC</a>, such as scalability and modulare usage in combination with deep learning, but it has also got some disadvantages. As we don&rsquo;t know the optimal ELBO (the loss we optimize in VI), we don&rsquo;t know if we are &lsquo;close&rsquo; to the true posterior, and this constraint of &rsquo;easy&rsquo; parameterizable distributions used as family for $Q(z)$ often leads us to use distributions that aren&rsquo;t expressive enough for the true non-gaussian real world.</p>
+<p>This post we&rsquo;ll explore a technique called <strong>normalizing flows</strong>. With NF are able to transform an &rsquo;easy&rsquo; paramaterizable base distribution in a more complex approximation for the posterior distribution. This is done by passing the base distribution through a series of transformations (the flow part). One of the definitions of a probability distribution is that the integral sums to one $\int_{-\infty}^{\infty} P(x) dx = 1$. A transformation can break this requirement, therefore we need to <strong>normalize</strong> $P(x)$ after the transformation.</p>
+<h2 id="1-change-of-variables">1. Change of variables</h2>
+<p>First we are going to look at some basics. We are going to start of with basis distribution $\mathcal{N}(\mu=1, \sigma=0.1)$. In the code snippet below (<a href="https://github.com/ritchie46/vanilla-machine-learning/tree/master/bayesian/normalizing_flows">the whole jupyter notebook is on github</a>) we define this distribution in python and we apply a nummerical integral with <code>np.trapz</code> to validate the integral summing to 1.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0.01</span>, <span style="color:#ae81ff">2</span>, num<span style="color:#f92672">=</span><span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>base <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0.1</span>)
+</span></span><span style="display:flex;"><span>print(np<span style="color:#f92672">.</span>trapz(base<span style="color:#f92672">.</span>pdf(x), x))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>&gt;&gt;&gt; 1.
+</span></span></code></pre></div><figure><img src="../../../../../img/post-28-norm-flows/base_gaussian.png"/><figcaption>
+            <h4>Basis Gaussian.</h4>
+        </figcaption>
+</figure>
+
+<h3 id="11-transformation">1.1 Transformation</h3>
+<p>Now we are going to apply a transformation $f(x) = x^2$.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">f</span>(x):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> x<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>y <span style="color:#f92672">=</span> f(x)
+</span></span><span style="display:flex;"><span>transformed <span style="color:#f92672">=</span> f(base<span style="color:#f92672">.</span>pdf(x))
+</span></span><span style="display:flex;"><span>print(np<span style="color:#f92672">.</span>trapz(transformed, y))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>&gt;&gt;&gt; 5.641895835477563
+</span></span></code></pre></div><figure><img src="../../../../../img/post-28-norm-flows/transform1.png"/><figcaption>
+            <h4>Transformed base wo/ normalization.</h4>
+        </figcaption>
+</figure>
+
+<p>By applying this transformation we&rsquo;ve blown up the probability space $\int_{-\infty}^{\infty}  P(y) dy \gg 1$. We need a to modify this tranformation such that the integral over the entire domain evaluates to 1. Let&rsquo;s define this a little bit more formally. We want to transform $P(x)$ to another distribution $P(y)$ with $f: \mathbb{R}^n \mapsto \mathbb{R}^n $. Because naively applying any possible $f$, would expand or shrink the probability mass of the distributions we need to constraint $f$ such that:</p>
+<div>
+\begin{eqnarray}
+\int_{-\infty}^{\infty}  P(x)dx &=&\int_{-\infty}^{\infty}  P(y)dy = 1 \\
+P(x)dx &=&P(y)dy \\
+P(y) &=&P(x)\frac{dx}{dy} \label{normtransf}
+\end{eqnarray} 
+</div>
+<p>To hold this constraint we need to multiply $P(x)$ with the derivative of $x$ w.r.t. $y$, $\frac{dx}{dy}$. Therefore we need to express $x$ in $y$, which can only be done <strong>if the transformation $f$ is invertible</strong>.</p>
+<div>
+$$\begin{eqnarray}
+f(x) &=& y \\
+f^{-1}(y) &=& x \label{invert}
+\end{eqnarray} $$
+</div>
+<p>Now we can rewrite eq. $ \eqref{normtransf}$ in terms of eq. $\eqref{invert}$:</p>
+<div>
+\begin{eqnarray}
+ P(y) &=& P(f^{-1}(y))\frac{\text{d}f^{-1}(y)}{\text{d}y} \\
+ &=& P(f^{-1}(y))f'^{-1}(y) \label{Py}
+\end{eqnarray} 
+</div>
+<h4 id="111-1d-verification">1.1.1 1D verification</h4>
+<p>Let&rsquo;s verify this in Python.
+Besides $f(x) = x^2$, we need $f^{-1}(y) = \sqrt(y)$ and $f&rsquo;^{-1}(y) = \frac{1}{2 \sqrt(y)}$.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">f_i</span>(y):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> y<span style="color:#f92672">**</span><span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">f_i_prime</span>(y):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0.5</span><span style="color:#f92672">*</span>y<span style="color:#f92672">**-</span><span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">assert</span> np<span style="color:#f92672">.</span>allclose(f_i(f(x)),  x)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>y <span style="color:#f92672">=</span> f(x)
+</span></span><span style="display:flex;"><span>px <span style="color:#f92672">=</span> base<span style="color:#f92672">.</span>pdf(x)
+</span></span><span style="display:flex;"><span>transformed <span style="color:#f92672">=</span> px <span style="color:#f92672">*</span> f_i_prime(f_i(y))
+</span></span><span style="display:flex;"><span>print(np<span style="color:#f92672">.</span>trapz(transformed, y))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>&gt;&gt;&gt; 0.9987379589284238
+</span></span></code></pre></div><figure><img src="../../../../../img/post-28-norm-flows/transform2.png"/><figcaption>
+            <h4>Transformed base w/ normalization.</h4>
+        </figcaption>
+</figure>
+
+<p>Save some small deviation due to nummerical discretization, the transformation sums to 1! We can also observe this in the plot we&rsquo;ve made. Because of the transformation, the resulting probability distribution has become wider, wich (in case of a Gaussian distribution) must result in a less high probability peak, if the total probability mass is preserved.</p>
+<h3 id="12-conditions">1.2 Conditions</h3>
+<p>The function $f(x) = x^2$ we&rsquo;ve used in the example above was <strong>strictly increasing</strong> (over the domain $\mathbb{R}_{&gt;0}$). This leads to a derivative $\frac{df}{dx}$ that is always positive. If we would have chosen a strictly decreasing function $g$, $\frac{dg}{dx}$ would always be negative. In that case eq. $\eqref{normtransf}$ would be defined as $P(y) = - P(x) \frac{dy}{dx}$. We could however, by taking the absolute value of the derivative, easily come up with an equation that holds true for both cases:</p>
+<div>
+\begin{eqnarray}
+P(y)&=&P(x) \cdot \left| \frac{dx}{dy} \right| \\
+ &=& P(f^{-1}(y)) \cdot \left| f'^{-1}(y)\right|
+\end{eqnarray}
+</div>
+<p>The intuition of taking the modulus can be seen as ensuring yourself that if the local rate of change for $x$ and $y$ are equal and increasing, the total amount of probability is preserved.</p>
+<p>$$\begin{equation}
+x + dx = y + dy &gt; 0
+\end{equation}$$</p>
+<figure><img src="../../../../../img/post-28-norm-flows/absolute_diff.svg"/><figcaption>
+            <h4>Ensuring increasing probability.</h4>
+        </figcaption>
+</figure>
+
+<h3 id="13-multiple-dimensions">1.3 Multiple dimensions</h3>
+<p>In multiple dimensions, the derivative $\frac{dx}{dy}$ is expressed in the determinant of the Jacobian matrix. Let $f: \mathbb{R}^n \mapsto \mathbb{R}^m$. The jacobian is a 2D matrix that stores the first order partial derivatives of <strong>all the outputs</strong> <span>$\{f_1, f_2, \dots, f_m \}$ </span> (the height of the matrix) w.r.t. <strong>all the inputs</strong> <span>$\{x_1, x_2, \dots, x_n \}$</span> (the width of the matrix).</p>
+<div>
+$$ \mathbf{J} = \begin{bmatrix}
+\frac{\partial f_1}{\partial x_1} & \dots & \frac{\partial f_1}{\partial x_n} \\[6pt]
+\vdots & \ddots & \vdots \\[6pt]
+\frac{\partial f_m}{\partial x_1} & \dots & \frac{\partial f_m}{\partial x_n} \\[6pt]
+\end{bmatrix}$$
+</div>
+<p>The dimensions of the probability distribution may not change due to the transformation, thus $f: \mathbb{R}^m \mapsto \mathbb{R}^m$ leading to a square jacobian matrix $m \times m$. From a square matrix, we can determine the determinant. The determinant of a matrix $A$ tells us how much an N-dimensional volume is scaled by applying the transformation $A$. For N-dimensions, eq. $\eqref{Py}$ is written with the determinant jacobian matrix.</p>
+<div>
+\begin{eqnarray}
+P(y)&=&P(f^{-1}(y)) \cdot \left| \det \frac{\partial{ f(y)^{-1} }}{\partial{y}} \right| \\
+&=&P(f^{-1}(y)) \cdot \left| \det \mathbf{J}_{f^{-1}(y)} \right| \\
+\end{eqnarray}
+</div>
+<h4 id="131-2d-verification">1.3.1 2D verification</h4>
+<p>Again, let&rsquo;s verify this in Python. Below we&rsquo;ll define a two-dimensional random variable $X$ as a Gaussian distribution. We will also verify the integral condition, again by using <code>np.trapz</code>, but now over 2 dimensions.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># field of all possible events X</span>
+</span></span><span style="display:flex;"><span>x1 <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">5</span>, num<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</span></span><span style="display:flex;"><span>x2 <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">5</span>, num<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</span></span><span style="display:flex;"><span>x1_s, x2_s <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>meshgrid(x1 ,x2)
+</span></span><span style="display:flex;"><span>x_field <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>concatenate([x1_s[<span style="color:#f92672">...</span>, <span style="color:#66d9ef">None</span>], x2_s[<span style="color:#f92672">...</span>, <span style="color:#66d9ef">None</span>]], axis<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># distribution</span>
+</span></span><span style="display:flex;"><span>base <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>multivariate_normal(mean<span style="color:#f92672">=</span>[<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>], cov<span style="color:#f92672">=</span><span style="color:#ae81ff">0.5</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># plot distribution</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>contourf(x1_s, x2_s, base<span style="color:#f92672">.</span>pdf(x_field))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check if P(x) sums to one.</span>
+</span></span><span style="display:flex;"><span>print(np<span style="color:#f92672">.</span>trapz(np<span style="color:#f92672">.</span>trapz(base<span style="color:#f92672">.</span>pdf(x_field), x_field[:, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>], axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), x_field[<span style="color:#ae81ff">0</span>, :, <span style="color:#ae81ff">0</span>]))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>0.9905751293230018
+</span></span></code></pre></div><figure><img src="../../../../../img/post-28-norm-flows/2dgaussian.png"/><figcaption>
+            <h4>Probability distribution of $X$.</h4>
+        </figcaption>
+</figure>
+
+<p>Next we have 2D function $f(x_1, x_2) = (e^{\frac{x_1}{3}}, x_2^2)$ and it&rsquo;s inverse $f^{-1}(y_1, y_2) = (3\log y_1, \sqrt(y_2))$. We could also define the derivative of the inverse function, but as I am lazy we will use <a href="https://pytorch.org/">pytorch</a> for automatic gradients.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">f</span>(x1, x2):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> torch<span style="color:#f92672">.</span>exp(x1 <span style="color:#f92672">/</span> <span style="color:#ae81ff">3</span>), x2<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">f_i</span>(y1, y2):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">3</span> <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>log(y1), y2<span style="color:#f92672">**</span><span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>x_field <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(x_field)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Transform x events to y events</span>
+</span></span><span style="display:flex;"><span>y_field <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>concatenate(f(x_field[<span style="color:#f92672">...</span>, <span style="color:#ae81ff">0</span>, <span style="color:#66d9ef">None</span>], x_field[<span style="color:#f92672">...</span>, <span style="color:#ae81ff">1</span>, <span style="color:#66d9ef">None</span>]), axis<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><p>Next we will need to define the jacobian matrix. For the purpose of this post, we&rsquo;ll use a rather slow implementation, favoring readability.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">create_det_jac</span>(y_field):
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># create for every y1, y2 combination the determinant of the jacobian f_i(y1, y2)</span>
+</span></span><span style="display:flex;"><span>    det_jac <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>zeros((y_field<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>], y_field<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>]))
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(y_field<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> j <span style="color:#f92672">in</span> range(y_field<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>]):
+</span></span><span style="display:flex;"><span>            y_field <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(y_field)
+</span></span><span style="display:flex;"><span>            y_field<span style="color:#f92672">.</span>requires_grad_(<span style="color:#66d9ef">True</span>);
+</span></span><span style="display:flex;"><span>            fiy <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>cat(f_i(y_field[<span style="color:#f92672">...</span>, <span style="color:#ae81ff">0</span>, <span style="color:#66d9ef">None</span>], y_field[<span style="color:#f92672">...</span>, <span style="color:#ae81ff">1</span>, <span style="color:#66d9ef">None</span>]), dim<span style="color:#f92672">=-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>            fiy[i, j]<span style="color:#f92672">.</span>sum()<span style="color:#f92672">.</span>backward()
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># Ouputs of the partial derivatives are independent.  </span>
+</span></span><span style="display:flex;"><span>	    <span style="color:#75715e"># I.e. f1 is dependent of y1 and not y2</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># and vice versa f2 is dependent of y2 and not y1</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># therefore the multiplication w/ 0 </span>
+</span></span><span style="display:flex;"><span>            row1 <span style="color:#f92672">=</span> y_field<span style="color:#f92672">.</span>grad[i, j]<span style="color:#f92672">.</span>data<span style="color:#f92672">.</span>numpy() <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>array([<span style="color:#ae81ff">1.</span>, <span style="color:#ae81ff">0.</span>])
+</span></span><span style="display:flex;"><span>            row2 <span style="color:#f92672">=</span> y_field<span style="color:#f92672">.</span>grad[i, j]<span style="color:#f92672">.</span>data<span style="color:#f92672">.</span>numpy() <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>array([<span style="color:#ae81ff">0.</span>, <span style="color:#ae81ff">1.</span>])
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>            det <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linalg<span style="color:#f92672">.</span>det(np<span style="color:#f92672">.</span>array([row1, row2]))
+</span></span><span style="display:flex;"><span>            det_jac[i, j] <span style="color:#f92672">=</span> det
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> det_jac
+</span></span></code></pre></div><p>Now we&rsquo;ve got all we need to do a distribution transformation and normalize the outcome.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>px <span style="color:#f92672">=</span> base<span style="color:#f92672">.</span>pdf(x_field)
+</span></span><span style="display:flex;"><span>transformed <span style="color:#f92672">=</span> px <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>abs(create_det_jac(y_field))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># show contour plot</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>contourf(y_field[<span style="color:#f92672">...</span>, <span style="color:#ae81ff">0</span>], y_field[<span style="color:#f92672">...</span>, <span style="color:#ae81ff">1</span>], transformed)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(np<span style="color:#f92672">.</span>trapz(np<span style="color:#f92672">.</span>trapz(transformed, y_field[:, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>], axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), y_field[<span style="color:#ae81ff">0</span>, :, <span style="color:#ae81ff">0</span>]))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>&gt;&gt;&gt; 0.9907110850291531
+</span></span></code></pre></div><figure><img src="../../../../../img/post-28-norm-flows/2dtransf.png"/><figcaption>
+            <h4>Probability distribution of $Y$.</h4>
+        </figcaption>
+</figure>
+
+<p>As we can see, we&rsquo;ve transformed the base distribution while meeting the requirement of $\int P(y)dy=1$ by normalizing. Now we can continue applying these transformations in variational inference.</p>
+<h2 id="2-normalizing-flows">2. Normalizing flows</h2>
+<h3 id="21-single-flow">2.1 Single flow</h3>
+<p>Consider a latent variable model, with a latent variable $Z$ we&rsquo;d like to infer. We choose a variational distribution $Q(z)$ over the latent variables $Z$. If we now have a invertible transformation $f: \mathbb{R}^m \mapsto \mathbb{R}^m$. A transformation of the latent variable $z&rsquo; = f(z)$, would have distribution $Q(z&rsquo;)$.</p>
+<div>
+\begin{eqnarray}
+Q(z') &=& Q(z) \left| \det \frac{\partial{f^{-1}}}{\partial{z'}} \right| \\
+Q(z') &=& Q(z) \left| \det \frac{\partial{f}}{\partial{z}} \right|^{-1} &\qquad \tiny{\text{Apply inverse function theorem}}\\
+\log Q(z') &=& \log Q(z) - \log \left| \det \frac{\partial{f}}{\partial{z}} \right| \label{Qz1}
+\end{eqnarray}
+</div>
+<p><em>Note: by applying <a href="https://en.wikipedia.org/wiki/Inverse_function_theorem">the inverse function theorem</a>, $J_{f^-1}(q) = [J_f(p)]^{-1}$</em>, we can rewrite the determinant in terms of the function $f$ instead of it&rsquo;s inverse $f^{-1}$, and $z$ instead of $z&rsquo;$, and the multiplication becomes a division because of the inverse matrix $A^{-1}$ ($\log(A^{-1} = -\log A$). The inverse matrix notation should not be confused with inverse function notation.</p>
+<h3 id="22-k-flows">2.2 K-flows</h3>
+<p>Because the flows have to be invertible, they are not likely to be very complex. Luckily, many simple transformations lead to more complex transformations. We like to obtain a complex random variable $Z_k$, by passing a simple random variable $Z_0$ through multiple flows, a flow composition.</p>
+<p>\begin{eqnarray}
+z_k = f_k \circ \dots \circ f_2 \circ f1(z_0)
+\end{eqnarray}</p>
+<p>Eq. $\eqref{Qz1}$ for $k$ flows becomes:</p>
+<div>
+\begin{eqnarray}
+\log Q(z_K) = \log Q(z_0) - \sum_{k=1}^{K} \log \left| \det \frac{\partial{f_k}}{\partial{z_{k-1}}} \right| \label{qzk}
+\end{eqnarray}
+</div>
+<h2 id="23-variational-free-energy">2.3 Variational Free Energy</h2>
+<p>The variation free energy is the optimization function we need to minimize. For more information about the derivation of this function <a href="https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/">read this post</a>. For clarity, we are going the rearange the variational free energy as defined in <a href="https://www.ritchievink.com/blog/2019/06/10/bayesian-inference-how-we-are-able-to-chase-the-posterior/">my vi post</a>, to the form used by <a href="https://arxiv.org/pdf/1505.05770.pdf">Rezende &amp; Mohammed</a> in [1].</p>
+<div>
+\begin{eqnarray}
+\mathcal{F(x)} &=& D_{KL}(Q(z) || P(z)) - E_{z \sim Q}[\log P(x|z)] \label{eq:vfe} \\
+&=& \int_{z} Q(z) \log \frac{Q(z)}{P(z)} dz - E_{z \sim Q}[\log P(x|z)] &\qquad \tiny{\text{rewrite KL-divergence in integral form}} \\
+&=& E_{z \sim Q}[\log \frac{Q(z)}{P(z)}] - E_{z \sim Q}[\log P(x|z)] &\qquad \tiny{\int P(x) x = E[x]} \\
+&=& E_{z \sim Q}[\log \frac{Q(z)}{P(z)} - \log P(x|z)]  \\
+&=& E_{z \sim Q}[\log Q(z) - \log P(z)  - \log P(x|z)]  \\
+&=& E_{z \sim Q}[\log Q(z) - (\log P(z)  + \log P(x|z))]  &\qquad \tiny{\text{Factorize}\log P(z)  - \log P(x|z)]} \\
+&=& E_{z \sim Q}[\log Q(z) - \log P(x, z))]  &\qquad \tiny{P(A,B) = P(A|B)P(B)} \label{vfepaper}
+\end{eqnarray}
+</div>
+<p>Now we have the same definition as [1], we can update $F(x)$ with $\log Q(z_K)$ <em>(eq. $\eqref{qzk}$)</em>. Eq. $\eqref{vfepaper}$ then becomes:</p>
+<div>
+\begin{eqnarray}
+\mathcal{F(x)} &=& E_{z \sim Q}[\log Q(z) - \log P(x, z)] \\
+&=&  E_{z \sim Q}[\log Q(z_K) - \log P(x, z_K)] \\
+&=&  E_{z \sim Q}[\log Q(z_0) - \sum_{k=1}^{K} \log \left| \det \frac{\partial{f_k}}{\partial{z_{k-1}}} \right| - \log P(x, z_K)] \label{vfeflow} \\
+\end{eqnarray}
+</div>
+<h3 id="24-planar-flows">2.4 Planar flows</h3>
+<p>$\mathcal{F}(x)$ is now <strong>general for any kind of normalizing flow</strong>, let&rsquo;s investigate one such flow called planar flow. The planar flow transformation is defined as:</p>
+<p>\begin{equation}
+f(z) = z + u h(w^Tz + b)
+\end{equation}</p>
+<p>Here <span>$\{ z \in \mathbb{R}^D, u \in \mathbb{R}^D, b\in \mathbb{R} \}$</span> are parameters we need to find by optimization. The function $h(\cdot)$ needs to be a smooth non linear function (the writers recommend using $\tanh(\cdot)$). Determining a determinant jacobian can be a very expensive operation, for <a href="https://arxiv.org/abs/1302.5125">invertible neural networks</a> they are at least $\mathcal{O}(D^3)$. Besides the invertibility constraint, cheaply computed log determinant jacobians should also be taken into consideration, if you wanted to design your own flows. With planar flows it has been. The complexity is reduced to $\mathcal{O}(D)$, by using the <a href="https://en.wikipedia.org/wiki/Matrix_determinant_lemma">matrix determinant lemma</a> $\det(I + uv^T) = (1 + v^Tu)$.</p>
+<div>
+\begin{eqnarray}
+\psi(z) &=& h'(w^Tz + b)w \\
+\left| \det \frac{\partial{f}}{\partial{z}} \right| &=& \left| \det(I + u \psi (z)^T)  \right| = \left| 1+u^T \psi (z)  \right|
+\end{eqnarray}
+</div>
+<p>That&rsquo;s all we need! We can plug this determinant jacobian right in eq. $\eqref{vfeflow}$ and wrap it up. There are however some conditions that need to be met to guarantee invertibility. In appendix A of [1] they are explained.</p>
+<h2 id="3-flow-in-practice">3. Flow in practice</h2>
+<p>Okay, let&rsquo;s see if we can bring what we&rsquo;ve defined above in practice. In the snippet below we define a <code>Planar</code> class, the implementation of the flow that we&rsquo;ve just discussed. Furthermore we normalize some of the parameters of the flow conform the appendix A in [1].</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Planar</span>(nn<span style="color:#f92672">.</span>Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, size<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, init_sigma<span style="color:#f92672">=</span><span style="color:#ae81ff">0.01</span>):
+</span></span><span style="display:flex;"><span>        super()<span style="color:#f92672">.</span>__init__()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>u <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Parameter(torch<span style="color:#f92672">.</span>randn(<span style="color:#ae81ff">1</span>, size)<span style="color:#f92672">.</span>normal_(<span style="color:#ae81ff">0</span>, init_sigma))
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>w <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Parameter(torch<span style="color:#f92672">.</span>randn(<span style="color:#ae81ff">1</span>, size)<span style="color:#f92672">.</span>normal_(<span style="color:#ae81ff">0</span>, init_sigma))
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>b <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Parameter(torch<span style="color:#f92672">.</span>zeros(<span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@property</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">normalized_u</span>(self):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Needed for invertibility condition.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        See Appendix A.1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Rezende et al. Variational Inference with Normalizing Flows
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        https://arxiv.org/pdf/1505.05770.pdf
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># softplus</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">m</span>(x):
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">+</span> torch<span style="color:#f92672">.</span>log(<span style="color:#ae81ff">1</span> <span style="color:#f92672">+</span> torch<span style="color:#f92672">.</span>exp(x))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        wtu <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>matmul(self<span style="color:#f92672">.</span>w, self<span style="color:#f92672">.</span>u<span style="color:#f92672">.</span>t())
+</span></span><span style="display:flex;"><span>        w_div_w2 <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>w <span style="color:#f92672">/</span> torch<span style="color:#f92672">.</span>norm(self<span style="color:#f92672">.</span>w)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>u <span style="color:#f92672">+</span> (m(wtu) <span style="color:#f92672">-</span> wtu) <span style="color:#f92672">*</span> w_div_w2
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">psi</span>(self, z):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        ψ(z) =h′(w^tz+b)w
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        See eq(11)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Rezende et al. Variational Inference with Normalizing Flows
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        https://arxiv.org/pdf/1505.05770.pdf
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>h_prime(z <span style="color:#f92672">@</span> self<span style="color:#f92672">.</span>w<span style="color:#f92672">.</span>t() <span style="color:#f92672">+</span> self<span style="color:#f92672">.</span>b) <span style="color:#f92672">@</span> self<span style="color:#f92672">.</span>w
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">h</span>(self, x):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> torch<span style="color:#f92672">.</span>tanh(x)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">h_prime</span>(self, z):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> torch<span style="color:#f92672">.</span>tanh(z) <span style="color:#f92672">**</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">forward</span>(self, z):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> isinstance(z, tuple):
+</span></span><span style="display:flex;"><span>            z, accumulating_ldj <span style="color:#f92672">=</span> z
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>            z, accumulating_ldj <span style="color:#f92672">=</span> z, <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>        psi <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>psi(z)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        u <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>normalized_u
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># determinant of jacobian</span>
+</span></span><span style="display:flex;"><span>        det <span style="color:#f92672">=</span> (<span style="color:#ae81ff">1</span> <span style="color:#f92672">+</span> psi <span style="color:#f92672">@</span> u<span style="color:#f92672">.</span>t())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># log |det Jac|</span>
+</span></span><span style="display:flex;"><span>        ldj <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>log(torch<span style="color:#f92672">.</span>abs(det) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1e-6</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        wzb <span style="color:#f92672">=</span> z <span style="color:#f92672">@</span> self<span style="color:#f92672">.</span>w<span style="color:#f92672">.</span>t() <span style="color:#f92672">+</span> self<span style="color:#f92672">.</span>b
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        fz <span style="color:#f92672">=</span> z <span style="color:#f92672">+</span> (u <span style="color:#f92672">*</span> self<span style="color:#f92672">.</span>h(wzb))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> fz, ldj <span style="color:#f92672">+</span> accumulating_ldj
+</span></span></code></pre></div><h3 id="31-target-distribution">3.1 Target distribution</h3>
+<p>Next we define a target distribution that is more complex than a standard Gaussian.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">target_density</span>(z):
+</span></span><span style="display:flex;"><span>    z1, z2 <span style="color:#f92672">=</span> z[<span style="color:#f92672">...</span>, <span style="color:#ae81ff">0</span>], z[<span style="color:#f92672">...</span>, <span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>    norm <span style="color:#f92672">=</span> (z1<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">+</span> z2<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)<span style="color:#f92672">**</span><span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span>    exp1 <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span><span style="color:#ae81ff">0.2</span> <span style="color:#f92672">*</span> ((z1 <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>) <span style="color:#f92672">/</span> <span style="color:#ae81ff">0.8</span>) <span style="color:#f92672">**</span> <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>    exp2 <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span><span style="color:#ae81ff">0.2</span> <span style="color:#f92672">*</span> ((z1 <span style="color:#f92672">+</span> <span style="color:#ae81ff">2</span>) <span style="color:#f92672">/</span> <span style="color:#ae81ff">0.8</span>) <span style="color:#f92672">**</span> <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>    u <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> ((norm <span style="color:#f92672">-</span> <span style="color:#ae81ff">4</span>) <span style="color:#f92672">/</span> <span style="color:#ae81ff">0.4</span>) <span style="color:#f92672">**</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">-</span> torch<span style="color:#f92672">.</span>log(exp1 <span style="color:#f92672">+</span> exp2)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> torch<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>u)
+</span></span></code></pre></div><p>If we plot the density of function above we obtain the following target distribution.</p>
+<figure><img src="../../../../../img/post-28-norm-flows/target_dist.png"/><figcaption>
+            <h4>Target distribution we want to approximate.</h4>
+        </figcaption>
+</figure>
+
+<h3 id="32-variational-free-energy">3.2 Variational Free Energy</h3>
+<p>Eq. $\eqref{vfeflow}$ is defined below in the function <code>det_loss</code>. The joint probability $P(x, z_K)$ in $\eqref{vfeflow}$ is split in the likelihood (the target density case) and the prior $P(z_K)$ (which is note used as I use a uniform prior).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">det_loss</span>(mu, log_var, z_0, z_k, ldj, beta):
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Note that I assume uniform prior here.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># So P(z) is constant and not modelled in this loss function</span>
+</span></span><span style="display:flex;"><span>    batch_size <span style="color:#f92672">=</span> z_0<span style="color:#f92672">.</span>size(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Qz0</span>
+</span></span><span style="display:flex;"><span>    log_qz0 <span style="color:#f92672">=</span> dist<span style="color:#f92672">.</span>Normal(mu, torch<span style="color:#f92672">.</span>exp(<span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> log_var))<span style="color:#f92672">.</span>log_prob(z_0)
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Qzk = Qz0 + sum(log det jac)</span>
+</span></span><span style="display:flex;"><span>    log_qzk <span style="color:#f92672">=</span> log_qz0<span style="color:#f92672">.</span>sum() <span style="color:#f92672">-</span> ldj<span style="color:#f92672">.</span>sum()
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># P(x|z)</span>
+</span></span><span style="display:flex;"><span>    nll <span style="color:#f92672">=</span> <span style="color:#f92672">-</span>torch<span style="color:#f92672">.</span>log(target_density(z_k) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1e-7</span>)<span style="color:#f92672">.</span>sum() <span style="color:#f92672">*</span> beta
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> (log_qzk <span style="color:#f92672">+</span> nll) <span style="color:#f92672">/</span> batch_size
+</span></span></code></pre></div><h3 id="33-final-model">3.3 Final model</h3>
+<p>The single <code>Planar</code> layer is sequentially stacked in the <code>Flow</code> class. The instance of this class is the final model and will be optimized in order to approximate the target distribution.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Flow</span>(nn<span style="color:#f92672">.</span>Module):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, dim<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>, n_flows<span style="color:#f92672">=</span><span style="color:#ae81ff">10</span>):
+</span></span><span style="display:flex;"><span>        super()<span style="color:#f92672">.</span>__init__()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>flow <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Sequential(<span style="color:#f92672">*</span>[
+</span></span><span style="display:flex;"><span>            Planar(dim) <span style="color:#66d9ef">for</span> _ <span style="color:#f92672">in</span> range(n_flows)
+</span></span><span style="display:flex;"><span>        ])
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>mu <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Parameter(torch<span style="color:#f92672">.</span>randn(dim, )<span style="color:#f92672">.</span>normal_(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0.01</span>))
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>log_var <span style="color:#f92672">=</span> nn<span style="color:#f92672">.</span>Parameter(torch<span style="color:#f92672">.</span>randn(dim, )<span style="color:#f92672">.</span>normal_(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0.01</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">forward</span>(self, shape):
+</span></span><span style="display:flex;"><span>        std <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>exp(<span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> self<span style="color:#f92672">.</span>log_var)
+</span></span><span style="display:flex;"><span>        eps <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>randn(shape)  <span style="color:#75715e"># unit gaussian</span>
+</span></span><span style="display:flex;"><span>        z0 <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>mu <span style="color:#f92672">+</span> eps <span style="color:#f92672">*</span> std
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        zk, ldj <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>flow(z0)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> z0, zk, ldj, self<span style="color:#f92672">.</span>mu, self<span style="color:#f92672">.</span>log_var
+</span></span></code></pre></div><h3 id="34-training-and-results">3.4 Training and results</h3>
+<p>Last we need is the train loop. This is just a function where we pass a model instance and apply some gradient updates.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">train_flow</span>(flow, shape, epochs<span style="color:#f92672">=</span><span style="color:#ae81ff">1000</span>):
+</span></span><span style="display:flex;"><span>    optim <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>optim<span style="color:#f92672">.</span>Adam(flow<span style="color:#f92672">.</span>parameters(), lr<span style="color:#f92672">=</span><span style="color:#ae81ff">1e-2</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(epochs):
+</span></span><span style="display:flex;"><span>        z0, zk, ldj, mu, log_var <span style="color:#f92672">=</span> flow(shape<span style="color:#f92672">=</span>shape)
+</span></span><span style="display:flex;"><span>        loss <span style="color:#f92672">=</span> det_loss(mu<span style="color:#f92672">=</span>mu,
+</span></span><span style="display:flex;"><span>                        log_var<span style="color:#f92672">=</span>log_var,
+</span></span><span style="display:flex;"><span>                        z_0<span style="color:#f92672">=</span>z0,
+</span></span><span style="display:flex;"><span>                        z_k<span style="color:#f92672">=</span>zk,
+</span></span><span style="display:flex;"><span>                        ldj<span style="color:#f92672">=</span>ldj,
+</span></span><span style="display:flex;"><span>                        beta<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        loss<span style="color:#f92672">.</span>backward()
+</span></span><span style="display:flex;"><span>        optim<span style="color:#f92672">.</span>step()
+</span></span><span style="display:flex;"><span>        optim<span style="color:#f92672">.</span>zero_grad()
+</span></span></code></pre></div><p>The figure below shows the final results. As we can see, the planar flow layer isn&rsquo;t quite flexible enough to approximate the target in one or two layers. We eventually seem to need ~16 layers to come full cirlce.</p>
+<figure><img src="../../../../../img/post-28-norm-flows/montage.png"/><figcaption>
+            <h4>Results with different number of planar flows.</h4>
+        </figcaption>
+</figure>
+
+<h2 id="discussion">Discussion</h2>
+<p>Upgrading the variational distribution with normalizing flows addresses a core setback of variational inference, that of simplifying the posterior distribution too much. However, we remain limited to invertible functions. As we see in the example with the planar flows, we need quite some layers in order to obtain the flexible distribution. In higher dimensions this problem increases, and planar flows are often thought to be too simplistic. Luckily there are more complex transformations. Maybe I&rsquo;ll discuss them in another post.</p>
+<h2 id="references">References</h2>
+<p>  [1] Rezende &amp; Mohammed (2016, Jun 14) <em>Variational Inference with Normalizing Flows</em>. Retrieved from <a href="https://arxiv.org/pdf/1505.05770.pdf">https://arxiv.org/pdf/1505.05770.pdf</a> <br>
+  [2] Rippel &amp; Adams (2013, Feb 20) <em>High-Dimensional Probability Estimation with Deep Density Models</em>. Retrieved from <a href="https://arxiv.org/pdf/1302.5125.pdf">https://arxiv.org/pdf/1302.5125.pdf</a> <br>
+  [3] van den Berg, R (2018, Aug 11) <em>Sylvester normalizing flows for variational inference</em> Retrieved from <a href="https://github.com/riannevdberg/sylvester-flows">https://github.com/riannevdberg/sylvester-flows</a> <br></p>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+    TeX: { equationNumbers: { autoNumber: "AMS" } }
+  });
+  </script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<head>
+<style>
+
+.formula-wrap {
+overflow-x: scroll;
+}
+
+</style>
+</head>
+
+    </div>
+    
+    
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <aside><div id="disqus_thread"></div></aside>
+    <script type="text/javascript">
+      var disqus_shortname = 'www-ritchievink-com';
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+</body>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>save-some-time on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/save-some-time/</link>
+    <description>Recent content in save-some-time on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Sun, 17 Mar 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/save-some-time/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Save some time: Embedding jupyter notebook in an iframe and serve as a reverse proxy behind NGINX</title>
+      <link>https://www.ritchievink.com/blog/2019/03/17/save-some-time-embedding-jupyter-notebook-in-an-iframe-and-serve-as-a-reverse-proxy-behind-nginx/</link>
+      <pubDate>Sun, 17 Mar 2019 00:00:00 +0000</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2019/03/17/save-some-time-embedding-jupyter-notebook-in-an-iframe-and-serve-as-a-reverse-proxy-behind-nginx/</guid>
+      <description>Embedding Jupyter notebook/ lab on your website can be done by embedding it in an iframe. However, it takes some configurational quirks to get it done. For my purpose, I also needed to offload validation to another service on the backend. Both the validation server as the jupyter notebook server were proxied behind an NGINX server. Here is the configuration. NGINX setup In the configuration, we set two upstream servers.</description>
+    </item>
+    
+  </channel>
+</rss>

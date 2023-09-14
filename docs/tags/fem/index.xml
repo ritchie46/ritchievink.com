@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>fem on Ritchie Vink</title>
+    <link>https://www.ritchievink.com/tags/fem/</link>
+    <description>Recent content in fem on Ritchie Vink</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-EN</language>
+    <managingEditor>ritchie46@gmail.com (Ritchie Vink)</managingEditor>
+    <webMaster>ritchie46@gmail.com (Ritchie Vink)</webMaster>
+    <copyright>(c) 2020 Ritchie Vink.</copyright>
+    <lastBuildDate>Wed, 23 Aug 2017 13:07:00 +0200</lastBuildDate><atom:link href="https://www.ritchievink.com/tags/fem/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>A nonlinear water accumulation analysis in Python</title>
+      <link>https://www.ritchievink.com/blog/2017/08/23/a-nonlinear-water-accumulation-analysis-in-python/</link>
+      <pubDate>Wed, 23 Aug 2017 13:07:00 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/08/23/a-nonlinear-water-accumulation-analysis-in-python/</guid>
+      <description>Frames One of my first packages in Python is a program for analysing 2D Frames called anaStruct. I wrote this in the summer of 2016 and learned a lot by doing so. When it was &amp;lsquo;finished&amp;rsquo; I was really enthusiastic and eager to give it some purpose in the &amp;lsquo;real&amp;rsquo; engineering world.
+My enthusiasm wasn&amp;rsquo;t for long though. I wrote a fem package that can compute linear force lines. The real world however isn&amp;rsquo;t so linear.</description>
+    </item>
+    
+    <item>
+      <title>Python 1D FEM Example 3</title>
+      <link>https://www.ritchievink.com/blog/2017/03/12/python-1d-fem-example-3/</link>
+      <pubDate>Sun, 12 Mar 2017 21:35:33 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/03/12/python-1d-fem-example-3/</guid>
+      <description>Python 1D FEM Example 3. Simple code example for anaStruct.
+# if using ipython notebook %matplotlib inline from anastruct.fem.system import SystemElements # Create a new system object. ss = SystemElements(EA=15000, EI=5000) # Add beams to the system. ss.add_element(location=[[0, 0], [0, 5]]) ss.add_element(location=[[0, 5], [5, 5]]) ss.add_element(location=[[5, 5], [5, 0]]) # Add a fixed support at node 1. ss.add_support_fixed(node_id=1) # Add a rotational spring at node 4. ss.add_support_spring(node_id=4, translation=3, k=4000) # Add loads.</description>
+    </item>
+    
+    <item>
+      <title>Python 1D FEM Example 2</title>
+      <link>https://www.ritchievink.com/blog/2017/02/12/python-1d-fem-example-2/</link>
+      <pubDate>Sun, 12 Feb 2017 21:35:33 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/02/12/python-1d-fem-example-2/</guid>
+      <description>Example 2: Truss framework Simple code example for anaStruct.
+# if using ipython notebook %matplotlib inline import math from anastruct.fem.system import SystemElements # Create a new system object. ss = SystemElements(EA=5000) # Add beams to the system. ss.add_truss_element(location=[[0, 0], [0, 5]]) ss.add_truss_element(location=[[0, 5], [5, 5]]) ss.add_truss_element(location=[[5, 5], [5, 0]]) ss.add_truss_element(location=[[0, 0], [5, 5]], EA=5000 * math.sqrt(2)) # get a visual of the element ID&amp;#39;s and the node ID&amp;#39;s ss.show_structure() # add hinged supports at node ID 1 and node ID 2 ss.</description>
+    </item>
+    
+    <item>
+      <title>Python 1D FEM Example 1</title>
+      <link>https://www.ritchievink.com/blog/2017/01/12/python-1d-fem-example-1/</link>
+      <pubDate>Thu, 12 Jan 2017 21:35:33 +0200</pubDate>
+      <author>ritchie46@gmail.com (Ritchie Vink)</author>
+      <guid>https://www.ritchievink.com/blog/2017/01/12/python-1d-fem-example-1/</guid>
+      <description>Example 1: Framework Simple code example for anaStruct.
+# if using ipython notebook %matplotlib inline from anastruct.fem.system import SystemElements # Create a new system object. ss = SystemElements() # Add beams to the system. ss.add_element(location=[[0, 0], [3, 4]], EA=5e9, EI=8000) ss.add_element(location=[[3, 4], [8, 4]], EA=5e9, EI=4000) # get a visual of the element IDs and the node IDs ss.show_structure() # add loads to the element ID 2 ss.q_load(element_id=2, q=-10) # add hinged support to node ID 1 ss.</description>
+    </item>
+    
+  </channel>
+</rss>

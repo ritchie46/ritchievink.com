@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en-EN">
+<head>
+	<meta name="generator" content="Hugo 0.118.2">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta content="keyword 1, keyword 2, keyword 3" name="keywords">
+<meta content="Ritchie Vink" name="author">
+<meta property="og:title" content="Ritchie Vink">
+<meta property="og:url" content="https://www.ritchievink.com/">
+<meta property="og:description" content="">
+<meta property="og:type" content="website" />
+
+
+
+<title>Ritchie Vink</title>
+
+<link rel="stylesheet" href="https://www.ritchievink.com//css/style.css">
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/styles/default.min.css">
+
+</head>
+
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+
+ <img src="../../profile.jpg" alt="Avatar" style="margin-right: 1em" height="100px"> 
+      <div class="nav-left" style="flex-basis: auto;">
+
+        <a class="nav-item" href="https://www.ritchievink.com/"><h1 class="title is-4">Ritchie Vink</h1></a>
+      <nav class="nav-item level is-mobile">
+          <a class="level-item" href="../../tags">
+            tags
+          </a>
+          
+          
+          <a class="level-item" href="https://www.ritchievink.com/about/">
+            about
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/anastruct/">
+            anastruct
+          </a>
+          
+        </nav>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+          <a class="level-item" href="https://github.com/ritchie46" target="_blank">
+            <span class="icon">
+              <i class="fa fa-github"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://linkedin.com/in/ritchievink/" target="_blank">
+            <span class="icon">
+              <i class="fa fa-linkedin-square"></i>
+            </span>
+          </a>
+          
+          <a class="level-item" href="https://www.ritchievink.com/index.xml" target="_blank">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+          </a>
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container">
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/">Writing a fourth order Runga Kutta solver for a vibrations problem in Python (Part 3)</a></h1>
+      <h2 class="subtitle is-5">April 13, 2017</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/python">python</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/vibrations">vibrations</a>
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/engineering">engineering</a>
+    
+</div>
+
+      
+
+
+
+      <div class="content">
+        This post continues where part 2 ended. The Runga Kutta algorithm described in last post is only able to solve first order differential equations.
+The differential equation (de) for a single mass spring vibrations problem is a second order de.
+\[ mu'' + cu' + ku = F\] Note that in this equation:
+u&rsquo;&rsquo; = acceleration a
+u&rsquo; = velocity v
+u = displacement
+Before we can solve it with a Runga Kutta algorithm we must rewrite the base equation to a system of two first order ode&rsquo;s.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2017/04/13/writing-a-fourth-order-runga-kutta-solver-for-a-vibrations-problem-in-python-part-3/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2017/03/12/python-1d-fem-example-3/">Python 1D FEM Example 3</a></h1>
+      <h2 class="subtitle is-5">March 12, 2017</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/fem">fem</a>
+    
+</div>
+
+      
+
+
+
+      <div class="content">
+        Python 1D FEM Example 3. Simple code example for anaStruct.
+# if using ipython notebook %matplotlib inline from anastruct.fem.system import SystemElements # Create a new system object. ss = SystemElements(EA=15000, EI=5000) # Add beams to the system. ss.add_element(location=[[0, 0], [0, 5]]) ss.add_element(location=[[0, 5], [5, 5]]) ss.add_element(location=[[5, 5], [5, 0]]) # Add a fixed support at node 1. ss.add_support_fixed(node_id=1) # Add a rotational spring at node 4. ss.add_support_spring(node_id=4, translation=3, k=4000) # Add loads.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2017/03/12/python-1d-fem-example-3/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2017/02/12/python-1d-fem-example-2/">Python 1D FEM Example 2</a></h1>
+      <h2 class="subtitle is-5">February 12, 2017</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/fem">fem</a>
+    
+</div>
+
+      
+
+
+
+      <div class="content">
+        Example 2: Truss framework Simple code example for anaStruct.
+# if using ipython notebook %matplotlib inline import math from anastruct.fem.system import SystemElements # Create a new system object. ss = SystemElements(EA=5000) # Add beams to the system. ss.add_truss_element(location=[[0, 0], [0, 5]]) ss.add_truss_element(location=[[0, 5], [5, 5]]) ss.add_truss_element(location=[[5, 5], [5, 0]]) ss.add_truss_element(location=[[0, 0], [5, 5]], EA=5000 * math.sqrt(2)) # get a visual of the element ID&#39;s and the node ID&#39;s ss.show_structure() # add hinged supports at node ID 1 and node ID 2 ss.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2017/02/12/python-1d-fem-example-2/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+    <article>
+      <h1 class="title"><a href="https://www.ritchievink.com/blog/2017/01/12/python-1d-fem-example-1/">Python 1D FEM Example 1</a></h1>
+      <h2 class="subtitle is-5">January 12, 2017</h2>
+      
+        <div class="tags">
+    
+        <a class="button is-link" href="https://www.ritchievink.com/tags/fem">fem</a>
+    
+</div>
+
+      
+
+
+
+      <div class="content">
+        Example 1: Framework Simple code example for anaStruct.
+# if using ipython notebook %matplotlib inline from anastruct.fem.system import SystemElements # Create a new system object. ss = SystemElements() # Add beams to the system. ss.add_element(location=[[0, 0], [3, 4]], EA=5e9, EI=8000) ss.add_element(location=[[3, 4], [8, 4]], EA=5e9, EI=4000) # get a visual of the element IDs and the node IDs ss.show_structure() # add loads to the element ID 2 ss.q_load(element_id=2, q=-10) # add hinged support to node ID 1 ss.
+        
+        <a class="button" href="https://www.ritchievink.com/blog/2017/01/12/python-1d-fem-example-1/" style="height:28px">
+          Read more
+          <span class="icon is-small">
+            <i class="fa fa-angle-double-right"></i>
+          </span>
+        </a>
+        
+      </div>
+    </article>
+    
+  </div>
+</section>
+<section class="section">
+  <div class="container">
+    <nav class="level is-mobile">
+      <div class="level-left">
+        <div class="level-item">
+          
+          <a class="button" href="../../page/3/">
+            <span class="icon is-small is-marginless">
+              <i class="fa fa-angle-left"></i>
+            </span>
+            Newer
+          </a>
+          
+        </div>
+      </div>
+      <div class="level-right is-marginless">
+        <div class="level-item">
+          
+        </div>
+      </div>
+    </nav>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p>(c) 2020 Ritchie Vink.</p>
+  </div>
+</section>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.2.0/build/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+<script type="text/javascript">
+    if (window.location.href.indexOf('localhost') < 0) {
+	    var _gaq = _gaq || [];
+	    _gaq.push(['_setAccount', 'UA-83196691-2']);
+	    _gaq.push(['_trackPageview']);
+
+	    (function() {
+		var ga = document.createElement('script');
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' :
+		    'http://www') + '.google-analytics.com/ga.js';
+		ga.setAttribute('async', 'true');
+		document.documentElement.firstChild.appendChild(ga);
+	    })();
+}
+</script>
+
+
+
+
+
