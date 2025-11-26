@@ -22,7 +22,7 @@ Before going to the bridges let's first look at the genetic algorithms model. Th
 The height of the hill is described with a fitness function. If we would compare this with Darwin's survival of the fittest, the fitness function would map your DNA to the probability of you:
 
 1. Living long enough to reproduce.
-2. Convincing the other sex to have coitis with you.
+2. Convincing the other sex that you are best to reproduce with.
 
 This guy would have a fitness score of over 9000:
 
